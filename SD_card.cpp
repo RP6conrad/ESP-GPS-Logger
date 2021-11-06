@@ -147,6 +147,7 @@ void loadConfiguration(const char *filename, Config &config) {
   config.dynamic_model = doc["dynamic_model"]|1;
   config.timezone = doc["timezone"]|2;
   config.stat_field = doc["stat_field"]|6;
+  config.bar_length = doc["bar_length"]|1852;
   config.logCSV=doc["logCSV"]|0;
   config.logUBX=doc["logUBX"]|1;
   config.logOAO=doc["logOAO"]|1;

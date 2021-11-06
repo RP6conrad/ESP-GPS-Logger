@@ -41,6 +41,7 @@ struct Config {
   int dynamic_model=1;//choice for dynamic model "Sea",if 0 model "portable" is used !!
   int timezone=2;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)
   int stat_field=6;//choice for stats field when no speed
+  int bar_length=1852;//choice for bar indicator for lentht of run (nautical mile)
   bool logCSV=0;
   bool logUBX=1;
   bool logOAO=1;

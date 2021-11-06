@@ -74,6 +74,9 @@
  * Start logging if speed>MIN_SPEED_START_LOGGING, now 2m/s
  * Added log files in oao format
  * Removed logging to csv files
+ * Changes sw 5.1
+ * Add distance of run
+ * Add configurable bar in "speed" screen, reflects run_distance, default 1852m = full bar
  */ 
 #include "FS.h"
 #include "SD.h"
@@ -138,7 +141,7 @@ bool GPS_Signal_OK = false;
 bool long_push = false;
 bool Field_choice = false;
 int analog_bat;
-int first_fix_GPS,run_count,stat_count,GPS_delay,push_time;
+int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay,push_time;
 //int stat_fields=6;//4=alleen STATS1 en STATS2, 6 ook STATS3
 int wifi_search=10;
 int time_out_nav_pvt=1200;
@@ -147,7 +150,7 @@ float analog_mean;
 float Mean_heading,heading_SD;
 float calibration_speed=3.6;
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]=" SW-version 5.00 ";
+char SW_version[32]=" SW-version 5.1 ";
 RTC_DATA_ATTR int bootCount = 0;
 RTC_DATA_ATTR float RTC_distance;
 RTC_DATA_ATTR float RTC_avg_10s;
@@ -501,7 +504,9 @@ void taskOne( void * parameter )
               Log_to_SD();//hier wordt ook geprint naar serial !!
               
               Ublox.push_data(ubxMessage.navPvt.lat/10000000.0f,ubxMessage.navPvt.lon/10000000.0f,gps_speed);   
-              run_count=New_run_detection(ubxMessage.navPvt.heading/100000.0f,S2.avg_s);         
+              run_count=New_run_detection(ubxMessage.navPvt.heading/100000.0f,S2.avg_s); 
+              if(run_count!=old_run_count)Ublox.run_distance=0;
+              old_run_count=run_count;        
               M100.Update_distance(run_count);
               M250.Update_distance(run_count);
               M500.Update_distance(run_count);

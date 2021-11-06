@@ -102,20 +102,25 @@ void Update_screen(int screen){
         if(config.field==5)display.print("Alfa:");
         if(config.field==6)display.print("0.5h:");
         if(config.field==7)display.print("1h:");
-        if(config.field==8)display.print("M100:");
+        if(config.field==8)display.print("DisR:");
         display.setTextColor(GxEPD_BLACK);
         if(config.field==1)display.print(S10.s_max_speed*calibration_speed,2);//actueel topspeed 10s van deze run
-        if(config.field==2)display.print(Ublox.total_distance/1000,0);//Total distance in meter
+        if(config.field==2)display.print(Ublox.total_distance/1000,0);//Total distance in meter, als test run_distance
         if(config.field==3)display.print(S10.avg_5runs*calibration_speed,2); //average 5*10s
         if(config.field==4)display.print(S2.display_max_speed*calibration_speed,2);  //best 2s
-        if(config.field==5)display.print(A500.avg_speed[9]*calibration_speed,2);   //best Alfa on 500 m 
+        if(config.field==5)display.print(A500.avg_speed[9]*calibration_speed,2);   //best Alfa on 500 m, A500.alfa_speed_max = actuele alfa !! 
         if(config.field==6)display.print(S1800.display_max_speed*calibration_speed);   //best 1800s
         if(config.field==7)display.print(S3600.display_max_speed*calibration_speed);  //best 3600s
-        if(config.field==8)display.print(M100.m_max_speed*calibration_speed,2);//actueel topspeed 10s van deze run
+        if(config.field==8)display.print(Ublox.run_distance/1000,0);//run_distance, was(M100.m_max_speed*calibration_speed,2);//actueel topspeed 10s van deze run
         display.setFont(&FreeMonoBold12pt7b);
         display.setCursor(202+offset%2,24);//zodat SXX niet groter wordt dan 244 pix
         display.print("S");
         display.println(ubxMessage.navPvt.numSV);
+        int bar_length=config.bar_length*1000/240;
+        if(bar_length){
+            int run_rectangle_length=(Ublox.run_distance/bar_length);//1852/240 pixels = 7.7 pixels = 7700
+            display.fillRect(offset,32,run_rectangle_length,8,GxEPD_BLACK);//balk voor run_distance weer te geven...
+            }
         if(update_epaper==0)update_epaper=2;
         }
         if(screen==AVG_10S){

@@ -20,6 +20,7 @@ class GPS_data {
   public:
     GPS_data (); // description of the constructor
     float total_distance;
+    float run_distance;
     float delta_dist;
     void push_data(float latitude,float longitude,uint32_t gSpeed); // hier wordt de gps data in de buffer geplaatst
    

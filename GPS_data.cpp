@@ -39,6 +39,7 @@ void GPS_data::push_data(float latitude,float longitude,uint32_t gSpeed) {//gspe
   if((ubxMessage.navPvt.numSV>=FILTER_MIN_SATS)&((ubxMessage.navPvt.sAcc/1000.0f)<FILTER_MAX_sACC)){
         delta_dist=gSpeed/config.sample_rate;//snelheid omrekenen naar afstand !!!
         total_distance=total_distance+delta_dist;
+        run_distance=run_distance+delta_dist;
         }  
   //Opslaan groundSpeed in seconden tact !!**********************************************************************************
   static int avg_gSpeed;//in mm/s
