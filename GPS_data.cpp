@@ -8,6 +8,7 @@ float _long[BUFFER_ALFA];
 uint16_t _secSpeed[BUFFER_SIZE];
 int index_GPS=-1;//bij eerste doorgang op 0 beginnen !!
 int index_sec=-1;//bij eerste doorgang op 0 beginnen !!
+int alfa_counter;
 
 //Deze functie gaat telkens 3 variabelen van de GPS in een globale buffer steken : doppler snelheid, lat en long.
 //Er is gekozen voor een globale buffer omdat deze data ook beschikbaar moeten zijn in andere classes (GPS_speed() en GPS_time).
@@ -40,6 +41,7 @@ void GPS_data::push_data(float latitude,float longitude,uint32_t gSpeed) {//gspe
         delta_dist=gSpeed/config.sample_rate;//snelheid omrekenen naar afstand !!!
         total_distance=total_distance+delta_dist;
         run_distance=run_distance+delta_dist;
+        alfa_distance=alfa_distance+delta_dist;
         }  
   //Opslaan groundSpeed in seconden tact !!**********************************************************************************
   static int avg_gSpeed;//in mm/s
@@ -228,7 +230,7 @@ float Alfa_speed::Update_Alfa(GPS_speed M){
           real_distance[0]=(int)straight_dist;
           }
     }
-  if((alfa_speed_max>0.0f)&(straight_dist>(M.m_set_distance*0.4))){
+  if((alfa_speed_max>0.0f)&(straight_dist>(M.m_set_distance*0.4))){//alfa max gaat pas op 0 indien 500 m na de gijp, rechte afstand na de gijp
       getLocalTime(&tmstruct, 0);
       time_hour[0]=tmstruct.tm_hour;
       time_min[0]=tmstruct.tm_min;
@@ -275,18 +277,49 @@ int New_run_detection(float actual_heading, float S2_speed){
    if(S2_speed>speed_detection_min)velocity_5=1;    //min gemiddelde over 2 s = 1m/s           
    if((S2_speed<standstill_detection_max)&(velocity_5==1))velocity_0=1;
    else velocity_0=0;
-   /*Nieuwe run gedetecteerd*********************************************************************************************************************************/
+   /*Nieuwe run gedetecteerd omwille stilstand    *****************************************************************************************************************/
+   if(velocity_0==1){
+     velocity_5=0;
+     delay_counter=0;
+    }
+   /*Nieuwe run gedetecteerd omwille heading change*****************************************************************************************************************/
    static bool straight_course;
    if(abs(Mean_heading-heading)<straight_course_max){straight_course=true;}//stabiele koers terug bereikt
-   if(((abs(Mean_heading-heading)>course_deviation_min)&(straight_course==true))|(velocity_0==1)){      
-      velocity_5=0;
+   if(((abs(Mean_heading-heading)>course_deviation_min)&(straight_course==true))){      
+      //velocity_5=0;
       straight_course=false;
       delay_counter=0;
-      //run_counter++;//delay for new run ....
+      alfa_counter++;//jibe detection for alfa_indicator ....
       }
    delay_counter++;   
    if(delay_counter==(time_delay_new_run*config.sample_rate)) run_counter++;   
    return run_counter;   
+}
+/*hier wordt de actuele "alfa afstand" berekend aan de hand van 2 punten voor de gijp : P1 = 250m en P2 = 100m voor de gijp
+*Deze punten bepalen een imaginaire lijn, de loodrechte afstand tot de actuele positie moet kleiner zijn dan 50 m/s
+*als het punt P1 gepasseerd wordt
+*/
+float Alfa_indicator(GPS_speed M250,GPS_speed M100){
+  static float P1_lat,P1_long,P2_lat,P2_long;
+  float P_lat,P_long,lambda_T,lambda_N,lambda,alfa_afstand;
+  static int old_alfa_counter;
+  if(alfa_counter!=old_alfa_counter){
+    Ublox.alfa_distance=0;//afstand afgelegd sinds jibe detectie      10*100.000/10.000=100 samples ?
+    P1_lat=_lat[M250.m_index%BUFFER_ALFA];//dit is het punt op -250 m van de actuele positie
+    P1_long=_long[M250.m_index%BUFFER_ALFA];
+    P2_lat=_lat[M100.m_index%BUFFER_ALFA];//dit is het punt op -150 m van de actuele positie (snelheid extrapolatie van -250m)
+    P2_long=_long[M100.m_index%BUFFER_ALFA]; 
+    }
+  old_alfa_counter=alfa_counter;  
+  P_lat=_lat[index_GPS%BUFFER_ALFA];
+  P_long=_long[index_GPS%BUFFER_ALFA];
+  float corr_lat=111120;
+  float corr_long=111120*cos(DEG2RAD*_lat[index_GPS%BUFFER_ALFA]);
+  lambda_T=(P2_lat-P1_lat)*(P_lat-P1_lat)*corr_lat*corr_lat+(P2_long-P1_long)*(P_long-P1_long)*corr_long*corr_long;
+  lambda_N= pow((P2_lat-P1_lat)*corr_lat,2)+pow((P2_long-P1_long)*corr_long,2);
+  lambda=lambda_T/lambda_N;//testen voor 0
+  alfa_afstand=sqrt(pow((P_lat-P1_lat-lambda*(P2_lat-P1_lat))*corr_lat,2)+pow((P_long-P1_long-lambda*(P2_long-P1_long))*corr_long,2));
+  return alfa_afstand;  
 }
 
 

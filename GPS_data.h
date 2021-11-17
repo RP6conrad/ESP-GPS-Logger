@@ -21,6 +21,7 @@ class GPS_data {
     GPS_data (); // description of the constructor
     float total_distance;
     float run_distance;
+    float alfa_distance;
     float delta_dist;
     void push_data(float latitude,float longitude,uint32_t gSpeed); // hier wordt de gps data in de buffer geplaatst
    
@@ -97,5 +98,5 @@ class Alfa_speed{
   private: 
     int alfa_count; 
 };
-
+float Alfa_indicator(GPS_speed M250,GPS_speed M100);
 #endif

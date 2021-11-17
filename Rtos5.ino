@@ -77,6 +77,14 @@
  * Changes sw 5.1
  * Add distance of run
  * Add configurable bar in "speed" screen, reflects run_distance, default 1852m = full bar
+ * Changes sw 5.2
+ * Change to proportional font 12pt and 18pt, speed screen now has 2 variables on top
+ * Replace sat nr in speed screen with other variable
+ * Add a alfa indicator, the actual distance from the start point is shown, has to be < 50m
+ * At the same time shows the bar the alfa distance, 250 m = full bar
+ * If config.field=1, automatic switching to alfa screen after jibe until 300 m
+ * then Run /. AVG screen.
+ * if run distance>1852 m, switch to NM view
  */ 
 #include "FS.h"
 #include "SD.h"
@@ -146,11 +154,12 @@ int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay,push_time;
 int wifi_search=10;
 int time_out_nav_pvt=1200;
 int nav_pvt_message_nr=0;
+float alfa_window;
 float analog_mean;
 float Mean_heading,heading_SD;
 float calibration_speed=3.6;
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]=" SW-version 5.1 ";
+char SW_version[32]="SW-version 5.2 ";
 RTC_DATA_ATTR int bootCount = 0;
 RTC_DATA_ATTR float RTC_distance;
 RTC_DATA_ATTR float RTC_avg_10s;
@@ -436,7 +445,7 @@ void taskOne( void * parameter )
    if((Edge_pin39()==true)&((millis()-push_time)>500)){//bouncing reedswitch
       push_time=millis();
       config.field++;
-      if (config.field>8)config.field=1;
+      if (config.field>7)config.field=1;
       }
    if((millis()-push_time)<10000)Field_choice=true;//10s wachttijd voor menu field keuze....
    else Field_choice=false;
@@ -505,6 +514,7 @@ void taskOne( void * parameter )
               
               Ublox.push_data(ubxMessage.navPvt.lat/10000000.0f,ubxMessage.navPvt.lon/10000000.0f,gps_speed);   
               run_count=New_run_detection(ubxMessage.navPvt.heading/100000.0f,S2.avg_s); 
+              alfa_window=Alfa_indicator(M250,M100);
               if(run_count!=old_run_count)Ublox.run_distance=0;
               old_run_count=run_count;        
               M100.Update_distance(run_count);

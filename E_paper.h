@@ -13,8 +13,10 @@
 
 // https://oleddisplay.squix.ch/#/home font-converter online, used for 48pt font !!
 // FreeFonts from Adafruit_GFX
-#include <Fonts/FreeMonoBold12pt7b.h>//gebruikt
-#include <Fonts/FreeMonoBold18pt7b.h>//gebruikt
+//#include <Fonts/FreeMonoBold12pt7b.h>//gebruikt
+#include <Fonts/FreeSansBold12pt7b.h>//gebruikt
+//#include <Fonts/FreeMonoBold18pt7b.h>//gebruikt
+#include <Fonts/FreeSansBold18pt7b.h>//gebruikt
 #include <Fonts/SansSerif_bold_96_nr.h>//bijgevoegd in lib
 #include <GxIO/GxIO_SPI/GxIO_SPI.h>
 #include <GxIO/GxIO.h>
@@ -40,7 +42,7 @@ extern int sdTrouble,wifi_search;
 extern bool sdOK;
 extern bool Wifi_on;
 extern bool GPS_Signal_OK;
-extern float voltage_bat;
+extern float voltage_bat,alfa_window;
 extern int bootCount,run_count,stat_count;
 extern String IP_adress;
 extern char SW_version[32];
