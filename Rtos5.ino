@@ -1,3 +1,15 @@
+#include <ETH.h>
+#include <WiFi.h>
+#include <WiFiAP.h>
+#include <WiFiClient.h>
+#include <WiFiGeneric.h>
+#include <WiFiMulti.h>
+#include <WiFiScan.h>
+#include <WiFiServer.h>
+#include <WiFiSTA.h>
+#include <WiFiType.h>
+#include <WiFiUdp.h>
+
 /*
  * Changes 2/5/2021
  * Alfa calculation with distance smaller<500 m
@@ -82,9 +94,23 @@
  * Replace sat nr in speed screen with other variable
  * Add a alfa indicator, the actual distance from the start point is shown, has to be < 50m
  * At the same time shows the bar the alfa distance, 250 m = full bar
- * If config.field=1, automatic switching to alfa screen after jibe until 300 m
- * then Run /. AVG screen.
- * if run distance>1852 m, switch to NM view
+ * If config.field=1: 
+ *        automatic switching to alfa screen after jibe until 300 m 
+ *        then Run /. AVG screen.
+ * If config.field=2:        
+ *        if run distance>1852 m, switch to NM view
+ *        else  Run screen !!       
+ * Changes sw 5.3       
+ * No "window" anymore for alfa, needs further development
+ * Some display changes
+ * This version goes to GP3S
+ * Changes sw 5.4
+ * Wifi stays on for 100s, first 10s searching for SSID, then still 90s AP actif if reed switch seen.
+ * Station or AP, but not both at the same time !
+ * Wifi screen stays as long as connection SSID or AP, no SAT nr in Wifi screen as GPS is not read
+ * Changed esp32 lib from 1.0.4 to 1.0.6
+ * Changes to ESP32FTP lib, so Android FTP is now possible
+ * FTP status visible in Wifi screen, FTP = 2 : waiting for connection, FTP 5 : Connection OK
  */ 
 #include "FS.h"
 #include "SD.h"
@@ -152,14 +178,16 @@ int analog_bat;
 int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay,push_time;
 //int stat_fields=6;//4=alleen STATS1 en STATS2, 6 ook STATS3
 int wifi_search=10;
+int ftpStatus=0;
 int time_out_nav_pvt=1200;
 int nav_pvt_message_nr=0;
+int msgType;
 float alfa_window;
 float analog_mean;
 float Mean_heading,heading_SD;
 float calibration_speed=3.6;
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.2 ";
+char SW_version[32]="SW-version 5.41";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 RTC_DATA_ATTR int bootCount = 0;
 RTC_DATA_ATTR float RTC_distance;
 RTC_DATA_ATTR float RTC_avg_10s;
@@ -180,8 +208,8 @@ GPS_time S3600(3600);
 Alfa_speed A250(50);
 Alfa_speed A500(50);
 void go_to_sleep(int sleep_time);
-GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ ELINK_DC, /*RST=*/ ELINK_RESET);
-GxEPD_Class display(io, /*RST=*/ ELINK_RESET, /*BUSY=*/ ELINK_BUSY);
+GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ ELINK_DC, /*RST=*/ ELINK_RESET);//not for GxEPD2
+GxEPD_Class display(io, /*RST=*/ ELINK_RESET, /*BUSY=*/ ELINK_BUSY);//not for GxEPD2
 SPIClass sdSPI(VSPI);
 
 const char *filename = "/config.txt"; 
@@ -298,6 +326,10 @@ void feedTheDog(){
 } 
 void OnWiFiEvent(WiFiEvent_t event){
   switch (event) {
+    case SYSTEM_EVENT_STA_CONNECTED:
+      Serial.println("ESP32 Connected to SSID Station mode");
+      WiFi.mode(WIFI_MODE_STA);//switch off softAP
+      Serial.println("ESP32 Soft AP switched off");
     case SYSTEM_EVENT_STA_GOT_IP://  Op dit moment nog geen IP !!!         SYSTEM_EVENT_STA_CONNECTED:
       Serial.println("ESP32 Connected to WiFi Network");
       IP_adress =  WiFi.localIP().toString();
@@ -379,11 +411,11 @@ void setup() {
   // Wait for connection during 10s in station mode
   while ((WiFi.status() != WL_CONNECTED)&(SoftAP_connection==false)) {
     if(digitalRead(39)==false){
-      WiFi.disconnect();
-      WiFi.mode(WIFI_AP);
-      WiFi.softAP(soft_ap_ssid, soft_ap_password);
-      wifi_search=100;
-    }
+        WiFi.disconnect();
+        WiFi.mode(WIFI_AP);
+        WiFi.softAP(soft_ap_ssid, soft_ap_password);
+        wifi_search=100;
+        }
     if(wifi_search<=10) Update_screen(WIFI_STATION);
     else Update_screen(WIFI_SOFT_AP);
     //delay(250);
@@ -459,23 +491,12 @@ void taskOne( void * parameter )
    if((WiFi.status() == WL_CONNECTED)|SoftAP_connection){
         ftpSrv.handleFTP();        //make sure in loop you call handleFTP()!! 
         server.handleClient();
-        delay(1);
+        ftpStatus=ftpSrv.cmdStatus;//for e-paper
+        //delay(1);
         }
-   int msgType = processGPS();
+   else msgType = processGPS(); //alleen decodering indien geen Wifi verbinding
           //while (Serial2.available()) {
-          //    Serial.print(char(Serial2.read()));}
-   /*       
-   int delta_t=millis()-time_out_nav_PVT;
-   if((delta_t>time_out_limit)&(Time_Set_OK==true)){
-        GPS_Signal_OK==false;
-        Ublox_off();
-        Serial.println("Time out ubx navPVT message, new start ublox !!"); 
-        delay(500);
-        Ublox_on();
-        Init_ublox(); 
-        time_out_limit=30000;    //na 30s terug opstart 
-      }
-   */   
+          //    Serial.print(char(Serial2.read()));}   
    if ( msgType == MT_NAV_PVT ) { 
     //ubxMessage.navPvt.gSpeed=10000;//test snelheid = 10 m/s
     static int nav_pvt_message=0;
@@ -508,13 +529,11 @@ void taskOne( void * parameter )
               if((ubxMessage.navPvt.numSV<=MIN_numSV_GPS_SPEED_OK)|((ubxMessage.navPvt.sAcc/1000.0f)>MAX_Sacc_GPS_SPEED_OK)|(ubxMessage.navPvt.gSpeed/1000.0f>MAX_GPS_SPEED_OK)){
                 gps_speed=0;
                 ubxMessage.navPvt.gSpeed=0;
-                }
-               
+                } 
               Log_to_SD();//hier wordt ook geprint naar serial !!
-              
               Ublox.push_data(ubxMessage.navPvt.lat/10000000.0f,ubxMessage.navPvt.lon/10000000.0f,gps_speed);   
               run_count=New_run_detection(ubxMessage.navPvt.heading/100000.0f,S2.avg_s); 
-              alfa_window=Alfa_indicator(M250,M100);
+              alfa_window=Alfa_indicator(M250,M100,ubxMessage.navPvt.heading/100000.0f);
               if(run_count!=old_run_count)Ublox.run_distance=0;
               old_run_count=run_count;        
               M100.Update_distance(run_count);
@@ -523,7 +542,6 @@ void taskOne( void * parameter )
               M1852.Update_distance(run_count);
               S2.Update_speed(run_count);    
               S10.Update_speed(run_count);
-              //S600.Update_speed(run_count);//buffer = 5000, aan 10 Hz dus 500s
               S1800.Update_speed(run_count);
               S3600.Update_speed(run_count);
               A250.Update_Alfa(M250);
@@ -547,7 +565,7 @@ void taskTwo( void * parameter)
     voltage_bat=analog_mean*calibration_bat/1000;
     if(long_push==true)Off_screen();
     else if(millis()<2000)Update_screen(BOOT_SCREEN);
-    else if(GPS_Signal_OK==false) Update_screen(WIFI_ON);
+    else if(GPS_Signal_OK==false) Update_screen(WIFI_ON);//((Wifi_on==true)&(ubxMessage.navPvt.gSpeed/1000.0f<2)) Update_screen(WIFI_ON);//toch wifi info indien GPS fix de eerste 100s, JH 14/2/2022
     else if((ubxMessage.navPvt.gSpeed/1000.0f<MAX_SPEED_DISPLAY_STATS)&(Field_choice==false)){
           if(stat_count%config.stat_field<2)Update_screen(STATS1);//was 10/5
           else if(stat_count%config.stat_field<4) Update_screen(STATS2);

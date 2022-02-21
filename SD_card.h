@@ -34,20 +34,20 @@ extern GPS_data Ublox; // create an object storing GPS_data, definition in RTOS
 extern int nav_pvt_message_nr; 
 
 struct Config {
-  float cal_bat=1.74;
-  float cal_speed=3.6;
+  float cal_bat=1.74;//calibration for read out bat voltage
+  float cal_speed=3.6;//conversion m/s to km/h, for knots use 1.944
   int sample_rate=1;//gps_rate in Hz, 1, 5 or 10Hz !!!
   int field=1;//choice for first field in speed screen !!!
   int dynamic_model=1;//choice for dynamic model "Sea",if 0 model "portable" is used !!
   int timezone=2;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)
   int stat_field=6;//choice for stats field when no speed
-  int bar_length=1852;//choice for bar indicator for lentht of run (nautical mile)
-  bool logCSV=0;
-  bool logUBX=1;
-  bool logOAO=1;
-  char UBXfile[32]="/BN220A000.ubx";
-  char ssid[32];
-  char password[32];
+  int bar_length=1852;//choice for bar indicator for lentht of run in m (nautical mile)
+  bool logCSV=0;//not used
+  bool logUBX=1;//lot to .ubx
+  bool logOAO=1;//log to .oao
+  char UBXfile[32]="BN220A000";//your preferred filename
+  char ssid[32];//your SSID
+  char password[32];//your password
   } ;
 extern Config config;
 extern void AddString();

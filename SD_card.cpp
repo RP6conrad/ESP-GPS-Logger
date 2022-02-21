@@ -343,6 +343,7 @@ void log_header_OAO(void){
   //oao_header.nickname="HeynenJan";//moet exact 10 bytes zijn ??
   checksum_verify(512,oao_header.bytes);
   oaofile.write((const uint8_t *)&oao_header.bytes,512); 
+  //oaofile.seek(0);//test om file pointer naar een positie te zetten
 }
 void log_OAO(void){
 time_t utcSec=tmConvert_t(ubxMessage.navPvt.year, ubxMessage.navPvt.month, ubxMessage.navPvt.day, ubxMessage.navPvt.hour, ubxMessage.navPvt.minute, ubxMessage.navPvt.second);
@@ -355,7 +356,7 @@ else {oao_pvt.mode=0x0AD5;}
 oao_pvt.latitude=ubxMessage.navPvt.lat;
 oao_pvt.longitude=ubxMessage.navPvt.lon;
 oao_pvt.altitude=ubxMessage.navPvt.hMSL;
-oao_pvt.speed=ubxMessage.navPvt.gSpeed;
+oao_pvt.speed=ubxMessage.navPvt.gSpeed;//hier kan de max versnelling begrensd worden !!
 oao_pvt.heading=ubxMessage.navPvt.heading;
 oao_pvt.fix=ubxMessage.navPvt.fixType;
 oao_pvt.satellites=ubxMessage.navPvt.numSV;

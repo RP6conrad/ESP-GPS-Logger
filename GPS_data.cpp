@@ -230,7 +230,8 @@ float Alfa_speed::Update_Alfa(GPS_speed M){
           real_distance[0]=(int)straight_dist;
           }
     }
-  if((alfa_speed_max>0.0f)&(straight_dist>(M.m_set_distance*0.4))){//alfa max gaat pas op 0 indien 500 m na de gijp, rechte afstand na de gijp
+  //if((alfa_speed_max>0.0f)&(straight_dist>(M.m_set_distance*0.4))){//alfa max gaat pas op 0 indien 500 m na de gijp, rechte afstand na de gijp
+  if(run_count!=old_run_count){  
       getLocalTime(&tmstruct, 0);
       time_hour[0]=tmstruct.tm_hour;
       time_min[0]=tmstruct.tm_min;
@@ -247,8 +248,11 @@ float Alfa_speed::Update_Alfa(GPS_speed M){
       strcat(message,tekst); 
       strcat(message,"\n");    
       //logERR(message);
-      alfa_speed_max=0;alfa_speed=0;
-      }    
+      alfa_speed=0;alfa_speed_max=0;
+      }
+  old_run_count=run_count;    
+  if(alfa_speed_max>avg_speed[9]) display_max_speed=alfa_speed_max;//update on the fly, dat klopt hier niet !!!
+  else display_max_speed=avg_speed[9];           
   return alfa_speed_max; 
 }
 int New_run_detection(float actual_heading, float S2_speed){
@@ -299,7 +303,9 @@ int New_run_detection(float actual_heading, float S2_speed){
 *Deze punten bepalen een imaginaire lijn, de loodrechte afstand tot de actuele positie moet kleiner zijn dan 50 m/s
 *als het punt P1 gepasseerd wordt
 */
-float Alfa_indicator(GPS_speed M250,GPS_speed M100){
+double delta_heading;
+double ref_heading;
+float Alfa_indicator(GPS_speed M250,GPS_speed M100,float actual_heading){
   static float P1_lat,P1_long,P2_lat,P2_long;
   float P_lat,P_long,lambda_T,lambda_N,lambda,alfa_afstand;
   static int old_alfa_counter;
@@ -319,7 +325,13 @@ float Alfa_indicator(GPS_speed M250,GPS_speed M100){
   lambda_N= pow((P2_lat-P1_lat)*corr_lat,2)+pow((P2_long-P1_long)*corr_long,2);
   lambda=lambda_T/lambda_N;//testen voor 0
   alfa_afstand=sqrt(pow((P_lat-P1_lat-lambda*(P2_lat-P1_lat))*corr_lat,2)+pow((P_long-P1_long-lambda*(P2_long-P1_long))*corr_long,2));
-  return alfa_afstand;  
+  /*Heading tov reference***********************************************************************************/
+  ref_heading=atan2(((P1_long-P2_long)*corr_long),((P1_lat-P2_lat)*corr_lat))*180/PI;//dit is getest en werkt correct, wel +180° tov werkelijke richting
+  if(ref_heading<0)ref_heading=ref_heading+360;//atan2 geeft een waarde terug tussen -PI en +PI radialen !
+  delta_heading=(int)(actual_heading-ref_heading*180/PI)%360;//due to P1-P2, this is the opposite direction from travelling !
+  if(delta_heading>180) delta_heading=delta_heading-360;
+  if(delta_heading<-180) delta_heading=delta_heading+360;
+  return alfa_afstand;  //ref heading -180 tot +180, actual heading van 0 tot 360
 }
 
 

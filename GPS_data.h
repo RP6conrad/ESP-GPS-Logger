@@ -10,7 +10,7 @@
 #define FILTER_MIN_SATS 5   //aan 10 Hz is dit 200 s, dus laagste snelheid is dan 500m/200s, dit is 2.5m/s of <10 km/h
 #define FILTER_MAX_sACC 2   
 
-extern  int index_GPS;
+extern  int index_GPS,run_count;
 extern  int index_sec;//index van laatste sample 
 extern uint16_t _secSpeed[BUFFER_SIZE];
 extern int nav_pvt_message_nr;
@@ -87,6 +87,7 @@ class Alfa_speed{
     float straight_dist;
     double alfa_speed;
     double alfa_speed_max;
+    float display_max_speed;//Om update on the fly op display
     double alfa_circle;
     double avg_speed[10];
     int real_distance[10];
@@ -96,7 +97,8 @@ class Alfa_speed{
     int this_run[10];
     int message_nr[10];
   private: 
-    int alfa_count; 
+    int alfa_count;
+    int old_run_count; 
 };
-float Alfa_indicator(GPS_speed M250,GPS_speed M100);
+float Alfa_indicator(GPS_speed M250,GPS_speed M100,float actual_heading);
 #endif

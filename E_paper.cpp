@@ -67,8 +67,8 @@ void Bat_level(int offset){
     }
 void Update_screen(int screen){
     static int count,offset,old_screen,update_delay;
-    if(screen!=old_screen)update_epaper=2;
-    update_epaper=1; 
+    if(screen!=old_screen)update_epaper=2;//klopt niet, altijd wit scherm tussendoor 
+    update_epaper=1; //was zonder else
     if(count%20<10) offset++;
     else offset--;  
     display.fillScreen(GxEPD_WHITE); 
@@ -78,8 +78,11 @@ void Update_screen(int screen){
         int field=config.field;//standaard keuze van config.txt
         int bar_length=config.bar_length*1000/240;//standaard 100% lengte = 1852 m
         if(config.field==1){                      //alleen switchen indien config.field==1 !!!
-            if((Ublox.alfa_distance/1000<300)&(alfa_window<100))field=5;//eerste 300 m na de gijp is het alfa screen zichtbaar !!
-            if((Ublox.run_distance/1000>1852)&(Ublox.alfa_distance/1000>300))field=7;//indien run langer dan 1852 m, NM scherm !!
+             if((Ublox.alfa_distance/1000<400)&(alfa_window<100))field=5;//eerste 300 m na de gijp is het alfa screen zichtbaar !!
+             if(Ublox.run_distance/1000>config.bar_length)field=7;//indien run langer dan 1852 m, NM scherm !!
+            }
+        if(config.field==2){     
+            if(Ublox.run_distance/1000>config.bar_length)field=7;//indien run langer dan 1852 m, NM scherm !!
             }
         if(GPS_Signal_OK==true){
               display.setFont(&SansSerif_bold_96_nr);
@@ -99,22 +102,26 @@ void Update_screen(int screen){
             display.print("Run ");
             display.setFont(&FreeSansBold18pt7b);
             display.print(S10.s_max_speed*calibration_speed,1);//actueel topspeed 10s van deze run
-            display.setCursor(offset+124,24);
+            //display.print(ref_heading,0);//dit is de referentie heading van 200 m eerder...
+            display.setCursor(offset+122,24);
             display.setFont(&FreeSansBold12pt7b);
-            display.print("avg ");
+            display.print("Avg ");
+            //display.print("Hd ");
             display.setFont(&FreeSansBold18pt7b);
-            display.print(S10.avg_5runs*calibration_speed,1);  
+            display.print(S10.avg_5runs*calibration_speed,1); 
+            //display.print(delta_heading,0);//dit is het verschil met de referentie heading
+            //display.print(ubxMessage.navPvt.heading/100000.0f,0);
             }
         if(field==3){
             display.setFont(&FreeSansBold12pt7b);
             display.print("Dis ");
             display.setFont(&FreeSansBold18pt7b);
             display.print(Ublox.total_distance/1000,0);//Total distance in meter, als test run_distance
-            display.setCursor(offset+140,24);
+            display.setCursor(offset+135,24);
             display.setFont(&FreeSansBold12pt7b);
-            display.print("dr ");//15+9+7= 31 px
+            display.print("R ");//15+9+7= 31 px
             display.setFont(&FreeSansBold18pt7b);
-            display.print(Ublox.run_distance/1000,0);//run_distance  4*19=76 px, 107 px
+            display.print(Ublox.run_distance/1000,0);//Actuele run_distance  4*19=76 px, 107 px
             }
         if(field==4){
             //display.setTextColor(GxEPD_BLACK);  
@@ -132,7 +139,7 @@ void Update_screen(int screen){
             bar_length=250*1000/240;//volle lengte = 250m
             //display.setTextColor(GxEPD_BLACK);  
             display.setFont(&FreeSansBold12pt7b);
-            if(alfa_window<100){
+            if(alfa_window<100){        //was <100 !!!!
                 display.print("Wind ");
                 display.setFont(&FreeSansBold18pt7b);
                 display.print(alfa_window,0);
@@ -140,7 +147,7 @@ void Update_screen(int screen){
             else{
                 display.print("Alfa ");
                 display.setFont(&FreeSansBold18pt7b);    
-                display.print(A500.avg_speed[9]*calibration_speed,1);   //best Alfa on 500 m, A500.alfa_speed_max = actuele alfa !! 
+                display.print(A500.display_max_speed*calibration_speed,1);   //best Alfa on 500 m, A500.alfa_speed_max = actuele alfa !! 
                 }
             display.setCursor(offset+130,24);
             display.setFont(&FreeSansBold12pt7b);
@@ -162,14 +169,14 @@ void Update_screen(int screen){
             }
          if(field==7){
             display.setFont(&FreeSansBold12pt7b); 
-            display.print("NMa ");
+            display.print("NMa ");    //Actuele nautical mile
             display.setFont(&FreeSansBold18pt7b);
             display.print(M1852.m_max_speed*calibration_speed,1);//actueel topspeed 10s van deze run
-            display.setCursor(offset+130,24);
+            display.setCursor(offset+129,24);
             display.setFont(&FreeSansBold12pt7b);
             display.print("NM ");
             display.setFont(&FreeSansBold18pt7b);
-            display.print(M1852.display_max_speed*calibration_speed,1);   
+            display.print(M1852.display_max_speed*calibration_speed,1);   //Snelste nautical mile van de sessie
             }  
         run_rectangle_length=(Ublox.alfa_distance/bar_length);
         if(bar_length){
@@ -276,16 +283,21 @@ void Update_screen(int screen){
           Bat_level(offset);
         }      
     if(screen==WIFI_ON){  
-        update_delay=500;   
+        update_delay=250;   
         display.setFont(&FreeSansBold18pt7b);
-        display.setCursor(offset,24);
-        if(Wifi_on==1) display.println("Wifi on");
+        display.setCursor(offset,26);
+        if(Wifi_on==1){
+              display.print("Wifi on  ");
+              if(SoftAP_connection==true) display.print("AP !");//ap mode
+              else display.print ("ST !");//station mode
+              }
         else display.println("Wifi off");
         display.setCursor(offset,56);
         display.setFont(&FreeSansBold12pt7b);
         display.println(IP_adress);
         display.setCursor(offset,88);
-        display.print("SATS: ");display.println(ubxMessage.navPvt.numSV);
+        //display.print("SATS: ");display.print(ubxMessage.navPvt.numSV);//geen GPS meer in Wifi ON !!
+        display.print("FTP status: ");display.println(ftpStatus);
         display.setCursor(offset,120);
         display.print("Bat:");display.print(voltage_bat,2);   
         if(screen!=old_screen)count=0;//eerste keer full update 
@@ -293,7 +305,7 @@ void Update_screen(int screen){
     if(screen==WIFI_STATION){  
         update_delay=0;   
         display.setFont(&FreeSansBold12pt7b);
-        display.setCursor(offset,24);
+        display.setCursor(offset,26);
         display.println("Connecting to ");
         display.setCursor(offset,56);
         display.setFont(&FreeSansBold12pt7b);
@@ -311,7 +323,7 @@ void Update_screen(int screen){
        if(screen==WIFI_SOFT_AP){  
         update_delay=0;   
         display.setFont(&FreeSansBold18pt7b);
-        display.setCursor(offset,24);
+        display.setCursor(offset,26);
         display.print("Wifi AP:  ");
         display.setCursor(offset,56);
         display.setFont(&FreeSansBold12pt7b);
@@ -324,7 +336,7 @@ void Update_screen(int screen){
         display.print(wifi_search);   
         if(screen!=old_screen)count=0;//eerste keer full update 
       }
-    if(count%200==0){
+    if(count%200==0){//was 200
         if(update_epaper>0) display.update();
         offset=0;
         }
