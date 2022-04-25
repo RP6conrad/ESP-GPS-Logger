@@ -25,17 +25,23 @@ boolean compareMsgHeader(const unsigned char* msgHeader) {
   return ptr[0] == msgHeader[0] && ptr[1] == msgHeader[1];
 }
 void Ublox_on(){
-   //digitalWrite(19, HIGH);//Groene LED
+   //F(19, HIGH);//Groene LED
    digitalWrite(25, HIGH); 
    digitalWrite(26, HIGH);
    digitalWrite(27, HIGH);
+   //digitalWrite(0, HIGH); 
+   //digitalWrite(12, HIGH);
+   //digitalWrite(34, HIGH);
    delay(20);
 }
 void Ublox_off(){
-  digitalWrite(19, LOW);//Groene LED uit
+  //digitalWrite(19, LOW);//Groene LED uit
   digitalWrite(25, LOW);
   digitalWrite(26, LOW);
   digitalWrite(27, LOW);
+  //digitalWrite(0, LOW);
+  //digitalWrite(12, LOW);
+  //digitalWrite(34, LOW);
 }
 void Ublox_serial2(int delay_ms){
  for(int i=0;i<delay_ms;i++){//string van ublox to serial, ca 424 char !!
@@ -198,7 +204,13 @@ int processGPS() {
       if ( fpos == 4 ) {
         // We have just received the second byte of the message type header, 
         // so now we can check to see what kind of message it is.
-        if ( compareMsgHeader(NAV_ID_HEADER) ) {
+        if ( compareMsgHeader(NAV_PVT_HEADER) ) {
+          currentMsgType = MT_NAV_PVT;
+          payloadSize = sizeof(NAV_PVT);
+          //Serial.print("NAV_PVT\n");
+        }
+        /*
+        else if ( compareMsgHeader(NAV_ID_HEADER) ) {
           currentMsgType = MT_NAV_ID;
           payloadSize = sizeof(NAV_ID);
           Serial.println("UBX_ID\n");
@@ -207,11 +219,6 @@ int processGPS() {
           currentMsgType = MT_NAV_STATUS;
           payloadSize = sizeof(NAV_STATUS);
           Serial.println("NAV_STATUS\n");
-        }
-         else if ( compareMsgHeader(NAV_PVT_HEADER) ) {
-          currentMsgType = MT_NAV_PVT;
-          payloadSize = sizeof(NAV_PVT);
-          //Serial.print("NAV_PVT\n");
         }
         else if ( compareMsgHeader(NAV_ODO_HEADER) ) {
           currentMsgType = MT_NAV_ODO;
@@ -223,6 +230,7 @@ int processGPS() {
           payloadSize = sizeof(NAV_ACK);
           //Serial.println("NAV_ACK");
         }
+        */
         else {
           // unknown message type, bail
           fpos = 0;

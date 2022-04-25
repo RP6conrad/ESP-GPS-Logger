@@ -14,7 +14,7 @@ extern  int index_GPS,run_count;
 extern  int index_sec;//index van laatste sample 
 extern uint16_t _secSpeed[BUFFER_SIZE];
 extern int nav_pvt_message_nr;
-
+extern float alfa_exit;
 // Description of the GPS data processing class
 class GPS_data {
   public:
@@ -42,6 +42,7 @@ int New_run_detection(float actual_heading, float S2_speed);
     double m_max_speed;//max speed van de laatste run
     float display_max_speed;//Om update on the fly op display
     double avg_speed[10];
+    double display_speed[10];
     int m_Distance[10];
     uint8_t time_hour[10];
     uint8_t time_min[10];
@@ -63,11 +64,13 @@ class GPS_time{
   public:
     GPS_time(int tijdvenster); // description of the constructor
     float Update_speed(int actual_run);//update function
+    void Reset_stats(void); //reset all stats to 0
     double avg_s;
     int avg_s_sum;
     double s_max_speed;
     float display_max_speed;//Om update on the fly op display
     double avg_speed[10];
+    double display_speed[10];
     double avg_5runs;
     uint8_t time_hour[10];
     uint8_t time_min[10];
@@ -81,14 +84,15 @@ class GPS_time{
 /*;h Berekenen van de alfa speed, instantie van GPS_speed 250 /500 kan gebruikt worden + diameter cirkel (normaal 50 m)***********/
 class Alfa_speed{
   public:
-    Alfa_speed(int circle);//constructor
+    Alfa_speed(int alfa_radius);//constructor
     //float Alfa_speed::Update_alfa(GPS_speed M)
     float Update_Alfa(GPS_speed M);   //update function every GPS-sample
-    float straight_dist;
+    void Reset_stats(void); //reset all stats to 0
+    double straight_dist_square;
     double alfa_speed;
     double alfa_speed_max;
     float display_max_speed;//Om update on the fly op display
-    double alfa_circle;
+    double alfa_circle_square;
     double avg_speed[10];
     int real_distance[10];
     uint8_t time_hour[10];
@@ -96,9 +100,11 @@ class Alfa_speed{
     uint8_t time_sec[10];
     int this_run[10];
     int message_nr[10];
+    int alfa_distance[10];
   private: 
     int alfa_count;
     int old_run_count; 
 };
+float Dis_point_line(float long_act,float lat_act,float long_1,float lat_1,float long_2,float lat_2);
 float Alfa_indicator(GPS_speed M250,GPS_speed M100,float actual_heading);
 #endif

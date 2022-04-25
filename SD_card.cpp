@@ -132,21 +132,25 @@ void loadConfiguration(const char *filename, Config &config) {
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use arduinojson.org/v6/assistant to compute the capacity.
-  StaticJsonDocument<512> doc;
+  StaticJsonDocument<1024> doc;
   // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
   if (error) {
               Serial.println(F("Failed to deserialize file, using default configuration"));
               Serial.println(error.f_str());
+              config.config_fail=1;
               }
   // Copy values from the JsonDocument to the Config
   config.cal_bat = doc["cal_bat"]|1.75;
   config.cal_speed = doc["cal_speed"]|3.6;
   config.sample_rate = doc["sample_rate"]|1;
   config.field = doc["speed_field"]|1;
-  config.dynamic_model = doc["dynamic_model"]|1;
+  config.dynamic_model = doc["dynamic_model"]|0;//sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
   config.timezone = doc["timezone"]|2;
-  config.stat_field = doc["stat_field"]|6;
+  config.Stat_screens = doc["Stat_screens"]|12;
+  config.GPIO12_screens = doc["GPIO12_screens"]|12;
+  config.Logo_choice = doc["Logo_choice"]|12;
+  config.sleep_off_screen = doc["sleep_off_screen"]|11;
   config.bar_length = doc["bar_length"]|1852;
   config.logCSV=doc["logCSV"]|0;
   config.logUBX=doc["logUBX"]|1;
@@ -154,6 +158,10 @@ void loadConfiguration(const char *filename, Config &config) {
   strlcpy(config.UBXfile,                  // <- destination
           doc["UBXfile"] | "/ubxGPS",  // <- source
           sizeof(config.UBXfile));         // <- destination's capacity 
+  strlcpy(config.Sleep_info,                  // <- destination
+          doc["Sleep_info"] | "My ID",  // <- source
+          sizeof(config.Sleep_info));         // <- destination's capacity
+          strcpy(Sleep_txt,config.Sleep_info);    //copy into RTC mem     
   strlcpy(config.ssid,                  // <- destination
           doc["ssid"] | "ssidNOK",  // <- source
           sizeof(config.ssid));         // <- destination's capacity
@@ -169,11 +177,30 @@ void loadConfiguration(const char *filename, Config &config) {
               Serial.println(config.logCSV);
               Serial.println(config.logUBX);
               Serial.println(config.ssid);
-Serial.println(config.password);
+              Serial.println(config.password);
               }
   calibration_bat=config.cal_bat;
   calibration_speed=config.cal_speed/1000;//3.6=km/h, 1.94384449 = knots, speed is now in mm/s
   time_out_nav_pvt=(1000/config.sample_rate+150);//max time out = 150 ms
+  SLEEP_screen=config.sleep_off_screen%10;
+  OFF_screen=config.sleep_off_screen/10%10;
+  for (int i=0;i<5;i++){
+        config.stat_screen[i]=config.Stat_screens%10;//STATSx heeft geen offset !!! 641
+        config.Stat_screens=config.Stat_screens/10;
+        if(config.Stat_screens>0){
+            config.screen_count=i+1;
+            }
+        config.gpio12_screen[i]=config.GPIO12_screens%10;//
+        config.GPIO12_screens=config.GPIO12_screens/10;
+        if(config.GPIO12_screens>0){
+            config.gpio12_count=i+1;
+            }
+        logo_choice[i]=config.Logo_choice%10;//
+        config.Logo_choice=config.Logo_choice/10;
+        if(config.Logo_choice>0){
+            config.logo_count=i+1;
+            }      
+        } 
 }
 // Prints the content of a file to the Serial
 void printFile(const char *filename) {
@@ -316,7 +343,10 @@ void Session_results_Alfa(Alfa_speed A,GPS_speed M){
       strcat(message,tekst); 
       if(Calibration==3600)strcat(message, " km/h "); 
       if(Calibration==1943)strcat(message, " knots "); 
-      dtostrf(A.real_distance[i], 1, 3, tekst);
+      dtostrf(sqrt((float)A.real_distance[i]), 1, 2, tekst);
+      strcat(message,tekst); 
+      strcat(message, " m "); 
+      dtostrf(A.alfa_distance[i], 1, 1, tekst);
       strcat(message,tekst); 
       strcat(message, " m "); 
       dtostrf(A.time_hour[i], 1, 0, tekst);
@@ -329,6 +359,9 @@ void Session_results_Alfa(Alfa_speed A,GPS_speed M){
       strcat(message,tekst); 
       strcat(message, " Run: "); 
       dtostrf(A.this_run[i], 1, 0, tekst);
+      strcat(message,tekst);
+      strcat(message, " Msg_nr: ");
+      dtostrf(A.message_nr[i], 1, 0, tekst);
       strcat(message,tekst); 
       strcat(message, " Alfa");
       dtostrf(M.m_set_distance, 1, 0, tekst);

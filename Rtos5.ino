@@ -3,8 +3,8 @@
 #include <WiFiAP.h>
 #include <WiFiClient.h>
 #include <WiFiGeneric.h>
-#include <WiFiMulti.h>
-#include <WiFiScan.h>
+//#include <WiFiMulti.h>
+//#include <WiFiScan.h>
 #include <WiFiServer.h>
 #include <WiFiSTA.h>
 #include <WiFiType.h>
@@ -80,7 +80,7 @@
  * Extra dynamic model Automotive : 2-> automotive
  * for higher accuracy, change of datatypes to double
  * All speeds are now in mm/s (format double)
- * Added STATS3 screen with M100/M500, config.stat_field 6
+ * Added STATS3 screen with M100/M500, config.Stat_screens 6
  * Added Rtos5.h for general #define
  * Bugfix in new_run_detection, speed m/s -> mm/s
  * Start logging if speed>MIN_SPEED_START_LOGGING, now 2m/s
@@ -111,7 +111,46 @@
  * Changed esp32 lib from 1.0.4 to 1.0.6
  * Changes to ESP32FTP lib, so Android FTP is now possible
  * FTP status visible in Wifi screen, FTP = 2 : waiting for connection, FTP 5 : Connection OK
- */ 
+ * Changes sw 5.42
+ * Removed CR in FTP lib for directory listing, as FTP has a problem with MacOS
+ * changes sw 5.44
+ * Several changes in FTP lib for problem with MacOS
+ * Bugfix for e-paper lib BN74
+ * Optimization Alfa screen, Window...
+ * Test for 1.54" e-paper
+ * changes sw 5.45
+ * exit distance for alfa = estimation of alfa-circle with current heading
+ * changes sw 5.46
+ * GPIO 25/26 are RTC, drive capability changed!! Were not working !!
+ * extra Button GPIO_Pin12, pullup, give STAT4 screen !!
+ * long push GPIO_Pin12 reset STAT4 screen
+ * short push toggles next screen
+ * changes sw 5.47
+ * NM bar start@minimal speed (10 m/s ?)
+ * More stats screen over GPIO pin 12
+ * Alfa speed screen with Window, avg speed 250m and Exit
+ * Sea model does not give a gps-fix if actual height is not on sea-level, default = 0 !!!
+ * wifi off screen nr of sats added
+ * bugfix bat symbol if bat_voltage>4.2
+ * Choice of stat_screens extended : preferred screens are chosen with their nr : Stat_screens = 523 is then stat_screen 5, 2 and 3 !!!
+ * changes sw 5.48
+ * Added Simon screens
+ * RTC offset for sleep screen 
+ * RTC txt for sleep screen
+ * sleep_screen "speed in km/h" or "knots" depends on calibration
+ * nr of stat screens are changed (e_paper.h)
+ * low_bat voltage 3.1 -> go to sleep !!!
+ * update STAT4 with actual run, added extra display_speed[]
+ * choice GPIO12 screens with config
+ * choice Logos with config
+ * choice sleep-screen, off-screen with config
+ * json doc 512 -> 1024 byte
+ * boot screen added config fail / ok
+ * SW 5.49
+ * Alfa calculation , alfa-circle² to avoid sqrt in calculations, factor 111120 -> 111195
+ * Bugfix in alfa calculation (pointer + 1)
+ * Shutdown : RTC data only written if new GPS-data is available
+ */
 #include "FS.h"
 #include "SD.h"
 #include "SPI.h"
@@ -123,7 +162,6 @@
 #include "E_paper.h"
 #include "SD_card.h"
 #include "GPS_data.h"
-#include "Rtos5.h"
 #include "Arduino.h"
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -132,6 +170,7 @@
 #include <esp_task_wdt.h>
 #include <driver/rtc_io.h>
 #include <driver/gpio.h>
+#include "Rtos5.h"
 
 #define SPI_MOSI 23
 #define SPI_MISO -1//standaard is MISO GPIO 19 !!!!
@@ -163,7 +202,7 @@ String IP_adress="0.0.0.0";
 
 int sdTrouble=0;
 bool sdOK = false;
-bool logCSV = false;
+//bool logCSV = false;
 bool logUBX = true;
 bool logOAO = true;
 bool button = false;
@@ -174,24 +213,47 @@ bool SoftAP_connection = false;
 bool GPS_Signal_OK = false;
 bool long_push = false;
 bool Field_choice = false;
+
 int analog_bat;
-int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay,push_time;
-//int stat_fields=6;//4=alleen STATS1 en STATS2, 6 ook STATS3
+int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay;
 int wifi_search=10;
 int ftpStatus=0;
 int time_out_nav_pvt=1200;
 int nav_pvt_message_nr=0;
 int msgType;
+int stat_screen=5;//keuze stat scherm indien stilstand
+int GPIO12_screen=0;//keuze welk scherm
+int low_bat_count;
 float alfa_window;
 float analog_mean;
 float Mean_heading,heading_SD;
-float calibration_speed=3.6;
+
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.41";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-RTC_DATA_ATTR int bootCount = 0;
+char SW_version[32]="SW-version 5.49";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+RTC_DATA_ATTR float calibration_speed=3.6;
+RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
 RTC_DATA_ATTR float RTC_avg_10s;
 RTC_DATA_ATTR float RTC_max_2s;
+//Simon
+RTC_DATA_ATTR short RTC_year;
+RTC_DATA_ATTR short RTC_month;
+RTC_DATA_ATTR short RTC_day;
+RTC_DATA_ATTR short RTC_hour;
+RTC_DATA_ATTR short RTC_min;
+RTC_DATA_ATTR float RTC_alp;
+RTC_DATA_ATTR float RTC_500m;
+RTC_DATA_ATTR float RTC_mile;
+RTC_DATA_ATTR float RTC_R1_10s;
+RTC_DATA_ATTR float RTC_R2_10s;
+RTC_DATA_ATTR float RTC_R3_10s;
+RTC_DATA_ATTR float RTC_R4_10s;
+RTC_DATA_ATTR float RTC_R5_10s;
+RTC_DATA_ATTR char Sleep_txt[32]="Your ID";
+RTC_DATA_ATTR int logo_choice[10];
+RTC_DATA_ATTR int SLEEP_screen=0;
+RTC_DATA_ATTR int OFF_screen=0;
+//Simon
 RTC_DATA_ATTR float calibration_bat=1.75;//bij ontwaken uit deepsleep niet noodzakelijk config file lezen
 RTC_DATA_ATTR float voltage_bat;
 FtpServer ftpSrv;  
@@ -201,28 +263,33 @@ GPS_speed M250(250);
 GPS_speed M500(500);
 GPS_speed M1852(1852);
 GPS_time S2(2);
+GPS_time s2(2);
 GPS_time S10(10);
-//GPS_time S600(600);
+GPS_time s10(10);//om tussentijdse stats, kan gereset worden !!
 GPS_time S1800(1800);
 GPS_time S3600(3600);
 Alfa_speed A250(50);
 Alfa_speed A500(50);
-void go_to_sleep(int sleep_time);
-GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ ELINK_DC, /*RST=*/ ELINK_RESET);//not for GxEPD2
-GxEPD_Class display(io, /*RST=*/ ELINK_RESET, /*BUSY=*/ ELINK_BUSY);//not for GxEPD2
+Alfa_speed a500(50);//tussentijdse Alfa stats
+Button_push Short_push12 (12,100,15,1);//GPIO pin 12 is nog vrij, button_count 0 en 1 !!!
+Button_push Long_push12 (12,2000,10,4);
+Button_push Short_push39 (39,100,10,8);
+Button_push Long_push39 (39,1500,10,8);
+GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ ELINK_DC, /*RST=*/ ELINK_RESET);
+GxEPD_Class display(io, /*RST=*/ ELINK_RESET, /*BUSY=*/ ELINK_BUSY);
 SPIClass sdSPI(VSPI);
 
 const char *filename = "/config.txt"; 
 Config config;  
-/*
+
+
+  /*
 Method to print the reason by which ESP32 has been awaken from sleep
 */
 void print_wakeup_reason(){
   esp_sleep_wakeup_cause_t wakeup_reason;
   wakeup_reason = esp_sleep_get_wakeup_cause();
-  //Increment boot number and print it every reboot
-  ++bootCount;
-  Serial.println("Boot number: " + String(bootCount));
+
   switch(wakeup_reason)
   {
     voltage_bat=analog_mean*calibration_bat/1000;
@@ -241,8 +308,8 @@ void print_wakeup_reason(){
                                         }
                                   voltage_bat=analog_mean*calibration_bat/1000;
                                   esp_sleep_enable_ext0_wakeup(GPIO_NUM_39,0); //1 = High, 0 = Low
-                                  Sleep_screen(bootCount);
-                                  go_to_sleep(4000);
+                                  Sleep_screen(SLEEP_screen);
+                                  go_to_sleep(3000);//was 4000
                                   break;                               
     case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); 
                                      break;
@@ -253,9 +320,8 @@ void print_wakeup_reason(){
               break;
     }
 }
+
 void go_to_sleep(int sleep_time){
-  //esp_task_wdt_delete(NULL);
-  //esp_task_wdt_deinit();
   deep_sleep=true;
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
@@ -270,56 +336,52 @@ void go_to_sleep(int sleep_time){
   delay(3000);
   esp_deep_sleep(uS_TO_S_FACTOR*sleep_time);
 }
-void Long_push(int push_time){
-    static int pushtime;
-    button=digitalRead(39);
-    if(button==1)pushtime=millis();
-    if((millis()-pushtime)>push_time){
-      //Serial.println("Button 2s");
-      long_push=true;
-      //digitalWrite(19, LOW);//Groene LED uit 
-      Ublox_off();
-      if(Time_Set_OK==true){
-        Time_Set_OK=false;
+
+void Shut_down(void){
+        long_push=true;
+        Ublox_off();
         GPS_Signal_OK=false;
         GPS_delay=0;
-        RTC_distance=Ublox.total_distance/1000;
-        RTC_max_2s= S2.avg_speed[9]*calibration_speed;
-        RTC_avg_10s=S10.avg_5runs*calibration_speed;
-        Session_info(Ublox);
-        Session_results_S(S2);
-        Session_results_S(S10);
-        //Session_results_S(S600);
-        Session_results_S(S1800);
-        Session_results_S(S3600);
-        Session_results_M(M100);
-        Session_results_M(M500);
-        Session_results_M(M1852);
-        Session_results_Alfa(A250,M250);
-        Session_results_Alfa(A500,M500);
-        }
-      delay(100);
-      Close_files();  
-    }
-    if((long_push==true)&(button==1)){
-      go_to_sleep(10);
-    }    
+        if(Time_Set_OK){    //Anly safe to RTC if new GPS data is available !!
+            Time_Set_OK=false;
+            RTC_year=(tmstruct.tm_year+1900);
+            RTC_month=(tmstruct.tm_mon+1);
+            RTC_day=(tmstruct.tm_mday);
+            RTC_hour=(tmstruct.tm_hour);
+            RTC_min=(tmstruct.tm_min);
+            RTC_distance=Ublox.total_distance/1000000;
+            RTC_alp=A500.display_max_speed*calibration_speed;
+            RTC_500m=M500.avg_speed[9]*calibration_speed;
+            RTC_mile=M1852.display_max_speed*calibration_speed;
+            RTC_max_2s= S2.avg_speed[9]*calibration_speed;
+            RTC_avg_10s=S10.avg_5runs*calibration_speed;
+            RTC_R1_10s=S10.avg_speed[9]*calibration_speed;
+            RTC_R2_10s=S10.avg_speed[8]*calibration_speed;
+            RTC_R3_10s=S10.avg_speed[7]*calibration_speed;
+            RTC_R4_10s=S10.avg_speed[6]*calibration_speed;
+            RTC_R5_10s=S10.avg_speed[5]*calibration_speed;
+            Session_info(Ublox);
+            Session_results_S(S2);
+            Session_results_S(S10);
+            Session_results_S(S1800);
+            Session_results_S(S3600);
+            Session_results_M(M100);
+            Session_results_M(M500);
+            Session_results_M(M1852);
+            Session_results_Alfa(A250,M250);
+            Session_results_Alfa(A500,M500);
+            delay(100);
+            Close_files();  
+            }
+        go_to_sleep(10);//got to sleep na 10s     
 }
-bool Edge_pin39 (void){
-  static bool last_state=true;
-  bool result;
-  if(digitalRead(39)&!last_state)result=true;
-  else result=false;
-  last_state=digitalRead(39);
-  return result;
-}
+
 //For RTOS, the watchdog has to be triggered
 void feedTheDog(){
-  // feed dog 0
   TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable
   TIMERG0.wdt_feed=1;                       // feed dog
   TIMERG0.wdt_wprotect=0;                   // write protect
-  // feed dog 1
+ 
   TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable
   TIMERG1.wdt_feed=1;                       // feed dog
   TIMERG1.wdt_wprotect=0;                   // write protect
@@ -350,29 +412,38 @@ void OnWiFiEvent(WiFiEvent_t event){
   }
 }
 void setup() {
-  pinMode(39,INPUT_PULLUP); 
   Serial.begin(115200);
   Serial.println("setup Serial");
   Serial.println("Serial Txd is on pin: "+String(TX));
   Serial.println("Serial Rxd is on pin: "+String(RX));
   SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
   print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
+  /*
+  pinMode(0, OUTPUT);//Power beitian //standaard maar drive strength 2, haal dan 2.7V aan de ublox gps
+  pinMode(12, OUTPUT);//Power beitian
+  pinMode(34, OUTPUT);//Power beitian
+  gpio_set_drive_capability(GPIO_NUM_0,GPIO_DRIVE_CAP_3);//zie ook https://www.esp32.com/viewtopic.php?t=5840
+  gpio_set_drive_capability(GPIO_NUM_12,GPIO_DRIVE_CAP_3);//haal nu 3.0V aan de ublox gps met 50 mA
+  gpio_set_drive_capability(GPIO_NUM_34,GPIO_DRIVE_CAP_3);
+  */
   pinMode(25, OUTPUT);//Power beitian //standaard maar drive strength 2, haal dan 2.7V aan de ublox gps
   pinMode(26, OUTPUT);//Power beitian
   pinMode(27, OUTPUT);//Power beitian
-  gpio_set_drive_capability(GPIO_NUM_25,GPIO_DRIVE_CAP_3);//zie ook https://www.esp32.com/viewtopic.php?t=5840
-  gpio_set_drive_capability(GPIO_NUM_26,GPIO_DRIVE_CAP_3);//haal nu 3.0V aan de ublox gps met 50 mA
-  gpio_set_drive_capability(GPIO_NUM_27,GPIO_DRIVE_CAP_3);
+  rtc_gpio_set_drive_capability(GPIO_NUM_25,GPIO_DRIVE_CAP_3);//zie ook https://www.esp32.com/viewtopic.php?t=5840
+  rtc_gpio_set_drive_capability(GPIO_NUM_26,GPIO_DRIVE_CAP_3);//haal nu 3.0V aan de ublox gps met 50 mA
+  gpio_set_drive_capability(GPIO_NUM_27,GPIO_DRIVE_CAP_3);//rtc noodzakelijk, anders geen spanning op RTC_pin 25 en 26, 13/3/2022
+  
   Ublox_on();//beitian bn220 power supply over output 25,26,27
   Serial2.setRxBufferSize(1024); // increasing buffer size ?
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2
   Serial.println("Serial2 9600bd Txd is on pin: "+String(TXD2));
   Serial.println("Serial2 9600bd Rxd is on pin: "+String(RXD2));
+  
   for(int i=0;i<600;i++){//Startup string van ublox to serial, ca 424 char !!
      while (Serial2.available()) {
               Serial.print(char(Serial2.read()));
               }
-     delay(1);   
+     delay(2);   //was delay (1)
      }
    
  
@@ -391,7 +462,7 @@ void setup() {
         Serial.println(F("Loading configuration..."));// Should load default config 
         loadConfiguration(filename, config); // load config file
         Serial.print(F("Print config file...")); 
-        printFile(filename);   
+        printFile(filename); 
         } 
   Init_ublox(); //switch to ubx protocol+ baudrate 19200
   Set_rate_ublox(config.sample_rate);//after reading config file !!    
@@ -441,8 +512,7 @@ void setup() {
   }
   analog_mean=voltage_bat/calibration_bat*1000;//voltage_bat staat in RTC mem !!!
   delay(100);
-  //pinMode(19, OUTPUT);
-  //digitalWrite(19, HIGH);//Groene LED aan
+ 
    //Create RTOS task, so logging and e-paper update are separated (update e-paper is blocking, 800 ms !!)
   xTaskCreate(
                     taskOne,          /* Task function. */
@@ -473,14 +543,18 @@ void taskOne( void * parameter )
 {
  while(true){ 
    feedTheDog();
-   Long_push(1000);//go to sleep
-   if((Edge_pin39()==true)&((millis()-push_time)>500)){//bouncing reedswitch
-      push_time=millis();
-      config.field++;
-      if (config.field>7)config.field=1;
+
+   if (Short_push12.Button_pushed())GPIO12_screen++;//toggle scherm
+   if (GPIO12_screen>config.gpio12_count)GPIO12_screen=0;
+   if (Long_push12.Button_pushed()){ s10.Reset_stats(); s2.Reset_stats();a500.Reset_stats();} //resetten stats   
+   //stat_screen=Short_push12.button_count+4;//toggle naar volgend stat scherm
+     
+   if(Long_push39.Button_pushed()) Shut_down();
+   if (Short_push39.Button_pushed()){
+      config.field=Short_push39.button_count;
       }
-   if((millis()-push_time)<10000)Field_choice=true;//10s wachttijd voor menu field keuze....
-   else Field_choice=false;
+   Field_choice=Short_push39.long_pulse;//10s wachttijd voor menu field keuze....
+   
    if((WiFi.status() != WL_CONNECTED)&(Wifi_on==true)&(SoftAP_connection==false)){
         Serial.println("No Wifi connection !");
         server.close();
@@ -540,12 +614,15 @@ void taskOne( void * parameter )
               M250.Update_distance(run_count);
               M500.Update_distance(run_count);
               M1852.Update_distance(run_count);
-              S2.Update_speed(run_count);    
+              S2.Update_speed(run_count); 
+              s2.Update_speed(run_count);      
               S10.Update_speed(run_count);
+              s10.Update_speed(run_count);
               S1800.Update_speed(run_count);
               S3600.Update_speed(run_count);
               A250.Update_Alfa(M250);
               A500.Update_Alfa(M500);
+              a500.Update_Alfa(M500);
               }  
       } 
   }  
@@ -554,22 +631,32 @@ void taskOne( void * parameter )
 void taskTwo( void * parameter)
 {
   while(true){
-    stat_count++;
-    feedTheDog(); 
-    //int stack_free=uxTaskGetStackHighWaterMark(NULL);//dit geeft het aantal vrij geheugen van de stack !!!
-                        //Waarschijnlijk andere oorzaak van stack overflow 
-    //Serial.print("Task2 update e-paper ");
-    //Serial.println(stack_free);  
+    feedTheDog();
+   
+    stat_count++;//ca 1s per screen update
+    if (stat_count>config.screen_count)stat_count=0;//screen_count = 2
+    
+    // Serial.println(stat_count);
     analog_bat = analogRead(PIN_BAT);
     analog_mean=analog_bat*0.05+analog_mean*0.95;
     voltage_bat=analog_mean*calibration_bat/1000;
-    if(long_push==true)Off_screen();
+    if(voltage_bat<3.1) low_bat_count++;
+    else low_bat_count=0;
+    if((long_push==true)|(low_bat_count>10)){
+        Off_screen(OFF_screen);
+        Shut_down();
+    }
     else if(millis()<2000)Update_screen(BOOT_SCREEN);
     else if(GPS_Signal_OK==false) Update_screen(WIFI_ON);//((Wifi_on==true)&(ubxMessage.navPvt.gSpeed/1000.0f<2)) Update_screen(WIFI_ON);//toch wifi info indien GPS fix de eerste 100s, JH 14/2/2022
+    else if(Short_push12.long_pulse){Update_screen(config.gpio12_screen[GPIO12_screen]);}//heeft voorrang, na drukken GPIO_pin 12, 10 STAT4 scherm !!!
     else if((ubxMessage.navPvt.gSpeed/1000.0f<MAX_SPEED_DISPLAY_STATS)&(Field_choice==false)){
-          if(stat_count%config.stat_field<2)Update_screen(STATS1);//was 10/5
-          else if(stat_count%config.stat_field<4) Update_screen(STATS2);
-          else Update_screen(STATS3);
+          Update_screen(config.stat_screen[stat_count]);
+          /*
+          if(stat_count<2)Update_screen(config.stat_screen[stat_count]);//STATS1=3, STATS5=7
+          else if(stat_count<4) Update_screen(config.stat_screen[1]);
+          else if(stat_count<6) Update_screen(config.stat_screen[2]);
+          else Update_screen(config.stat_screen[3]);//max 4 stat schermen !!
+          */
           }
     else {
           Update_screen(SPEED);

@@ -5,6 +5,7 @@
 uint16_t _gSpeed[BUFFER_SIZE]; 
 float _lat[BUFFER_ALFA]; 
 float _long[BUFFER_ALFA];
+float alfa_exit;//test voor functie afstand punt tot lijn !!
 uint16_t _secSpeed[BUFFER_SIZE];
 int index_GPS=-1;//bij eerste doorgang op 0 beginnen !!
 int index_sec=-1;//bij eerste doorgang op 0 beginnen !!
@@ -56,7 +57,17 @@ void GPS_data::push_data(float latitude,float longitude,uint32_t gSpeed) {//gspe
 GPS_data::GPS_data() {
   index_GPS=0; 
 }
-
+void sort_display(double a[],int size){
+  for(int i=0; i<(size-1); i++) {
+        for(int o=0; o<(size-(i+1)); o++) {
+                if(a[o] > a[o+1]) {
+                    double t = a[o];
+                    a[o] = a[o+1];
+                    a[o+1] = t;
+                    }
+        }
+  }     
+}
 void sort_run(double a[], uint8_t hour[], uint8_t minute[],uint8_t seconde[],int runs[], int size) {
     for(int i=0; i<(size-1); i++) {
         for(int o=0; o<(size-(i+1)); o++) {
@@ -132,9 +143,17 @@ double GPS_speed::Update_distance(int actual_run){
   old_run=actual_run;
   return m_max_speed;
 }
+
 /*Instantie om gemiddelde snelheid over een bepaald tijdvenster te bepalen*******************************************/
 GPS_time::GPS_time(int tijdvenster){
   time_window=tijdvenster;
+}
+void GPS_time::Reset_stats(void){
+  for (int i=0;i<10;i++){
+    avg_speed[i]=0;
+    display_speed[i]=0;
+  }
+  avg_5runs=0;
 }
 float GPS_time::Update_speed(int actual_run){
   if(time_window*config.sample_rate<BUFFER_SIZE){      //indien tijdvenster kleiner is dan de sample_rate*BUFFER, normale buffer gebruiken
@@ -159,12 +178,20 @@ float GPS_time::Update_speed(int actual_run){
                     }
                   avg_5runs=avg_5runs+avg_speed[0]; 
                   avg_5runs=avg_5runs/5;
+                  display_speed[5]=s_max_speed;//actuele run is sneller dan run[5] !!
+                  for (int i=9;i>5;i--){        //andere runs kopieren
+                     display_speed[i]=avg_speed[i];
+                    }
+                  sort_display(display_speed,10);  
                 }
                if(s_max_speed>avg_speed[9])display_max_speed=s_max_speed;//update on the fly, dat klopt hier niet !!!
                else display_max_speed=avg_speed[9];
               }
             if((actual_run!=old_run)&(this_run[0]==old_run)){          //sorting only if new max during this run !!!
               sort_run(avg_speed,time_hour,time_min,time_sec,this_run,10);
+              for(int i=0;i<10;i++){
+                  display_speed[i]=avg_speed[i];//om een directe update op het scherm mogelijk te maken
+                  }
               avg_speed[0]=0;
               s_max_speed=0;
               avg_5runs=0;
@@ -212,8 +239,8 @@ float GPS_time::Update_speed(int actual_run){
     return s_max_speed;//anders compiler waarschuwing control reaches end of non-void function [-Werror=return-type]
  }
 
-Alfa_speed::Alfa_speed(int circle){
-    alfa_circle=circle;
+Alfa_speed::Alfa_speed(int alfa_radius){
+    alfa_circle_square=alfa_radius*alfa_radius;//to avoid sqrt calculation !!
 }
 /*
  * Opgelet, hier moet de afgelegde afstand kleiner zijn dan 500 m! daarom extra variable in GPS_speed voorzien, m_speed_alfa !!!
@@ -221,25 +248,28 @@ Alfa_speed::Alfa_speed(int circle){
 float Alfa_speed::Update_Alfa(GPS_speed M){
   //nu de absolute afstfloat Alfa_speed::Alfa_update(GPS_speed M)and berekenen tussen het beginpunt en het eindpunt van de 250m afstand, indien < 50m is dit een alfa !!!
   //opgelet, dit wordt berekend in meter, daarom alfa_circle ook in m !!
-  straight_dist= sqrt(pow((_lat[index_GPS%BUFFER_ALFA]-_lat[(M.m_index-1)%BUFFER_ALFA]),2)+pow(cos(DEG2RAD*_lat[index_GPS%BUFFER_ALFA])*(_long[index_GPS%BUFFER_ALFA]-_long[(M.m_index-1)%BUFFER_ALFA]),2))*111120;
-  if(straight_dist<alfa_circle){
+  //was (M.m_index-1), moet (M.m_index+1)
+  straight_dist_square= (pow((_lat[index_GPS%BUFFER_ALFA]-_lat[(M.m_index+1)%BUFFER_ALFA]),2)+pow(cos(DEG2RAD*_lat[index_GPS%BUFFER_ALFA])*(_long[index_GPS%BUFFER_ALFA]-_long[(M.m_index+1)%BUFFER_ALFA]),2))*111195*111195;//was 111120
+  if(straight_dist_square<alfa_circle_square){
     alfa_speed=M.m_speed_alfa;
     if(M.m_sample>=BUFFER_ALFA) alfa_speed=0;//overflow vermijden bij lage snelheden
     if(alfa_speed>alfa_speed_max){
           alfa_speed_max=alfa_speed;
-          real_distance[0]=(int)straight_dist;
+          real_distance[0]=(int)straight_dist_square;
+          getLocalTime(&tmstruct, 0);
+          time_hour[0]=tmstruct.tm_hour;
+          time_min[0]=tmstruct.tm_min;
+          time_sec[0]=tmstruct.tm_sec;
+          this_run[0]=alfa_counter;//was alfa_count
+          avg_speed[0]=alfa_speed_max; 
+          message_nr[0]=nav_pvt_message_nr;
+          alfa_distance[0]=M.m_distance_alfa/config.sample_rate;
           }
     }
-  //if((alfa_speed_max>0.0f)&(straight_dist>(M.m_set_distance*0.4))){//alfa max gaat pas op 0 indien 500 m na de gijp, rechte afstand na de gijp
-  if(run_count!=old_run_count){  
-      getLocalTime(&tmstruct, 0);
-      time_hour[0]=tmstruct.tm_hour;
-      time_min[0]=tmstruct.tm_min;
-      time_sec[0]=tmstruct.tm_sec;
-      this_run[0]=alfa_count;
-      avg_speed[0]=alfa_speed_max; 
-      message_nr[0]=nav_pvt_message_nr;
-      sort_run_alfa(avg_speed,real_distance,message_nr,time_hour,time_min,time_sec,this_run,this_run,10);
+  //if((alfa_speed_max>0.0f)&(straight_dist_square>(alfa_circle_square*1.4))){//alfa max gaat pas op 0 indien 500 m na de gijp, rechte afstand na de gijp
+  if(run_count!=old_run_count){ 
+    
+      sort_run_alfa(avg_speed,real_distance,message_nr,time_hour,time_min,time_sec,alfa_distance,this_run,10);
       char tekst[20]="";char message[255]=""; 
       strcat(message, " alfa_speed "); 
       dtostrf(M.m_set_distance, 3, 0, tekst);
@@ -254,6 +284,11 @@ float Alfa_speed::Update_Alfa(GPS_speed M){
   if(alfa_speed_max>avg_speed[9]) display_max_speed=alfa_speed_max;//update on the fly, dat klopt hier niet !!!
   else display_max_speed=avg_speed[9];           
   return alfa_speed_max; 
+}
+void Alfa_speed::Reset_stats(void){
+  for (int i=0;i<10;i++){
+    avg_speed[i]=0;
+  }
 }
 int New_run_detection(float actual_heading, float S2_speed){
    /*Berekening van de gemiddelde heading over de laatste 10s************************************************************************/
@@ -299,6 +334,7 @@ int New_run_detection(float actual_heading, float S2_speed){
    if(delay_counter==(time_delay_new_run*config.sample_rate)) run_counter++;   
    return run_counter;   
 }
+
 /*hier wordt de actuele "alfa afstand" berekend aan de hand van 2 punten voor de gijp : P1 = 250m en P2 = 100m voor de gijp
 *Deze punten bepalen een imaginaire lijn, de loodrechte afstand tot de actuele positie moet kleiner zijn dan 50 m/s
 *als het punt P1 gepasseerd wordt
@@ -307,32 +343,52 @@ double delta_heading;
 double ref_heading;
 float Alfa_indicator(GPS_speed M250,GPS_speed M100,float actual_heading){
   static float P1_lat,P1_long,P2_lat,P2_long;
-  float P_lat,P_long,lambda_T,lambda_N,lambda,alfa_afstand;
+  float P_lat,P_long, P_lat_heading,P_long_heading,lambda_T,lambda_N,lambda,alfa_afstand;
   static int old_alfa_counter;
   if(alfa_counter!=old_alfa_counter){
     Ublox.alfa_distance=0;//afstand afgelegd sinds jibe detectie      10*100.000/10.000=100 samples ?
     P1_lat=_lat[M250.m_index%BUFFER_ALFA];//dit is het punt op -250 m van de actuele positie
     P1_long=_long[M250.m_index%BUFFER_ALFA];
-    P2_lat=_lat[M100.m_index%BUFFER_ALFA];//dit is het punt op -150 m van de actuele positie (snelheid extrapolatie van -250m)
+    P2_lat=_lat[M100.m_index%BUFFER_ALFA];//dit is het punt op -100 m van de actuele positie (snelheid extrapolatie van -250m)
     P2_long=_long[M100.m_index%BUFFER_ALFA]; 
     }
   old_alfa_counter=alfa_counter;  
-  P_lat=_lat[index_GPS%BUFFER_ALFA];
-  P_long=_long[index_GPS%BUFFER_ALFA];
+  P_lat=_lat[index_GPS%BUFFER_ALFA];//actuele positie lat
+  P_long=_long[index_GPS%BUFFER_ALFA];//actuele positie long
+  /*
   float corr_lat=111120;
   float corr_long=111120*cos(DEG2RAD*_lat[index_GPS%BUFFER_ALFA]);
   lambda_T=(P2_lat-P1_lat)*(P_lat-P1_lat)*corr_lat*corr_lat+(P2_long-P1_long)*(P_long-P1_long)*corr_long*corr_long;
   lambda_N= pow((P2_lat-P1_lat)*corr_lat,2)+pow((P2_long-P1_long)*corr_long,2);
-  lambda=lambda_T/lambda_N;//testen voor 0
+  lambda=lambda_T/lambda_N;
   alfa_afstand=sqrt(pow((P_lat-P1_lat-lambda*(P2_lat-P1_lat))*corr_lat,2)+pow((P_long-P1_long-lambda*(P2_long-P1_long))*corr_long,2));
-  /*Heading tov reference***********************************************************************************/
+  */
+  P_lat_heading= _lat[(index_GPS-2*config.sample_rate)%BUFFER_ALFA];//-2s  positie lat         //cos(ubxMessage.navPvt.heading*PI/180.0f/100000.0f)*111120+P_lat;//was eerst sin,extra punt berekenen heading, berekenen met afstand/lengte graad !!
+  P_long_heading=_long[(index_GPS-2*config.sample_rate)%BUFFER_ALFA];//-2s  positie long//sin(ubxMessage.navPvt.heading*PI/180.0f/100000.0f)*111120*cos(DEG2RAD*P_lat)+P_long;//berekenen met afstand/lengte graad!!
+  alfa_exit=Dis_point_line(P1_long,P1_lat,P_long,P_lat,P_long_heading,P_lat_heading);//
+  alfa_afstand=Dis_point_line(P_long,P_lat,P1_long,P1_lat,P2_long,P2_lat);
+  return alfa_afstand;  //actuele loodrechte afstand tov de lijn P2-P1, mag max 50m zijn voor een geldige alfa !!
+}
+/*Calculates distance from point with coör lat/long to line which passes points lat_1/long_1 and lat_2/long_2**************************************/
+float Dis_point_line(float long_act,float lat_act,float long_1,float lat_1,float long_2,float lat_2){
+  float corr_lat=111195;            //meter per breedtegraad
+  float corr_long=111195*cos(DEG2RAD*lat_act);//meter per lengtegraad, dit is f(breedtegraad) !
+  float lambda_T,lambda_N,lambda,alfa_distance;
+  lambda_T=(lat_2-lat_1)*(lat_act-lat_1)*corr_lat*corr_lat+(long_2-long_1)*(long_act-long_1)*corr_long*corr_long;
+  lambda_N= pow((lat_2-lat_1)*corr_lat,2)+pow((long_2-long_1)*corr_long,2);
+  lambda=lambda_T/lambda_N;
+  alfa_distance=sqrt(pow((lat_act-lat_1-lambda*(lat_2-lat_1))*corr_lat,2)+pow((long_act-long_1-lambda*(long_2-long_1))*corr_long,2));
+  return alfa_distance;
+}
+ /*Heading tov reference***********************************************************************************
+  
   ref_heading=atan2(((P1_long-P2_long)*corr_long),((P1_lat-P2_lat)*corr_lat))*180/PI;//dit is getest en werkt correct, wel +180° tov werkelijke richting
   if(ref_heading<0)ref_heading=ref_heading+360;//atan2 geeft een waarde terug tussen -PI en +PI radialen !
   delta_heading=(int)(actual_heading-ref_heading*180/PI)%360;//due to P1-P2, this is the opposite direction from travelling !
   if(delta_heading>180) delta_heading=delta_heading-360;
   if(delta_heading<-180) delta_heading=delta_heading+360;
-  return alfa_afstand;  //ref heading -180 tot +180, actual heading van 0 tot 360
-}
+  */
+
 
 
 

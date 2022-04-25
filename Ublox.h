@@ -99,53 +99,29 @@ const char UBX_AUTOMOTIVE[] PROGMEM ={
 //00 64 00 2C 01 00 00 00 00 10 27 00 00 00 00 00 00 00 00 4B 97    
 };
 const unsigned char UBX_HEADER[]        = { 0xB5, 0x62 };
-const unsigned char NAV_POSLLH_HEADER[] = { 0x01, 0x02 };
-const unsigned char NAV_STATUS_HEADER[] = { 0x01, 0x03 };
 const unsigned char NAV_PVT_HEADER[] = { 0x01, 0x07 };
-const unsigned char NAV_ODO_HEADER[] = { 0x01, 0x09 };
 const unsigned char NAV_ACK_HEADER[] = { 0x05, 0x01 };
 const unsigned char NAV_ID_HEADER[] = { 0x27, 0x03 };
+/*
+const unsigned char NAV_POSLLH_HEADER[] = { 0x01, 0x02 };
+const unsigned char NAV_STATUS_HEADER[] = { 0x01, 0x03 };
+const unsigned char NAV_ODO_HEADER[] = { 0x01, 0x09 };
+
+*/
 enum _ubxMsgType {
   MT_NONE,
-  MT_NAV_POSLLH,
-  MT_NAV_STATUS,
   MT_NAV_PVT,
-  MT_NAV_ODO,
   MT_NAV_ACK,
   MT_NAV_ID
+  //MT_NAV_POSLLH,
+  //MT_NAV_STATUS, 
+  //MT_NAV_ODO,
 };
-struct NAV_POSLLH {   //28 bytes payload, total = 32 bytes
-  unsigned char cls;
-  unsigned char id;
-  unsigned short len;
-  unsigned long iTOW;
-  long lon;
-  long lat;
-  long height;
-  long hMSL;
-  unsigned long hAcc;
-  unsigned long vAcc;
-};
-
-struct NAV_STATUS {   //20 bytes payload, total = 24 bytes
-  unsigned char cls;
-  unsigned char id;
-  unsigned short len;
-  unsigned long iTOW;
-  unsigned char gpsFix;
-  char flags;
-  char fixStat;
-  char flags2;
-  unsigned long ttff;
-  unsigned long msss;
-};
-
 struct NAV_PVT {  // 88 bytes payload, 92 bytes total, with Beitian BN220 100 bytes total ????
   unsigned char cls;
   unsigned char id;
   unsigned short len;
-  unsigned long iTOW;          // GPS time of week of the navigation epoch (ms)
-  
+  unsigned long iTOW;          // GPS time of week of the navigation epoch (ms)  
   unsigned short year;         // Year (UTC) 
   unsigned char month;         // Month, range 1..12 (UTC)
   unsigned char day;           // Day of month, range 1..31 (UTC)
@@ -158,15 +134,13 @@ struct NAV_PVT {  // 88 bytes payload, 92 bytes total, with Beitian BN220 100 by
   unsigned char fixType;       // GNSSfix Type, range 0..5
   char flags;                  // Fix Status Flags
   unsigned char reserved1;     // reserved
-  unsigned char numSV;         // Number of satellites used in Nav Solution
-  
+  unsigned char numSV;         // Number of satellites used in Nav Solution  
   long lon;                    // Longitude (deg)
   long lat;                    // Latitude (deg)
   long height;                 // Height above Ellipsoid (mm)
   long hMSL;                   // Height above mean sea level (mm)
   unsigned long hAcc;          // Horizontal Accuracy Estimate (mm)
   unsigned long vAcc;          // Vertical Accuracy Estimate (mm)
-  
   long velN;                   // NED north velocity (mm/s)
   long velE;                   // NED east velocity (mm/s)
   long velD;                   // NED down velocity (mm/s)
@@ -181,16 +155,6 @@ struct NAV_PVT {  // 88 bytes payload, 92 bytes total, with Beitian BN220 100 by
   short magDec;                 //only valid for adr4.1,beitian bn220 !
   short magAcc;                //only valid for adr4.1,beitian bn220 !
 };
-struct NAV_ODO {   //18 bytes payload, total = 20 bytes
-  unsigned char cls;
-  unsigned char id;
-  byte vers;
-  byte reserved;
-  long iTOW;
-  long distance;
-  long total_distance;
-  long distance_std;
-};
 struct NAV_ACK {
   unsigned char cls;
   unsigned char id;
@@ -198,7 +162,6 @@ struct NAV_ACK {
   unsigned char msg_cls;
   unsigned char msg_id;
 };
-
 struct NAV_ID {
   unsigned char cls;
   unsigned char id;
@@ -213,6 +176,41 @@ struct NAV_ID {
   byte ubx_id_5;
 };
 /*
+struct NAV_POSLLH {   //28 bytes payload, total = 32 bytes
+  unsigned char cls;
+  unsigned char id;
+  unsigned short len;
+  unsigned long iTOW;
+  long lon;
+  long lat;
+  long height;
+  long hMSL;
+  unsigned long hAcc;
+  unsigned long vAcc;
+};
+struct NAV_STATUS {   //20 bytes payload, total = 24 bytes
+  unsigned char cls;
+  unsigned char id;
+  unsigned short len;
+  unsigned long iTOW;
+  unsigned char gpsFix;
+  char flags;
+  char fixStat;
+  char flags2;
+  unsigned long ttff;
+  unsigned long msss;
+};
+struct NAV_ODO {   //18 bytes payload, total = 20 bytes
+  unsigned char cls;
+  unsigned char id;
+  byte vers;
+  byte reserved;
+  long iTOW;
+  long distance;
+  long total_distance;
+  long distance_std;
+};
+
  "MON-VER": {
         "swVersion": C30,
         "hwVersion": C10,
@@ -221,12 +219,12 @@ struct NAV_ID {
 */
 union UBXMessage {
   //NONE none;
-  NAV_POSLLH navPosllh;
-  NAV_STATUS navStatus;
   NAV_PVT navPvt;
-  NAV_ODO navOdo;
   NAV_ACK navAck;
   NAV_ID ubxId;
+ // NAV_POSLLH navPosllh;
+ // NAV_STATUS navStatus;
+ // NAV_ODO navOdo;
 };
 extern UBXMessage ubxMessage; //declaration here, definition in Ublox.cpp
 //extern GPS_data Ublox(1000);
