@@ -9,6 +9,7 @@
 #define BUFFER_ALFA 2000     //gewenste buffer grootte voor alfa speed berekening, hier moet maar 500 m afstand in kunnen !!
 #define FILTER_MIN_SATS 5   //aan 10 Hz is dit 200 s, dus laagste snelheid is dan 500m/200s, dit is 2.5m/s of <10 km/h
 #define FILTER_MAX_sACC 2   
+#define NR_OF_BAR 43 //aantal bar in de bar_graph
 
 extern  int index_GPS,run_count;
 extern  int index_sec;//index van laatste sample 
@@ -76,7 +77,8 @@ class GPS_time{
     uint8_t time_min[10];
     uint8_t time_sec[10];
     int this_run[10];
-    int time_window;    
+    int time_window; 
+    uint16_t speed_run[50];   
   private:
     int old_run;
     //int last_second;

@@ -1,0 +1,5 @@
+#Exclude files from commit !!!
+ $ git status
+    [...]
+    # Untracked files:
+    [SD_card.*]

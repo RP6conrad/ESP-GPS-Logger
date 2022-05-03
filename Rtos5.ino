@@ -150,6 +150,8 @@
  * Alfa calculation , alfa-circle² to avoid sqrt in calculations, factor 111120 -> 111195
  * Bugfix in alfa calculation (pointer + 1)
  * Shutdown : RTC data only written if new GPS-data is available
+ * SW 5.50
+ * Added bar graph screen which shows the speed from al the runs (max=43)
  */
 #include "FS.h"
 #include "SD.h"

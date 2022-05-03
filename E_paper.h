@@ -7,9 +7,9 @@
 //  if you are not sure which version, please test each one,
 //  if it is successful then it belongs to the model of the file name
 
-#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen
+//#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen
 //#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen
-//#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
+#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
 //#include <GxGDEW0213M21/GxGDEW0213M21.h>  //nog een andere versie, resolutie NIET OK vanwege resolutie !!!
 //#include <GxGDEP015OC1/GxGDEP015OC1.h>    //  GDEH015OC1 1.54" screen for Jeff Turner !!!
 
@@ -49,7 +49,7 @@
 #define STATS4 4
 #define STATS5 5
 #define STATS6 6    //simon stat screen
-#define STATS7 7
+#define STATS7 7    //bar graph screen 10s run
 #define STATS8 8
 #define AVG_10S 9
 #define SPEED 10

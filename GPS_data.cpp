@@ -170,6 +170,7 @@ float GPS_time::Update_speed(int actual_run){
               time_sec[0]=tmstruct.tm_sec;
               this_run[0]=actual_run;
               avg_speed[0]=s_max_speed; 
+              speed_run[actual_run%NR_OF_BAR]=avg_speed[0];
               //Om de avg te actualiseren tijdens de run, gemiddelde berekenen van niet gesorteerde array  !
               if(s_max_speed>avg_speed[5]){
                   avg_5runs=0;
@@ -192,6 +193,7 @@ float GPS_time::Update_speed(int actual_run){
               for(int i=0;i<10;i++){
                   display_speed[i]=avg_speed[i];//om een directe update op het scherm mogelijk te maken
                   }
+              speed_run[actual_run%NR_OF_BAR]=avg_speed[0];    
               avg_speed[0]=0;
               s_max_speed=0;
               avg_5runs=0;
