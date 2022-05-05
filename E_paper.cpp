@@ -663,40 +663,39 @@ void Update_screen(int screen){
           display.fillRect(0,line+2,col3-10,2,GxEPD_BLACK);//lijn voor actuele run weer te geven...
     
             }
-    if(screen==STATS7){ //Simon bar graph screen
+if(screen==STATS7){ //Simon bar graph screen
           Serial.println("STATS7_Simon_bar graph");
           update_delay=2000;
-          //float S10avg_speed[99];
-          //float S10avg_speed_R[4];
           int DisplayWidth=255;
           int DisplayHeight=122;
           int posX=5;
           int posY=120;
-          int MaxNumberBar=42;
+          int MaxNumberBar=NR_OF_BAR;//is 42, zie GPS_data.h
           int barLengthMax=70;
           int GraphWidth=215;//was 220
           int barWidth=3;
           int barSpace=2;
           int barPitch=barWidth+barSpace;
           static int r=0;
+          int top_speed = S10.display_speed[9]*calibration_speed;
+          int max_bar= int(top_speed/5+1)*5;
+          if(max_bar<24)max_bar=24;
+          int step=3;
+          if(max_bar>45)step=5;
+          int min_bar=(max_bar-step*8);
+          float scale=80/(max_bar-min_bar);
+      
           display.setFont(&FreeSansBold9pt7b);
           display.setCursor(0,15);
           display.println("Graph : Speed runs (10sec)");//printen top tekst
-          r=run_count%42;
+          r=run_count%MaxNumberBar+1;//laatste bar = 0 ?
           display.setFont(&FreeSansBold6pt7b);
           for(int i=0;i<9;i++){          
-              display.fillRect(offset+posX,posY-(i*10),215, 1,GxEPD_BLACK);//printen hor.lijnen grafiek
-              display.setCursor(225+offset,posY-(i*10));
-              display.print(i*10);            //Printen y-as legende speed 0...80
+              display.fillRect(offset+posX,posY-(i*10),215, 1,GxEPD_BLACK);//printen hor.lijnen grafiek, van 5 tot 215
+              display.setCursor(225+offset,posY-(i*10));//positie y-as legende
+              display.print(min_bar+i*step);            //Printen y-as legende speed, van min_bar tot max_bar in 8 steps...
               }
-          /*    
-          for(int i=0;i<43;i++){    
-            S10avg_speed[i]=random(4000,6500)/100;
-            }
-           for(int i=0;i<5;i++){    
-            S10avg_speed_R[i]=random(5500,6500)/100;
-            }
-          */  
+         
           display.setCursor(0,30);
           display.print("R1-R5:");display.print(S10.display_speed[9]*calibration_speed);
           display.print(" ");display.print(S10.display_speed[8]*calibration_speed);
@@ -704,21 +703,25 @@ void Update_screen(int screen){
           display.print(" ");display.print(S10.display_speed[6]*calibration_speed);
           display.print(" ");display.println(S10.display_speed[5]*calibration_speed);
         
-          barWidth=max((GraphWidth-(r*barSpace))/(r+1),3);
-          Serial.print("Run: ");Serial.println(r);
-          Serial.print("barWidth: ");Serial.println(barWidth);
-          barPitch=(barWidth)+barSpace;
-          if (run_count<42) {
+          if (run_count<MaxNumberBar) {
+            barWidth=max((GraphWidth-(r*barSpace))/(r),3);//(was r+1),3), laatste bar altijd 0; 
+            barPitch=(barWidth)+barSpace; 
             for(int i=0;i<r;i++) {
-              display.fillRect(offset+posX+(i*barPitch),posY-int(S10.speed_run[i]*calibration_speed),barWidth,int(S10.speed_run[i]*calibration_speed),GxEPD_BLACK);
-            }
+              int barHeight=(S10.speed_run[i]*calibration_speed-min_bar)*scale; 
+              display.fillRect(offset+posX+(i*barPitch),posY-barHeight,barWidth,barHeight,GxEPD_BLACK);
+              }
           } else {
-            for(int i=0;i<42;i++) {
-              display.fillRect(offset+posX+(i*barPitch),posY-int(S10.speed_run[i+r%NR_OF_BAR-42]*calibration_speed),barWidth,int(S10.speed_run[i+r%NR_OF_BAR-42]*calibration_speed),GxEPD_BLACK);
+            barWidth=max((GraphWidth-(MaxNumberBar*barSpace))/MaxNumberBar,3);
+            barPitch=(barWidth)+barSpace; 
+            for(int i=0;i<MaxNumberBar;i++) {
+              int barHeight=(S10.speed_run[(i+r)%NR_OF_BAR]*calibration_speed-min_bar)*scale;  //was S10.speed_run[i+r%NR_OF_BAR-42]  
+              display.fillRect(offset+posX+(i*barPitch),posY-barHeight,barWidth,barHeight,GxEPD_BLACK);
             }    
           }
-          
-    }           
+          Serial.print("Run: ");Serial.println(r);
+          Serial.print("barWidth: ");Serial.println(barWidth);
+    }
+            
     if(screen==WIFI_ON){  
         update_delay=250;
         if(count%20<10) offset++;

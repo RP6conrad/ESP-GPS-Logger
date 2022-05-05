@@ -151,7 +151,9 @@
  * Bugfix in alfa calculation (pointer + 1)
  * Shutdown : RTC data only written if new GPS-data is available
  * SW 5.50
- * Added bar graph screen which shows the speed from al the runs (max=43)
+ * Added bar graph screen which shows the speed from al the runs (max=42)
+ * Scale  bar value depends on fastest run, min value = 24
+ * Speed km/h or knots
  */
 #include "FS.h"
 #include "SD.h"
@@ -231,7 +233,7 @@ float analog_mean;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.49";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[32]="SW-version 5.50";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
