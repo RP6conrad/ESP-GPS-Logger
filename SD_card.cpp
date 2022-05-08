@@ -184,7 +184,7 @@ void loadConfiguration(const char *filename, Config &config) {
   time_out_nav_pvt=(1000/config.sample_rate+150);//max time out = 150 ms
   SLEEP_screen=config.sleep_off_screen%10;
   OFF_screen=config.sleep_off_screen/10%10;
-  for (int i=0;i<5;i++){
+  for (int i=0;i<9;i++){
         config.stat_screen[i]=config.Stat_screens%10;//STATSx heeft geen offset !!! 641
         config.Stat_screens=config.Stat_screens/10;
         if(config.Stat_screens>0){
