@@ -46,7 +46,7 @@ void Ublox_off(){
 void Ublox_serial2(int delay_ms){
  for(int i=0;i<delay_ms;i++){//string van ublox to serial, ca 424 char !!
   //while (Serial2.available()) {
-              //Serial.print(char(Serial2.read()));}
+           //   Serial.print(char(Serial2.read()));}
     int msgType = processGPS();
      if ( msgType == MT_NAV_ACK){
           Serial.print(" ACK ");
@@ -61,6 +61,13 @@ void Ublox_serial2(int delay_ms){
           Serial.print (ubxMessage.ubxId.ubx_id_4);
           Serial.println(ubxMessage.ubxId.ubx_id_5);
           }
+     if ( msgType == MT_MON_GNSS){
+          config.gnss=ubxMessage.monGNSS.enabled_Gnss;//to save the reported setting, 3 = gps+ glonas, 11= gps + glonas + galileo
+          Serial.print("GNSS= :");
+          Serial.print (ubxMessage.monGNSS.supported_Gnss);
+          Serial.print (ubxMessage.monGNSS.default_Gnss);
+          Serial.println (ubxMessage.monGNSS.enabled_Gnss);
+          }
      delay(2);   
      } 
 }
@@ -74,6 +81,11 @@ void Ask_ID(void){
 //Initialization of the ublox M8N with binary commands
 void Init_ublox(void){
   //send configuration data in UBX protocol 
+  Serial.print("Set ublox UBX_OUT ");     
+  for(int i = 0; i < sizeof(UBLOX_UBX_OUT); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_UBX_OUT+i) );
+        }
+  Ublox_serial2(500);
   if(config.dynamic_model==1){
       Serial.print("Set ublox UBX_SEA ");
       for(int i = 0; i < sizeof(UBX_SEA); i++) {                        
@@ -88,12 +100,19 @@ void Init_ublox(void){
         }
       Ublox_serial2(500); 
   }
-  //Ask_ID();  //Works only if M8N has sw-version 3, beitian has 2.01 !!!
-  Serial.print("Set ublox UBX_OUT ");     
-  for(int i = 0; i < sizeof(UBLOX_UBX_OUT); i++) {                        
-        Serial2.write( pgm_read_byte(UBLOX_UBX_OUT+i) );
+  if(config.gnss=3){
+      Serial.print("Set ublox UBX_GNSS3 : GPS, GLONAS & GALILEO ");
+      for(int i = 0; i < sizeof(UBX_GNSS3); i++) {                        
+        Serial2.write( pgm_read_byte(UBX_GNSS3+i) );
         }
-  Ublox_serial2(500);
+      Ublox_serial2(500); 
+      Serial.print("Check MON_GNSS settings ");
+      for(int i = 0; i < sizeof(UBX_MON_GNSS); i++) {                        
+        Serial2.write( pgm_read_byte(UBX_MON_GNSS+i) );
+        }
+      Ublox_serial2(500); 
+  }
+  //Ask_ID();  //Works only if M8N has sw-version 3, beitian BN180 has 2.01 !!!
   Serial.print("Set ublox NAV_PVT_ON ");   
   for(int i = 0; i < sizeof(UBLOX_UBX_NAVPVT_ON); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_UBX_NAVPVT_ON+i) );
@@ -209,12 +228,12 @@ int processGPS() {
           payloadSize = sizeof(NAV_PVT);
           //Serial.print("NAV_PVT\n");
         }
-        /*
-        else if ( compareMsgHeader(NAV_ID_HEADER) ) {
-          currentMsgType = MT_NAV_ID;
-          payloadSize = sizeof(NAV_ID);
-          Serial.println("UBX_ID\n");
+        else if ( compareMsgHeader(MON_GNSS_HEADER) ) {
+          currentMsgType = MT_MON_GNSS;
+          payloadSize = sizeof(MON_GNSS);
+          Serial.println("MT_MON_GNSS\n");
         }
+        /*
         else if ( compareMsgHeader(NAV_STATUS_HEADER) ) {
           currentMsgType = MT_NAV_STATUS;
           payloadSize = sizeof(NAV_STATUS);

@@ -3,6 +3,7 @@
   "cal_bat": 1.75,
   "cal_speed":3.6,
   "sample_rate":5,
+  "gnss":2,
   "speed_field":8,
   "bar_length":1852,
   "Stat_screens":321,

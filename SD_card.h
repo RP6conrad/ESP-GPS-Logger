@@ -41,6 +41,7 @@ struct Config {
   float cal_bat=1.74;//calibration for read out bat voltage
   float cal_speed=3.6;//conversion m/s to km/h, for knots use 1.944
   int sample_rate=1;//gps_rate in Hz, 1, 5 or 10Hz !!!
+  int gnss=2;//default setting 2 GNSS, GPS & GLONAS
   int field=1;//choice for first field in speed screen !!!
   int dynamic_model=0;//choice for dynamic model "Sea",if 0 model "portable" is used !!
   int timezone=2;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)

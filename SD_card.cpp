@@ -144,6 +144,7 @@ void loadConfiguration(const char *filename, Config &config) {
   config.cal_bat = doc["cal_bat"]|1.75;
   config.cal_speed = doc["cal_speed"]|3.6;
   config.sample_rate = doc["sample_rate"]|1;
+  config.gnss = doc["gnss"]|2;
   config.field = doc["speed_field"]|1;
   config.dynamic_model = doc["dynamic_model"]|0;//sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
   config.timezone = doc["timezone"]|2;
@@ -232,6 +233,7 @@ void Session_info(GPS_data G){
   char tekst[20]="";char message[255]="";//Serial.print("T5 MAC adress: ");
   errorfile.print("T5 MAC adress: "); 
   for(int i=0;i<6;i++) errorfile.print(mac[i],HEX);
+  errorfile.println(" ");
   errorfile.println(SW_version);
  // strcat(message,"T5 MAC adress: ");  
  // strcat(message,(char*)mac);//Serial.println(WiFi.macAddress());
@@ -256,6 +258,9 @@ void Session_info(GPS_data G){
   if(config.dynamic_model==1) strcat(message,"Sea");
   else if (config.dynamic_model==2) strcat(message,"Automotive");
   else strcat(message,"Portable");
+  strcat(message," \n");
+  if(config.gnss==3) strcat(message,"GNSS = GPS + GLONAS");
+  if(config.gnss==11) strcat(message,"GNSS = GPS + GLONAS + GALILEO");
   strcat(message," \n");
   errorfile.print(message);                  
 }

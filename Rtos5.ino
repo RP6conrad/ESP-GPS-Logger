@@ -154,6 +154,13 @@
  * Added bar graph screen which shows the speed from al the runs (max=42)
  * Scale  bar value depends on fastest run, min value = 24
  * Speed km/h or knots
+ * SW 5.51
+ * new run detection, min speed of 5 m/s
+ * max nr of stat screens change to 9
+ * bugfix Log_to_SD() before set speed to 0 with bad reception, checksum ubx was not correct with speed 0 !!!
+ * Added config.gnss : set for 3 gnss possible, works only with ublox ROM 3.0 !
+ * Check for GNSS setting : ubx msg MON_GNSS
+ * Add setting GNSS in txt file @ end of session
  */
 #include "FS.h"
 #include "SD.h"
@@ -233,7 +240,7 @@ float analog_mean;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.50";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[32]="SW-version 5.51";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
@@ -576,7 +583,6 @@ void taskOne( void * parameter )
           //while (Serial2.available()) {
           //    Serial.print(char(Serial2.read()));}   
    if ( msgType == MT_NAV_PVT ) { 
-    //ubxMessage.navPvt.gSpeed=10000;//test snelheid = 10 m/s
     static int nav_pvt_message=0;
     if((ubxMessage.navPvt.numSV>=MIN_numSV_FIRST_FIX)&((ubxMessage.navPvt.sAcc/1000.0f)<MAX_Sacc_FIRST_FIX)&(GPS_Signal_OK==false)){
                 GPS_Signal_OK=true;
@@ -600,15 +606,16 @@ void taskOne( void * parameter )
               float sAcc=ubxMessage.navPvt.sAcc/1000;
               int gps_speed=ubxMessage.navPvt.gSpeed; //hier alles naar mm/s !!
               static int last_flush_time=0;
+              Log_to_SD();//hier wordt ook geprint naar serial !!
               if((millis()-last_flush_time)>60000){
                 Flush_files();
                 last_flush_time=millis();
                 }
               if((ubxMessage.navPvt.numSV<=MIN_numSV_GPS_SPEED_OK)|((ubxMessage.navPvt.sAcc/1000.0f)>MAX_Sacc_GPS_SPEED_OK)|(ubxMessage.navPvt.gSpeed/1000.0f>MAX_GPS_SPEED_OK)){
                 gps_speed=0;
-                ubxMessage.navPvt.gSpeed=0;
+                ubxMessage.navPvt.gSpeed=0;//checksum is wrong when setting navPvt, so first Log_to_SD !!!
                 } 
-              Log_to_SD();//hier wordt ook geprint naar serial !!
+              //Log_to_SD();//hier wordt ook geprint naar serial !!
               Ublox.push_data(ubxMessage.navPvt.lat/10000000.0f,ubxMessage.navPvt.lon/10000000.0f,gps_speed);   
               run_count=New_run_detection(ubxMessage.navPvt.heading/100000.0f,S2.avg_s); 
               alfa_window=Alfa_indicator(M250,M100,ubxMessage.navPvt.heading/100000.0f);

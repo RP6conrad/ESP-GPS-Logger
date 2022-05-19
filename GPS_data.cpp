@@ -191,10 +191,11 @@ float GPS_time::Update_speed(int actual_run){
               }
             if((actual_run!=old_run)&(this_run[0]==old_run)){          //sorting only if new max during this run !!!
               sort_run(avg_speed,time_hour,time_min,time_sec,this_run,10);
+              if(s_max_speed>5000)speed_run_counter ++;//changes SW5.51 min speed bar graph = 5 m/s
               for(int i=0;i<10;i++){
                   display_speed[i]=avg_speed[i];//om een directe update op het scherm mogelijk te maken
                   }
-              speed_run[actual_run%NR_OF_BAR]=avg_speed[0];    
+              speed_run[speed_run_counter%NR_OF_BAR]=avg_speed[0];   //changes SW 5.51 
               avg_speed[0]=0;
               s_max_speed=0;
               avg_5runs=0;
@@ -202,7 +203,7 @@ float GPS_time::Update_speed(int actual_run){
                     avg_5runs=avg_5runs+avg_speed[i];
                     }
                 avg_5runs=avg_5runs/5;
-              }
+              }  
             old_run=actual_run;
             return s_max_speed;
            // }
@@ -314,8 +315,8 @@ int New_run_detection(float actual_heading, float S2_speed){
    heading_SD=heading;
    Mean_heading=Mean_heading*(mean_heading_time*config.sample_rate-1)/(mean_heading_time*config.sample_rate)+heading/(mean_heading_time*config.sample_rate);
    /*detection stand still, more then 2s with velocity<1m/s**************************************************************************************************/
-   int speed_detection_min=5000;//minimum snelheid in mm/s voor snelheid display
-   int standstill_detection_max=1500;//maximum snelheid in mm/s voor stilstand herkenning
+   int speed_detection_min=5000;//minimum snelheid 5m/s (18 km/h)voor snelheid display
+   int standstill_detection_max=1000;//maximum snelheid 1 m/s (3.6 km/h) voor stilstand herkenning, was 1.5 m/s change SW5.51
    if(S2_speed>speed_detection_min)velocity_5=1;    //min gemiddelde over 2 s = 1m/s           
    if((S2_speed<standstill_detection_max)&(velocity_5==1))velocity_0=1;
    else velocity_0=0;
@@ -326,7 +327,7 @@ int New_run_detection(float actual_heading, float S2_speed){
     }
    /*Nieuwe run gedetecteerd omwille heading change*****************************************************************************************************************/
    static bool straight_course;
-   if(abs(Mean_heading-heading)<straight_course_max){straight_course=true;}//stabiele koers terug bereikt
+   if((abs(Mean_heading-heading)<straight_course_max)&(S2_speed>speed_detection_min)){straight_course=true;}//stabiele koers terug bereikt, added min_speed SW5.51
    if(((abs(Mean_heading-heading)>course_deviation_min)&(straight_course==true))){      
       //velocity_5=0;
       straight_course=false;

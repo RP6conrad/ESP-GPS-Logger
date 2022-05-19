@@ -78,6 +78,7 @@ class GPS_time{
     uint8_t time_sec[10];
     int this_run[10];
     int time_window; 
+    int speed_run_counter;
     uint16_t speed_run[50];   
   private:
     int old_run;

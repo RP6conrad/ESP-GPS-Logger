@@ -60,9 +60,11 @@ void Off_screen(int choice){//choice 0 = oud scherm, anders Simon scherm
       display.print("Tijd gesurft: ");display.print(session_time/60,0);display.println(" min");
     // Buddie logo:
       display.drawExampleBitmap(Surfbuddie_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
-      display.setCursor(offset,121);
-      display.setFont(&SF_Distant_Galaxy9pt7b);
-    //  display.print("surfbuddie: ");display.print("Jan");
+      display.setCursor(offset,78);
+      //display.setFont(&SF_Distant_Galaxy9pt7b);
+      display.print("GNSS: ");
+      if(config.gnss==3) display.print("GPS + GLONAS");
+      if(config.gnss==11) display.print("GPS+GLONAS+GALILEO");
       display.updateWindow(0,0,250,122,true);
   }
   //display.update();
@@ -431,7 +433,6 @@ void Update_screen(int screen){
             display.print(S10.avg_speed[i]*calibration_speed,2);display.print(" @");
             display.print(S10.time_hour[i]);display.print(":");
             display.print(S10.time_min[i]);
-            //display.println(ubxMessage.navPvt.gSpeed/1000.0f*calibration_speed,1);
             }   
         }      
     if(screen==BOOT_SCREEN){
@@ -688,7 +689,7 @@ if(screen==STATS7){ //Simon bar graph screen
           display.setFont(&FreeSansBold9pt7b);
           display.setCursor(0,15);
           display.println("Graph : Speed runs (10sec)");//printen top tekst
-          r=run_count%MaxNumberBar+1;//laatste bar = 0 ?
+          r=S10.speed_run_counter%MaxNumberBar+1;//laatste bar = 0 ?
           display.setFont(&FreeSansBold6pt7b);
           for(int i=0;i<9;i++){          
               display.fillRect(offset+posX,posY-(i*10),215, 1,GxEPD_BLACK);//printen hor.lijnen grafiek, van 5 tot 215
