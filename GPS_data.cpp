@@ -195,7 +195,8 @@ float GPS_time::Update_speed(int actual_run){
               for(int i=0;i<10;i++){
                   display_speed[i]=avg_speed[i];//om een directe update op het scherm mogelijk te maken
                   }
-              speed_run[speed_run_counter%NR_OF_BAR]=avg_speed[0];   //changes SW 5.51 
+              speed_run[actual_run%NR_OF_BAR]=avg_speed[0];    //SW 5.5
+              //speed_run[speed_run_counter%NR_OF_BAR]=avg_speed[0];   //changes SW 5.51 
               avg_speed[0]=0;
               s_max_speed=0;
               avg_5runs=0;
@@ -301,6 +302,8 @@ int New_run_detection(float actual_heading, float S2_speed){
    static int run_counter;
    static bool velocity_0 = false;
    static bool velocity_5 = false;
+   int speed_detection_min=4000;//minimum snelheid 4m/s (14 km/h)voor snelheid display
+   int standstill_detection_max=1000;//maximum snelheid 1 m/s (3.6 km/h) voor stilstand herkenning, was 1.5 m/s change SW5.51
    //float headAcc=ubxMessage.navPvt.headingAcc/100000.0f;  //heading Accuracy wordt niet gebruikt ???  
    //actual_heading=ubxMessage.navPvt.heading/100000.0f;
    if((actual_heading-old_heading)>300.0f) delta_heading=delta_heading-360.0f;
@@ -315,8 +318,6 @@ int New_run_detection(float actual_heading, float S2_speed){
    heading_SD=heading;
    Mean_heading=Mean_heading*(mean_heading_time*config.sample_rate-1)/(mean_heading_time*config.sample_rate)+heading/(mean_heading_time*config.sample_rate);
    /*detection stand still, more then 2s with velocity<1m/s**************************************************************************************************/
-   int speed_detection_min=5000;//minimum snelheid 5m/s (18 km/h)voor snelheid display
-   int standstill_detection_max=1000;//maximum snelheid 1 m/s (3.6 km/h) voor stilstand herkenning, was 1.5 m/s change SW5.51
    if(S2_speed>speed_detection_min)velocity_5=1;    //min gemiddelde over 2 s = 1m/s           
    if((S2_speed<standstill_detection_max)&(velocity_5==1))velocity_0=1;
    else velocity_0=0;
@@ -327,9 +328,9 @@ int New_run_detection(float actual_heading, float S2_speed){
     }
    /*Nieuwe run gedetecteerd omwille heading change*****************************************************************************************************************/
    static bool straight_course;
+   //if(abs(Mean_heading-heading)<straight_course_max){straight_course=true;}//stabiele koers terug bereikt
    if((abs(Mean_heading-heading)<straight_course_max)&(S2_speed>speed_detection_min)){straight_course=true;}//stabiele koers terug bereikt, added min_speed SW5.51
    if(((abs(Mean_heading-heading)>course_deviation_min)&(straight_course==true))){      
-      //velocity_5=0;
       straight_course=false;
       delay_counter=0;
       alfa_counter++;//jibe detection for alfa_indicator ....

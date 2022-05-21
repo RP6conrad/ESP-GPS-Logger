@@ -62,7 +62,7 @@ void Off_screen(int choice){//choice 0 = oud scherm, anders Simon scherm
       display.drawExampleBitmap(Surfbuddie_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
       display.setCursor(offset,78);
       //display.setFont(&SF_Distant_Galaxy9pt7b);
-      display.print("GNSS: ");
+      //display.print("GNSS: ");
       if(config.gnss==3) display.print("GPS + GLONAS");
       if(config.gnss==11) display.print("GPS+GLONAS+GALILEO");
       display.updateWindow(0,0,250,122,true);
@@ -246,25 +246,6 @@ void Sats_level(int offset){
     int posX=172+offset;
     int posY=122-(circelL+2*circelS);
 
-/*  Quarter-circle drawer with fill, used for circles and roundrects
-    Adafruit_GFX::fillCircleHelper(int16_t x0, int16_t y0, int16_t r, uint8_t corners, int16_t delta, uint16_t color)
-    @param  x0       Center-point x coordinate
-    @param  y0       Center-point y coordinate
-    @param  r        Radius of circle
-    @param  corners  Mask bits indicating which half we're doing 1: right half, 2: left half
-    @param  delta    Offset from center-point, used for round-rects
-    @param  color    16-bit 5-6-5 Color to fill with
-
-    Draw a triangle with color-fill
-    Adafruit_GFX::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color)
-    @param    x0  Vertex #0 x coordinate
-    @param    y0  Vertex #0 y coordinate
-    @param    x1  Vertex #1 x coordinate
-    @param    y1  Vertex #1 y coordinate
-    @param    x2  Vertex #2 x coordinate
-    @param    y2  Vertex #2 y coordinate
-    @param    color 16-bit 5-6-5 Color to fill/draw with
-*/
     display.fillCircle ( posX, posY, circelL, GxEPD_BLACK);
     display.fillTriangle (posX, posY+(circelL+2*circelS), posX-circelL , posY+circelS, posX+circelL , posY+circelS,GxEPD_BLACK);
     display.fillCircle ( posX, posY, circelS, GxEPD_WHITE);
@@ -298,7 +279,7 @@ void Update_screen(int screen){
         if(GPS_Signal_OK==true){
               display.setFont(&SansSerif_bold_96_nr);
               display.setCursor(offset,120);//was offset + 2
-              display.println(ubxMessage.navPvt.gSpeed*calibration_speed,1);//calibration_speed is 3.6/1000 !!!
+              display.println(gps_speed*calibration_speed,1);//calibration_speed is 3.6/1000 !!!
               }
         else{
               display.setCursor(offset,60);
@@ -689,7 +670,7 @@ if(screen==STATS7){ //Simon bar graph screen
           display.setFont(&FreeSansBold9pt7b);
           display.setCursor(0,15);
           display.println("Graph : Speed runs (10sec)");//printen top tekst
-          r=S10.speed_run_counter%MaxNumberBar+1;//laatste bar = 0 ?
+          r=run_count%MaxNumberBar+1;//laatste bar = 0 ?
           display.setFont(&FreeSansBold6pt7b);
           for(int i=0;i<9;i++){          
               display.fillRect(offset+posX,posY-(i*10),215, 1,GxEPD_BLACK);//printen hor.lijnen grafiek, van 5 tot 215

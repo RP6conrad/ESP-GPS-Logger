@@ -161,6 +161,8 @@
  * Added config.gnss : set for 3 gnss possible, works only with ublox ROM 3.0 !
  * Check for GNSS setting : ubx msg MON_GNSS
  * Add setting GNSS in txt file @ end of session
+ * SW 5.52
+ * bugfix for bar graph 
  */
 #include "FS.h"
 #include "SD.h"
@@ -235,12 +237,13 @@ int msgType;
 int stat_screen=5;//keuze stat scherm indien stilstand
 int GPIO12_screen=0;//keuze welk scherm
 int low_bat_count;
+int gps_speed;
 float alfa_window;
 float analog_mean;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.51";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[32]="SW-version 5.52";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
@@ -604,18 +607,18 @@ void taskOne( void * parameter )
     if(Time_Set_OK==true)nav_pvt_message++;
     if ((sdOK==true)&(Time_Set_OK==true)&(nav_pvt_message>10)){
               float sAcc=ubxMessage.navPvt.sAcc/1000;
-              int gps_speed=ubxMessage.navPvt.gSpeed; //hier alles naar mm/s !!
+              gps_speed=ubxMessage.navPvt.gSpeed; //hier alles naar mm/s !!
               static int last_flush_time=0;
-              Log_to_SD();//hier wordt ook geprint naar serial !!
+              //Log_to_SD();//hier wordt ook geprint naar serial !!
               if((millis()-last_flush_time)>60000){
                 Flush_files();
                 last_flush_time=millis();
                 }
               if((ubxMessage.navPvt.numSV<=MIN_numSV_GPS_SPEED_OK)|((ubxMessage.navPvt.sAcc/1000.0f)>MAX_Sacc_GPS_SPEED_OK)|(ubxMessage.navPvt.gSpeed/1000.0f>MAX_GPS_SPEED_OK)){
                 gps_speed=0;
-                ubxMessage.navPvt.gSpeed=0;//checksum is wrong when setting navPvt, so first Log_to_SD !!!
+                //ubxMessage.navPvt.gSpeed=0;//checksum is wrong when setting navPvt, so first Log_to_SD !!!
                 } 
-              //Log_to_SD();//hier wordt ook geprint naar serial !!
+              Log_to_SD();//hier wordt ook geprint naar serial !!
               Ublox.push_data(ubxMessage.navPvt.lat/10000000.0f,ubxMessage.navPvt.lon/10000000.0f,gps_speed);   
               run_count=New_run_detection(ubxMessage.navPvt.heading/100000.0f,S2.avg_s); 
               alfa_window=Alfa_indicator(M250,M100,ubxMessage.navPvt.heading/100000.0f);
@@ -660,7 +663,7 @@ void taskTwo( void * parameter)
     else if(millis()<2000)Update_screen(BOOT_SCREEN);
     else if(GPS_Signal_OK==false) Update_screen(WIFI_ON);//((Wifi_on==true)&(ubxMessage.navPvt.gSpeed/1000.0f<2)) Update_screen(WIFI_ON);//toch wifi info indien GPS fix de eerste 100s, JH 14/2/2022
     else if(Short_push12.long_pulse){Update_screen(config.gpio12_screen[GPIO12_screen]);}//heeft voorrang, na drukken GPIO_pin 12, 10 STAT4 scherm !!!
-    else if((ubxMessage.navPvt.gSpeed/1000.0f<MAX_SPEED_DISPLAY_STATS)&(Field_choice==false)){
+    else if((gps_speed/1000.0f<MAX_SPEED_DISPLAY_STATS)&(Field_choice==false)){
           Update_screen(config.stat_screen[stat_count]);
           /*
           if(stat_count<2)Update_screen(config.stat_screen[stat_count]);//STATS1=3, STATS5=7

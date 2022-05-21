@@ -58,7 +58,7 @@
 #define WIFI_SOFT_AP 13
 
 extern GxEPD_Class display;
-extern int sdTrouble,wifi_search;
+extern int sdTrouble,wifi_search,gps_speed;
 extern bool sdOK;
 extern bool Wifi_on;
 extern bool SoftAP_connection;
