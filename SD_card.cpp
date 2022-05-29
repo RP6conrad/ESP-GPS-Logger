@@ -24,20 +24,26 @@ void Open_files(void){
   //const char* fileUBX = config.password; //WiFi Password
   //filenameUBX=config.UBXfile;//vb "/BN280A"
   strcat(filenameUBX,config.UBXfile);
+  strcat(filenameOAO,config.UBXfile);
   //int filenameSize=strlen(filenameUBX);//dit is dan 7 + NULL = 8
   char ubx[16]="000.ubx";
+  char oao[16]="000.oao";
   char macAddr[32];
   sprintf(macAddr, "_%2X%2X%2X%2X%2X%2X_", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
   strcat(filenameUBX,macAddr);
+  strcat(filenameOAO,macAddr);
   int filenameSize=strlen(filenameUBX);//dit is dan 7 + NULL = 8
   strcat(filenameUBX,ubx);//dit wordt dan /BN280A000.ubx
-  
+  strcat(filenameOAO,oao);//dit wordt dan /BN280A000.oao
   for(int i=0;i<1000;i++){
         filenameUBX[filenameSize+2] = '0' + i%10;
         filenameUBX[filenameSize+1] = '0' + ((i / 10) % 10);
         filenameUBX[filenameSize] = '0' + ((i / 100) % 10);
+        filenameOAO[filenameSize+2] = '0' + i%10;
+        filenameOAO[filenameSize+1] = '0' + ((i / 10) % 10);
+        filenameOAO[filenameSize] = '0' + ((i / 100) % 10);       
         // create if does not exist, do not open existing, write, sync after write
-        if (! SD.exists(filenameUBX)) {
+        if (!SD.exists(filenameUBX)&(!SD.exists(filenameOAO))) {
                           break;
                         }
         }

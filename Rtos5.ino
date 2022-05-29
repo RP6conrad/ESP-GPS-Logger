@@ -163,6 +163,8 @@
  * Add setting GNSS in txt file @ end of session
  * SW 5.52
  * bugfix for bar graph 
+ * SW 5.53
+ * bugfix for filenaming if logUBX=0 !!!
  */
 #include "FS.h"
 #include "SD.h"
@@ -243,7 +245,7 @@ float analog_mean;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.52";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[32]="SW-version 5.53";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
