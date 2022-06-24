@@ -289,8 +289,8 @@ Alfa_speed A500(50);
 Alfa_speed a500(50);//tussentijdse Alfa stats
 Button_push Short_push12 (12,100,15,1);//GPIO pin 12 is nog vrij, button_count 0 en 1 !!!
 Button_push Long_push12 (12,2000,10,4);
-Button_push Short_push39 (39,100,10,8);
-Button_push Long_push39 (39,1500,10,8);
+Button_push Short_push39 (39,100,10,8);//was 39
+Button_push Long_push39 (39,1500,10,8);//was 39
 GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ ELINK_DC, /*RST=*/ ELINK_RESET);
 GxEPD_Class display(io, /*RST=*/ ELINK_RESET, /*BUSY=*/ ELINK_BUSY);
 SPIClass sdSPI(VSPI);
@@ -310,7 +310,7 @@ void print_wakeup_reason(){
   {
     voltage_bat=analog_mean*calibration_bat/1000;
     case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO"); reed=1;
-                                 rtc_gpio_deinit(GPIO_NUM_39);
+                                 rtc_gpio_deinit(GPIO_NUM_39);//was 39
                                  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
                                  Boot_screen();
                                  break;
@@ -323,7 +323,7 @@ void print_wakeup_reason(){
                                         analog_mean=analog_bat*0.1+analog_mean*0.9;
                                         }
                                   voltage_bat=analog_mean*calibration_bat/1000;
-                                  esp_sleep_enable_ext0_wakeup(GPIO_NUM_39,0); //1 = High, 0 = Low
+                                  esp_sleep_enable_ext0_wakeup(GPIO_NUM_39,0); //1 = High, 0 = Low, was 39
                                   Sleep_screen(SLEEP_screen);
                                   go_to_sleep(3000);//was 4000
                                   break;                               
@@ -497,7 +497,7 @@ void setup() {
  
   // Wait for connection during 10s in station mode
   while ((WiFi.status() != WL_CONNECTED)&(SoftAP_connection==false)) {
-    if(digitalRead(39)==false){
+    if(digitalRead(39)==false){//was 39
         WiFi.disconnect();
         WiFi.mode(WIFI_AP);
         WiFi.softAP(soft_ap_ssid, soft_ap_password);
@@ -563,7 +563,6 @@ void taskOne( void * parameter )
    if (Short_push12.Button_pushed())GPIO12_screen++;//toggle scherm
    if (GPIO12_screen>config.gpio12_count)GPIO12_screen=0;
    if (Long_push12.Button_pushed()){ s10.Reset_stats(); s2.Reset_stats();a500.Reset_stats();} //resetten stats   
-   //stat_screen=Short_push12.button_count+4;//toggle naar volgend stat scherm
      
    if(Long_push39.Button_pushed()) Shut_down();
    if (Short_push39.Button_pushed()){
@@ -664,7 +663,7 @@ void taskTwo( void * parameter)
     }
     else if(millis()<2000)Update_screen(BOOT_SCREEN);
     else if(GPS_Signal_OK==false) Update_screen(WIFI_ON);//((Wifi_on==true)&(ubxMessage.navPvt.gSpeed/1000.0f<2)) Update_screen(WIFI_ON);//toch wifi info indien GPS fix de eerste 100s, JH 14/2/2022
-    else if(Short_push12.long_pulse){Update_screen(config.gpio12_screen[GPIO12_screen]);}//heeft voorrang, na drukken GPIO_pin 12, 10 STAT4 scherm !!!
+   // else if(Short_push12.long_pulse){Update_screen(config.gpio12_screen[GPIO12_screen]);}//heeft voorrang, na drukken GPIO_pin 12, 10 STAT4 scherm !!!
     else if((gps_speed/1000.0f<MAX_SPEED_DISPLAY_STATS)&(Field_choice==false)){
           Update_screen(config.stat_screen[stat_count]);
           /*
