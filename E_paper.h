@@ -15,24 +15,24 @@
 
 // https://oleddisplay.squix.ch/#/home font-converter online, used for 48pt font !!
 // FreeFonts from Adafruit_GFX
-#include <Fonts/FreeMonoBold9pt7b.h>//gebruikt
-#include <Fonts/FreeMonoBold12pt7b.h>//gebruikt
-#include <Fonts/FreeSansBold6pt7b.h>//gebruikt
-#include <Fonts/FreeSansBold9pt7b.h>//gebruikt
-#include <Fonts/FreeSansBold12pt7b.h>//gebruikt
-#include <Fonts/FreeSansBold18pt7b.h>//gebruikt
-#include <Fonts/SansSerif_bold_96_nr.h>//bijgevoegd in lib
+#include "Fonts/FreeMonoBold9pt7b.h"//gebruikt
+#include "Fonts/FreeMonoBold12pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold6pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold9pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold12pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold18pt7b.h"//gebruikt
+#include "Fonts/SansSerif_bold_96_nr.h"//bijgevoegd in lib
 //Simon
-//#include <Fonts/Sea_Dog_2001_Italic7pt7b.h>//simon
-#include <Fonts/Sea_Dog_2001_Italic9pt7b.h>//simon
-#include <Fonts/Sea_Dog_2001_Italic12pt7b.h>//simon
-#include <Fonts/Sea_Dog_2001_Italic16pt7b.h>//simon
-#include <Fonts/SF_Distant_Galaxy7pt7b.h>//surfbuddies
-#include <Fonts/SF_Distant_Galaxy9pt7b.h>//surfbuddies
-#include <Fonts/SF_Distant_Galaxy12pt7b.h>//surfbuddies
-#include <Fonts/SF_Distant_Galaxy16pt7b.h>//surfbuddies
-#include <Fonts/SPINC___12pt7b.h>//buddies on boards
-#include <Fonts/BitmapSurfbuddies.h>
+//#include "Fonts/Sea_Dog_2001_Italic7pt7b.h>//simon
+#include "Fonts/Sea_Dog_2001_Italic9pt7b.h"//simon
+#include "Fonts/Sea_Dog_2001_Italic12pt7b.h"//simon
+#include "Fonts/Sea_Dog_2001_Italic16pt7b.h"//simon
+#include "Fonts/SF_Distant_Galaxy7pt7b.h"//surfbuddies
+#include "Fonts/SF_Distant_Galaxy9pt7b.h"//surfbuddies
+#include "Fonts/SF_Distant_Galaxy12pt7b.h"//surfbuddies
+#include "Fonts/SF_Distant_Galaxy16pt7b.h"//surfbuddies
+#include "Fonts/SPINC___12pt7b.h"//buddies on boards
+#include "Fonts/BitmapSurfbuddies.h"
 #include <GxIO/GxIO_SPI/GxIO_SPI.h>
 #include <GxIO/GxIO.h>
 //Simon
