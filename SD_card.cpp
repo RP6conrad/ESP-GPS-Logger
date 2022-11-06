@@ -8,8 +8,8 @@ File errorfile;
 File oaofile;
 
 char filenameUBX[64]="/";
-char filenameERR[64]="blabla";
-char filenameOAO[64]="blabla";
+char filenameERR[64]="/";
+char filenameOAO[64]="/";
 char dataStr[255] = "";//string for logging NMEA in txt, test for write 2000 chars !!
 char Buffer[50]= "";//string for logging
 union OAO_Frame oao_pvt ;
@@ -21,39 +21,29 @@ void logERR(const char * message){
 void Open_files(void){
   logUBX=config.logUBX;
   logOAO=config.logOAO;
-  //const char* fileUBX = config.password; //WiFi Password
-  //filenameUBX=config.UBXfile;//vb "/BN280A"
-  strcat(filenameUBX,config.UBXfile);
-  strcat(filenameOAO,config.UBXfile);
-  //int filenameSize=strlen(filenameUBX);//dit is dan 7 + NULL = 8
-  char ubx[16]="000.ubx";
-  char oao[16]="000.oao";
+  strcat(filenameERR,config.UBXfile);
+  char txt[16]="000.txt";
   char macAddr[32];
   sprintf(macAddr, "_%2X%2X%2X%2X%2X%2X_", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-  strcat(filenameUBX,macAddr);
-  strcat(filenameOAO,macAddr);
-  int filenameSize=strlen(filenameUBX);//dit is dan 7 + NULL = 8
-  strcat(filenameUBX,ubx);//dit wordt dan /BN280A000.ubx
-  strcat(filenameOAO,oao);//dit wordt dan /BN280A000.oao
+  strcat(filenameERR,macAddr);
+  int filenameSize=strlen(filenameERR);//dit is dan 7 + NULL = 8
+  strcat(filenameERR,txt);//dit wordt dan /BN280A000.txt
   for(int i=0;i<1000;i++){
-        filenameUBX[filenameSize+2] = '0' + i%10;
-        filenameUBX[filenameSize+1] = '0' + ((i / 10) % 10);
-        filenameUBX[filenameSize] = '0' + ((i / 100) % 10);
-        filenameOAO[filenameSize+2] = '0' + i%10;
-        filenameOAO[filenameSize+1] = '0' + ((i / 10) % 10);
-        filenameOAO[filenameSize] = '0' + ((i / 100) % 10);       
+        filenameERR[filenameSize+2] = '0' + i%10;
+        filenameERR[filenameSize+1] = '0' + ((i / 10) % 10);
+        filenameERR[filenameSize] = '0' + ((i / 100) % 10);          
         // create if does not exist, do not open existing, write, sync after write
-        if (!SD.exists(filenameUBX)&(!SD.exists(filenameOAO))) {
+        if (!SD.exists(filenameERR)) {
                           break;
                         }
         }
-  strcpy(filenameERR,filenameUBX);
-  filenameERR[filenameSize+3]='.';
-  filenameERR[filenameSize+4]='t';
-  filenameERR[filenameSize+5]='x';
-  filenameERR[filenameSize+6]='t';
+  strcpy(filenameUBX,filenameERR);
+  filenameUBX[filenameSize+3]='.';
+  filenameUBX[filenameSize+4]='u';
+  filenameUBX[filenameSize+5]='b';
+  filenameUBX[filenameSize+6]='x';
  
-  strcpy(filenameOAO,filenameUBX);
+  strcpy(filenameOAO,filenameERR);
   filenameOAO[filenameSize+3]='.';
   filenameOAO[filenameSize+4]='o';
   filenameOAO[filenameSize+5]='a';
@@ -66,7 +56,6 @@ void Open_files(void){
                   ubxfile.print(SW_version);
                   ubxfile.println("");
                   */
-                  //ubxfile.close();
                   }
             if(logOAO==true){
                 oaofile=SD.open(filenameOAO,FILE_APPEND);
@@ -74,8 +63,6 @@ void Open_files(void){
                 }
             
             errorfile=SD.open(filenameERR, FILE_APPEND);
-            //errorfile.close();    
-           
             Serial.println(filenameUBX); 
             Serial.println(filenameERR); 
             Serial.println(filenameOAO); 
@@ -83,7 +70,6 @@ void Open_files(void){
 void Close_files(void){
   ubxfile.close();
   errorfile.close();
-  //oaofile.seek(0);
   oaofile.close();
 }
 void Flush_files(void){
@@ -158,6 +144,7 @@ void loadConfiguration(const char *filename, Config &config) {
   config.GPIO12_screens = doc["GPIO12_screens"]|12;
   config.Logo_choice = doc["Logo_choice"]|12;
   config.sleep_off_screen = doc["sleep_off_screen"]|11;
+  config.stat_speed= doc["stat_speed"]|1;
   config.bar_length = doc["bar_length"]|1852;
   config.logCSV=doc["logCSV"]|0;
   config.logUBX=doc["logUBX"]|1;

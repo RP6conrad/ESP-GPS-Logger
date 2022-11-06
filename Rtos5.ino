@@ -165,6 +165,13 @@
  * bugfix for bar graph 
  * SW 5.53
  * bugfix for filenaming if logUBX=0 !!!
+ * SW 5.54
+ * Added extra Board / Sail logo's, design by Hans Scholten
+ * Added variable to config.txt : "stat_speed":2,  // speed less then 2 m/s -> stat screens
+ * Filenr depends now from existing .txt files !! Bug if only log OAO files was active should be ok now...
+ * Shut down screen : add type of E-paper (in case you forgot...)
+ * Webserver can now download and delete files from the SD-card !!! 
+ * Contribution from Triton_dm on github !!
  */
 #include "FS.h"
 #include "SD.h"
@@ -211,7 +218,7 @@
 #define MIN_numSV_GPS_SPEED_OK 4  //min aantal satellieten voor berekenen snelheid, anders 
 #define MAX_Sacc_GPS_SPEED_OK 1   //max waarde Sacc voor berekenen snelheid, anders 0
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
-#define MAX_SPEED_DISPLAY_STATS 1 //max snelheid in m/s om stat schermen te zien
+//#define MAX_SPEED_DISPLAY_STATS 1 //max snelheid in m/s om stat schermen te zien
 
 String IP_adress="0.0.0.0";
 
@@ -245,7 +252,7 @@ float analog_mean;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.53";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[32]="SW-version 5.54";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
@@ -323,7 +330,7 @@ void print_wakeup_reason(){
                                         analog_mean=analog_bat*0.1+analog_mean*0.9;
                                         }
                                   voltage_bat=analog_mean*calibration_bat/1000;
-                                  esp_sleep_enable_ext0_wakeup(GPIO_NUM_39,0); //1 = High, 0 = Low, was 39
+                                  esp_sleep_enable_ext0_wakeup(GPIO_NUM_39,0); //was 39  1 = High, 0 = Low
                                   Sleep_screen(SLEEP_screen);
                                   go_to_sleep(3000);//was 4000
                                   break;                               
@@ -434,14 +441,7 @@ void setup() {
   Serial.println("Serial Rxd is on pin: "+String(RX));
   SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
   print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
-  /*
-  pinMode(0, OUTPUT);//Power beitian //standaard maar drive strength 2, haal dan 2.7V aan de ublox gps
-  pinMode(12, OUTPUT);//Power beitian
-  pinMode(34, OUTPUT);//Power beitian
-  gpio_set_drive_capability(GPIO_NUM_0,GPIO_DRIVE_CAP_3);//zie ook https://www.esp32.com/viewtopic.php?t=5840
-  gpio_set_drive_capability(GPIO_NUM_12,GPIO_DRIVE_CAP_3);//haal nu 3.0V aan de ublox gps met 50 mA
-  gpio_set_drive_capability(GPIO_NUM_34,GPIO_DRIVE_CAP_3);
-  */
+ 
   pinMode(25, OUTPUT);//Power beitian //standaard maar drive strength 2, haal dan 2.7V aan de ublox gps
   pinMode(26, OUTPUT);//Power beitian
   pinMode(27, OUTPUT);//Power beitian
@@ -564,11 +564,11 @@ void taskOne( void * parameter )
    if (GPIO12_screen>config.gpio12_count)GPIO12_screen=0;
    if (Long_push12.Button_pushed()){ s10.Reset_stats(); s2.Reset_stats();a500.Reset_stats();} //resetten stats   
      
-   if(Long_push39.Button_pushed()) Shut_down();
+   if(Long_push39.Button_pushed()) Shut_down();//was 39
    if (Short_push39.Button_pushed()){
       config.field=Short_push39.button_count;
       }
-   Field_choice=Short_push39.long_pulse;//10s wachttijd voor menu field keuze....
+   Field_choice=Short_push12.long_pulse;//10s wachttijd voor menu field keuze....
    
    if((WiFi.status() != WL_CONNECTED)&(Wifi_on==true)&(SoftAP_connection==false)){
         Serial.println("No Wifi connection !");
@@ -664,7 +664,7 @@ void taskTwo( void * parameter)
     else if(millis()<2000)Update_screen(BOOT_SCREEN);
     else if(GPS_Signal_OK==false) Update_screen(WIFI_ON);//((Wifi_on==true)&(ubxMessage.navPvt.gSpeed/1000.0f<2)) Update_screen(WIFI_ON);//toch wifi info indien GPS fix de eerste 100s, JH 14/2/2022
    // else if(Short_push12.long_pulse){Update_screen(config.gpio12_screen[GPIO12_screen]);}//heeft voorrang, na drukken GPIO_pin 12, 10 STAT4 scherm !!!
-    else if((gps_speed/1000.0f<MAX_SPEED_DISPLAY_STATS)&(Field_choice==false)){
+    else if((gps_speed/1000.0f<config.stat_speed)&(Field_choice==false)){//nu configureerbaar via config.txt
           Update_screen(config.stat_screen[stat_count]);
           /*
           if(stat_count<2)Update_screen(config.stat_screen[stat_count]);//STATS1=3, STATS5=7

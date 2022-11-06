@@ -51,13 +51,13 @@ void Off_screen(int choice){//choice 0 = oud scherm, anders Simon scherm
       display.drawExampleBitmap(Surfbuddie_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
       display.setFont(&FreeSansBold9pt7b);
       display.setCursor(offset,14);
-      display.println("opslaan gps sessie...");
+      display.println("Saving gps session...");
       display.setCursor(offset,30);
       display.print("Avg 5x10sec: ");display.print(RTC_avg_10s,2);display.println(" km/u");
       display.setCursor(offset,46);
-      display.print("Afstand: ");display.print(Ublox.total_distance/1000000,0);display.println(" km");
+      display.print("Distance: ");display.print(Ublox.total_distance/1000000,0);display.println(" km");
       display.setCursor(offset,62);
-      display.print("Tijd gesurft: ");display.print(session_time/60,0);display.println(" min");
+      display.print("Session time: ");display.print(session_time/60,0);display.println(" min");
     // Buddie logo:
       display.drawExampleBitmap(Surfbuddie_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
       display.setCursor(offset,78);
@@ -65,6 +65,16 @@ void Off_screen(int choice){//choice 0 = oud scherm, anders Simon scherm
       //display.print("GNSS: ");
       if(config.gnss==3) display.print("GPS + GLONAS");
       if(config.gnss==11) display.print("GPS+GLONAS+GALILEO");
+      display.setCursor(offset,94);
+      #if defined(_GxGDEH0213B73_H_) 
+      display.print("E-paper 213 B73");
+      #endif
+      #if defined(_GxDEPG0213BN_H_) 
+      display.print("E-paper 213 BN");
+      #endif
+      #if defined(_GxGDEM0213B74_H_) 
+      display.print("E-paper 213B74");
+      #endif
       display.updateWindow(0,0,250,122,true);
   }
   //display.update();
@@ -106,11 +116,9 @@ void Sleep_screen(int choice){
       int col4=146+offset;
       int line=0; 
       display.fillRect(0,0,255,122,GxEPD_WHITE);
-
-     // display.drawExampleBitmap(Surfbuddie_logo_zwart, 185, 0, 64, 64, GxEPD_BLACK);
     
-    // Board:
-    if(logo_choice[0]==1)
+    // Board Logo's:
+    if(logo_choice[0]==1)//Logo's Simon Dijkstra
       display.drawExampleBitmap(Starboard_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
     if(logo_choice[0]==2)  
       display.drawExampleBitmap(Fanatic_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
@@ -118,9 +126,17 @@ void Sleep_screen(int choice){
       display.drawExampleBitmap(JP_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
     if(logo_choice[0]==4)  
       display.drawExampleBitmap(NoveNove_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
-    
-    // Zeil:
-    if(logo_choice[1]==1)
+    if(logo_choice[0]==5)//Logo's Jan Scholten      display.drawExampleBitmap(Mistral_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
+    if(logo_choice[0]==6)
+      display.drawExampleBitmap(Goya_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
+    if(logo_choice[0]==7)
+      display.drawExampleBitmap(Patrik_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
+    if(logo_choice[0]==8)
+      display.drawExampleBitmap(Severne_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
+    if(logo_choice[0]==9)
+      display.drawExampleBitmap(Tabou_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
+    // Zeil Logo's:
+    if(logo_choice[1]==1)//Logo's Simon Dijkstra
       display.drawExampleBitmap(GAsails_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
     if(logo_choice[1]==2)
       display.drawExampleBitmap(DuoTone_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
@@ -128,7 +144,16 @@ void Sleep_screen(int choice){
       display.drawExampleBitmap(Pryde_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
     if(logo_choice[1]==4)
       display.drawExampleBitmap(NP_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
-    
+    if(logo_choice[1]==5)//Logo's Jan Scholten
+      display.drawExampleBitmap(Loftsails_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
+    if(logo_choice[1]==6)
+      display.drawExampleBitmap(Gunsails_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
+    if(logo_choice[1]==7)
+      display.drawExampleBitmap(Point7_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
+    if(logo_choice[1]==8)
+      display.drawExampleBitmap(Simmer_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
+    if(logo_choice[1]==9)
+      display.drawExampleBitmap(Naish_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK); 
       display.setFont(&SF_Distant_Galaxy7pt7b);//font ??
       display.setCursor(col1,105);
       display.print(RTC_hour);display.print(":");display.print(RTC_min);display.print(" ");display.print(RTC_day);display.print("-");display.print(RTC_month);display.print("-");display.print(RTC_year);

@@ -47,15 +47,16 @@ struct Config {
   int timezone=2;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)
   int Stat_screens=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active
   int GPIO12_screens=123;//choice for stats field when gpio12 is activated (pull-up high, low = active)
-  int Logo_choice=11;
+  int Logo_choice=11;//Board = logo 1, Sail = logo 1
   int stat_screen[10];//which stat_screen you want to see ?
   int gpio12_screen[10];//which stat_screen when gpio 12 toggles ?
   int logo_count=0;//was 2 !!! boot scherm 0 verschijnt tussendoor...
   int screen_count=0;
   int gpio12_count=0;
   int sleep_off_screen=11;
-  int bar_length=1852;//choice for bar indicator for lentht of run in m (nautical mile)
-  bool logCSV=0;//not used
+  int stat_speed=1;//max speed in m/s for showing Stat screens
+  int bar_length=1852;//choice for bar indicator for length of run in m (nautical mile)
+  bool logCSV=0;//not used anymore...
   bool logUBX=1;//log to .ubx
   bool logOAO=1;//log to .oao
   char UBXfile[32]="BN220A000";//your preferred filename
