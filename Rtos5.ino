@@ -172,6 +172,8 @@
  * Shut down screen : add type of E-paper (in case you forgot...)
  * Webserver can now download and delete files from the SD-card !!! 
  * Contribution from Triton_dm on github !!
+ * SW5.55
+ * Bugfix for choice screens with GPIO39 after boot
  */
 #include "FS.h"
 #include "SD.h"
@@ -252,7 +254,7 @@ float analog_mean;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.54";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[32]="SW-version 5.55";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
@@ -568,7 +570,7 @@ void taskOne( void * parameter )
    if (Short_push39.Button_pushed()){
       config.field=Short_push39.button_count;
       }
-   Field_choice=Short_push12.long_pulse;//10s wachttijd voor menu field keuze....
+   Field_choice=Short_push39.long_pulse;//10s wachttijd voor menu field keuze....//bug sw 5.54 !!
    
    if((WiFi.status() != WL_CONNECTED)&(Wifi_on==true)&(SoftAP_connection==false)){
         Serial.println("No Wifi connection !");
