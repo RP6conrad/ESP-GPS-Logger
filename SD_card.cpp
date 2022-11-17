@@ -172,6 +172,7 @@ void loadConfiguration(const char *filename, Config &config) {
               Serial.println(config.logUBX);
               Serial.println(config.ssid);
               Serial.println(config.password);
+              Serial.println(config.Logo_choice);
               }
   calibration_bat=config.cal_bat;
   calibration_speed=config.cal_speed/1000;//3.6=km/h, 1.94384449 = knots, speed is now in mm/s
@@ -189,12 +190,17 @@ void loadConfiguration(const char *filename, Config &config) {
         if(config.GPIO12_screens>0){
             config.gpio12_count=i+1;
             }
+        //add special logos
+        if(config.Logo_choice > 99){
+          logo_choice[0]=config.Logo_choice;
+        }else{ // else default logos
         logo_choice[i]=config.Logo_choice%10;//
         config.Logo_choice=config.Logo_choice/10;
         if(config.Logo_choice>0){
             config.logo_count=i+1;
-            }      
-        } 
+              }      
+          }
+       }
 }
 // Prints the content of a file to the Serial
 void printFile(const char *filename) {

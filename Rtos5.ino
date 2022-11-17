@@ -174,6 +174,13 @@
  * Contribution from Triton_dm on github !!
  * SW5.55
  * Bugfix for choice screens with GPIO39 after boot
+ * SW5.56
+ * Added an upload section to the webserver
+ * Enabled the webserver on AP Usage, prevent from stopping during downloading files
+ * Add IP Address of the AP to display
+ * Add a special LOGO section > 99 and add a special logo of a beer supplier hier @Achensee/Tirol
+ * Change the Webinterface to a responsive design
+ * prevent delete on one click
  */
 #include "FS.h"
 #include "SD.h"
@@ -254,7 +261,7 @@ float analog_mean;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.55";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[32]="SW-version 5.56";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
@@ -498,18 +505,37 @@ void setup() {
   WiFi.macAddress(mac);
  
   // Wait for connection during 10s in station mode
+  bool ota_notrunning=true;
   while ((WiFi.status() != WL_CONNECTED)&(SoftAP_connection==false)) {
+    server.handleClient(); // wait for client handle, and update BAT Status, this section should be moved to the loop... //client coutner wait until download is finished to prevent stoping the server during download
+    analog_bat = analogRead(PIN_BAT);
+    analog_mean=analog_bat*0.1+analog_mean*0.9;
+    voltage_bat=analog_mean*calibration_bat/1000;
     if(digitalRead(39)==false){//was 39
-        WiFi.disconnect();
-        WiFi.mode(WIFI_AP);
-        WiFi.softAP(soft_ap_ssid, soft_ap_password);
-        wifi_search=100;
+       if(ota_notrunning){
+            WiFi.disconnect();
+            WiFi.mode(WIFI_AP);
+            WiFi.softAP(soft_ap_ssid, soft_ap_password);
+            wifi_search=100;
+            IP_adress =  WiFi.softAPIP().toString();
+            Serial.println(IP_adress);
+            Serial.println("start OTA Server");
+            OTA_setup(); //start webserver and ota - for use on AP Mode
+            ota_notrunning=false;
+          }else{
+            wifi_search=100;
+          }
         }
     if(wifi_search<=10) Update_screen(WIFI_STATION);
     else Update_screen(WIFI_SOFT_AP);
     //delay(250);
     Serial.print(".");
-    wifi_search--;if(wifi_search<=0)break;
+    wifi_search--;
+    if(wifi_search<=0){
+      server.close();
+      IP_adress = "0.0.0.0";
+      break;
+      }
     }
   if((WiFi.status()== WL_CONNECTED)|SoftAP_connection){
       Serial.println("");
