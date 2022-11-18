@@ -118,6 +118,10 @@ void Sleep_screen(int choice){
       display.fillRect(0,0,255,122,GxEPD_WHITE);
     
     // Board Logo's:
+    // add special logos - funlogos
+    if(logo_choice[0]==100) // Schwechater - Autrian Beer - by tritondm
+      display.drawExampleBitmap(epd_bitmap_Schwechater, 195, -10, 79, 132, GxEPD_BLACK);
+    //normal logos
     if(logo_choice[0]==1)//Logo's Simon Dijkstra
       display.drawExampleBitmap(Starboard_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
     if(logo_choice[0]==2)  
@@ -126,7 +130,8 @@ void Sleep_screen(int choice){
       display.drawExampleBitmap(JP_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
     if(logo_choice[0]==4)  
       display.drawExampleBitmap(NoveNove_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
-    if(logo_choice[0]==5)//Logo's Jan Scholten      display.drawExampleBitmap(Mistral_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
+    if(logo_choice[0]==5)//Logo's Jan Scholten      
+      display.drawExampleBitmap(Mistral_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
     if(logo_choice[0]==6)
       display.drawExampleBitmap(Goya_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
     if(logo_choice[0]==7)
@@ -781,11 +786,12 @@ if(screen==STATS7){ //Simon bar graph screen
         display.print("Wifi AP:  ");
         display.setCursor(offset,56);
         display.setFont(&FreeSansBold12pt7b);
-        display.println("ESP32AP");
+        display.println((String)"ESP32AP " + IP_adress);
         display.setCursor(offset,88);
         display.print("password ");
         display.setCursor(offset,120);
-        display.print("Bat: ");display.print(voltage_bat,2); 
+        display.print("Bat: ");
+        display.print(voltage_bat,2); 
         display.setCursor(offset+190,120); 
         display.print(wifi_search);   
         if(screen!=old_screen)count=0;//eerste keer full update 
@@ -834,4 +840,3 @@ boolean Button_push::Button_pushed(void){
   if(digitalRead(Input_pin)==1) old_button_status=0;
   return return_value;
 }
-
