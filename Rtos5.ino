@@ -174,7 +174,7 @@
  * Contribution from Triton_dm on github !!
  * SW5.55
  * Bugfix for choice screens with GPIO39 after boot
- * SW5.56
+ * SW5.56 (Contribution from Triton_dm on github !!)
  * Added an upload section to the webserver
  * Enabled the webserver on AP Usage, prevent from stopping during downloading files
  * Add IP Address of the AP to display
