@@ -524,6 +524,7 @@ void setup() {
             ota_notrunning=false;
           }else{
             wifi_search=100;
+            Serial.println("Set AP Counter to 100");
           }
         }
     if(wifi_search<=10) Update_screen(WIFI_STATION);

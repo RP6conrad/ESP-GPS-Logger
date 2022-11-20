@@ -393,7 +393,3 @@ float Dis_point_line(float long_act,float lat_act,float long_1,float lat_1,float
   if(delta_heading>180) delta_heading=delta_heading-360;
   if(delta_heading<-180) delta_heading=delta_heading+360;
   */
-
-
-
-
