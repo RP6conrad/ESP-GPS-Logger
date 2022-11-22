@@ -47,6 +47,8 @@ struct Config {
   int timezone=2;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)
   int Stat_screens=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active
   int GPIO12_screens=123;//choice for stats field when gpio12 is activated (pull-up high, low = active)
+  int Stat_screens_persist=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active / for resave the config
+  int GPIO12_screens_persist=123;//choice for stats field when gpio12 is activated (pull-up high, low = active) / for resave the config
   int Logo_choice=11;//Board = logo 1, Sail = logo 1
   int stat_screen[10];//which stat_screen you want to see ?
   int gpio12_screen[10];//which stat_screen when gpio 12 toggles ?
@@ -72,7 +74,7 @@ void Open_files(void);
 void Close_files(void);
 void Flush_files(void);
 void Log_to_SD(void); 
-void loadConfiguration(const char *filename, Config &config) ;
+void loadConfiguration(const char *filename, const char *filename_backup, Config &config) ;
 void Model_info(int model);
 void printFile(const char *filename);
 void Session_info(GPS_data G);

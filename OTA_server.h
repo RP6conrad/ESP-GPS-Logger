@@ -118,12 +118,12 @@ void printDirectory(const char * dirname, uint8_t levels)
       SendHTML_Content();
     }
     if(file.isDirectory()){
-      webpage += "<tr><td>"+String(file.isDirectory()?"Dir":"File")+"</td><td></td><td></td></tr>";
+      webpage += "<tr>\n<td>"+String(file.isDirectory()?"Dir":"File")+"</td><td></td><td></td></tr>";
       printDirectory(file.name(), levels-1);
     }
     else
     {
-      webpage += "<tr><td width='20%'>"+String(file.name())+"</td>";
+      webpage += "<tr>\n<td width='20%'>"+String(file.name())+"</td>";
       int bytes = file.size();
       String fsize = "";
       if (bytes < 1024)                     fsize = String(bytes)+" B";
@@ -138,12 +138,12 @@ void printDirectory(const char * dirname, uint8_t levels)
       webpage += F("' value='"); webpage +="download_"+String(file.name()); webpage +=F("'>Download</button>");
       webpage += "</td>";
       webpage += "<td>";
-      if(String(file.name()) != "config.txt"){
+      if(String(file.name()) != "configx.txt" | String(file.name()) != "/configx.txt"){
         webpage += F("<FORM action='/' method='post'>"); 
         webpage += F("<button type='submit' name='delete' class='button' onclick='return confirmdelete();'"); 
         webpage += F("' value='"); webpage +="delete_"+String(file.name()); webpage +=F("'>Delete</button>");
       }
-      webpage += "</td>";
+      webpage += "</td>\n";
       webpage += "</tr>";
 
     }
@@ -213,10 +213,10 @@ void SD_dir()
     if (root) {
       root.rewindDirectory();
       SendHTML_Header();    
-      webpage += F("<table id='esplogger'>");
-      webpage += F("<tr><th>Name</th><th>Size</th><th>Download</th><th>Delete</th></tr>");
+      webpage += F("<table id='esplogger'>\n");
+      webpage += F("<tr>\n<th>Name</th><th>Size</th><th>Download</th><th>Delete</th>\n</tr>");
       printDirectory("/",0);
-      webpage += F("</table>");
+      webpage += F("\n</table>");
       SendHTML_Content();
       root.close();
     }
@@ -311,51 +311,63 @@ void Config_TXT()
 }
 
 void handleConfigUpload() {
- const char *filenameX = "/test.txt"; //löschen und filenameX weiter unten tauschen - test only
- String cal_bat = server.arg("cal_bat"); 
- String cal_speed = server.arg("cal_speed"); 
- String sample_rate = server.arg("sample_rate"); 
- 
- Serial.print("cal_bat:");
- Serial.println(cal_bat);
-
- Serial.print("cal_speed:");
- Serial.println(cal_speed);
-
- Serial.print("sample_rate:");
- Serial.println(sample_rate);
-
  if (sdOK) 
   {
-   SD.remove(filenameX);
+   SD.remove("/config_backup.txt");
+   SD.rename("/config.txt", "/config_backup.txt");
+   SD.remove("/config.txt");
   
     // Open file for writing
-    File file = SD.open(filenameX, FILE_WRITE);
+    File file = SD.open("/config.txt", FILE_WRITE);
     if (!file) {
       Serial.println(F("Failed to create file"));
       return;
     }
-  
-    // Allocate a temporary JsonDocument
-    // Don't forget to change the capacity to match your requirements.
-    // Use arduinojson.org/assistant to compute the capacity.
     StaticJsonDocument<1024> doc;
   
     // Set the values in the document
-    doc["cal_bat"] = cal_bat;
-    doc["cal_speed"] = cal_speed;
-    doc["sample_rate"] = sample_rate;
-  
-    // Serialize JSON to file
+    doc["cal_bat"] = server.arg("cal_bat"); 
+    doc["cal_speed"] = server.arg("cal_speed"); 
+    doc["sample_rate"] = server.arg("sample_rate");
+    
+    doc["gnss"] = server.arg("gnss");
+    doc["speed_field"] = server.arg("speed_field");
+    doc["bar_length"] = server.arg("bar_length");
+    doc["Stat_screens"] = server.arg("Stat_screens"); 
+    doc["GPIO12_screens"] = server.arg("GPIO12_screens"); 
+    doc["Logo_choice"] = server.arg("Logo_choice");
+    doc["sleep_off_screen"] = server.arg("sleep_off_screen");
+    doc["logOAO"] = server.arg("logOAO"); 
+    doc["logUBX"] = server.arg("logUBX");
+    doc["dynamic_model"] = server.arg("dynamic_model");
+    doc["GPIO12_screens"] = server.arg("GPIO12_screens");
+    doc["timezone"] = server.arg("timezone");
+    doc["UBXfile"] = server.arg("UBXfile");
+    doc["Sleep_info"] = server.arg("Sleep_info");
+    doc["ssid"] = server.arg("ssid");
+    doc["password"] = server.arg("password");
+      
+    // Pretty Serialize JSON to file
     if (serializeJsonPretty(doc, file) == 0) {
       Serial.println(F("Failed to write to file"));
       SendHTML_Header();
-      webpage += F("<h3>Failed to write to file</h3>");
+      webpage += F("<div style='overflow-x:auto;'><table id='esplogger'>");
+      webpage += F("<tr><th>failed to Upload the file</th></tr></table></div>"); 
+      webpage += F("<a href='/config"); webpage += "'>[Back]</a><br><br>";
+      append_page_footer();
       
     }else{
       // Close the file
       file.close();
-      server.send(200, "text/html", webpage); //Send web page
+      SendHTML_Header();
+      webpage += F("<div style='overflow-x:auto;'><table id='esplogger'>");
+      webpage += F("<tr><th>Upload was successful!</th></tr></table></div>"); 
+      webpage += F("<a href='/config"); webpage += "'>[Back]</a><br><br>";
+      append_page_footer();
+      delay(2000);
+      if(server.arg("reboot") == "yes"){
+        ESP.restart(); //possible restart
+      }
     }
   }
 }

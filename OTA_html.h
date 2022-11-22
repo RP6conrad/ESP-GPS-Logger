@@ -288,13 +288,13 @@ void html_config(String& webpage){
   //cal_bat
   webpage += "<tr>\n<td>cal_bat</td><td>\n";
   webpage += "<input size='4' type='number' required name='cal_bat' min='1.7' max='1.89' value="+String(config.cal_bat)+" step='0.01'>\n";
-  webpage += "</select>\n</td><td>cal_bat is the calibration <br> of the battery voltage measurement (1.7-1.8).</td>\n</tr>\n";
-
+  webpage += "</select>\n</td><td>cal_bat: is the calibration <br> of the battery voltage measurement (1.7-1.8).</td>\n</tr>\n";
+  
   //cal_speed
   webpage += "<tr><td>cal_speed</td><td>\n<select id='cal_speed' name='cal_speed'>\n";
-  if(config.cal_speed == 3.6) webpage += "<option value='3.6' selected>3.6 km/h</option>\n"; else webpage += "<option value='3.6'>3.6 km/h</option>\n";
-  if(config.cal_speed == 1,94) webpage += "<option value='1.94' selected>1.94 knots</option>\n"; else webpage += "<option value='1.94'>1.94 knots</option>\n";
-  webpage += "</select>\n</td><td>cal_speed is for the conversion from gps unit m/s to km/h (3.6)or knots (1.94).</td>\n</tr>\n";
+  if(config.cal_speed == 3.60) webpage += "<option value='3.60' selected>3.6 km/h</option>\n"; else webpage += "<option value='3.60'>3.6 km/h</option>\n";
+  if(config.cal_speed == 1.94) webpage += "<option value='1.94' selected>1.94 knots</option>\n"; else webpage += "<option value='1.94'>1.94 knots</option>\n";
+  webpage += "</select>\n</td><td>cal_speed: is for the conversion from gps unit m/s to km/h (3.6)or knots (1.94).</td>\n</tr>\n";
   
   //sample_rate
   webpage += "<tr>\n<td>sample_rate(Hz)</td><td>\n<select id='sample_rate' name='sample_rate'>";
@@ -302,8 +302,101 @@ void html_config(String& webpage){
   if(config.sample_rate == 2) webpage += "<option value='2' selected>2</option>\n"; else webpage += "<option value='2'>2 Hz</option>\n";
   if(config.sample_rate == 5) webpage += "<option value='5' selected>5</option>\n"; else webpage += "<option value='5'>5 Hz</option>\n";
   if(config.sample_rate == 10) webpage += "<option value='10' selected>10</option>\n"; else webpage += "<option value='10'>10 Hz</option>\n";
-  webpage += "</select>\n</td><td>sample_rate can be 1,2,5 or 10Hz. The higher, the more accurate,<br> but also the larger thefiles become! One UBX NavPVT message is 100byte, <br>so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>sample_rate: can be 1,2,5 or 10Hz. The higher, the more accurate,<br> but also the larger thefiles become! One UBX NavPVT message is 100byte, <br>so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!</td>\n</tr>\n";
 
+  //gnss
+  webpage += "<tr><td>gnss</td><td>\n<select id='gnss' name='gnss'>\n";
+  if(config.gnss == 2) webpage += "<option value='2' selected>GPS + GLONAS</option>\n"; else webpage += "<option value='2'>GPS + GLONAS</option>\n";
+  if(config.gnss == 3 | config.gnss == 11) webpage += "<option value='3' selected>GPS + GLONAS + GALILEO</option>\n"; else webpage += "<option value='3'>GPS + GLONAS + GALILEO</option>\n";
+  webpage += "</select>\n</td><td>gnss: gnss = 3 : GPS + GLONAS + GALILEO (only possible with ROM version 3.01 !!). <br> Default is only GPS + GLONAS used. Some Beitian modules still have a old firmware, ROM 2.01. Here, Galileo can’t be activated.</td>\n</tr>\n";
+  Serial.println("gnss: "+String(config.gnss)+"\n");
+  
+  //speed_field
+  webpage += "<tr><td>speed_field</td><td>\n<select id='speed_field' name='speed_field'>\n";
+  if(config.field == 1) webpage += "<option value='1' selected>1</option>\n"; else webpage += "<option value='1'>1</option>\n";
+  if(config.field == 2) webpage += "<option value='2' selected>2</option>\n"; else webpage += "<option value='2'>2</option>\n";
+  if(config.field == 3) webpage += "<option value='3' selected>3</option>\n"; else webpage += "<option value='3'>3</option>\n";
+  if(config.field == 4) webpage += "<option value='4' selected>4</option>\n"; else webpage += "<option value='4'>4</option>\n";
+  if(config.field == 5) webpage += "<option value='5' selected>5</option>\n"; else webpage += "<option value='5'>5</option>\n";
+  if(config.field == 6) webpage += "<option value='6' selected>6</option>\n"; else webpage += "<option value='6'>6</option>\n";
+  if(config.field == 7) webpage += "<option value='7' selected>7</option>\n"; else webpage += "<option value='7'>7</option>\n";
+  if(config.field == 8) webpage += "<option value='8' selected>8</option>\n"; else webpage += "<option value='8'>8</option>\n";
+  webpage += "</select>\n</td><td>speed_field: The preferred value in the upper speed screen : 1=Run, 2=Dis, 3=AVG, 4=2s, 5=Alfa, 6=0,5h, 7=1h, 8=100m.</td>\n</tr>\n";
+
+  //bar_length
+  webpage += "<tr>\n<td>bar_length</td><td>\n";
+  webpage += "<input size='8' type='number' required name='bar_length' min='1000' max='1852' value="+String(config.bar_length)+" step='1'>\n";
+  webpage += "</select>\n</td><td>bar_length: standard is 100%, default length = 1852</td>\n</tr>\n";
+
+  //Stat_screens
+  webpage += "<tr>\n<td>Stat_screens</td><td>\n";
+  webpage += "<input size='8' type='number' required name='Stat_screens' min='0' max='1000' value="+String(config.Stat_screens_persist)+" step='1'>\n";
+  webpage += "</select>\n</td><td>Stat_screens</td>\n</tr>\n";
+
+  //GPIO12_screens
+  webpage += "<tr>\n<td>GPIO12_screens</td><td>\n";
+  webpage += "<input size='8' type='number' required name='GPIO12_screens' min='0' max='1000' value="+String(config.GPIO12_screens_persist)+" step='1'>\n";
+  webpage += "</select>\n</td><td>GPIO12_screens</td>\n</tr>\n";
+
+  //Logo_choice
+  webpage += "<tr>\n<td>Logo_choice</td><td>\n";
+  webpage += "<input size='8' type='number' required name='Logo_choice' min='0' max='1000' value="+String(config.Logo_choice)+" step='1'>\n";
+  webpage += "</select>\n</td><td>Logo_choice: from 11 - 99 its a matrix to use the matrix see the info on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19346141.jpg' target='_blank'>this Link</a> >100 are different single logos</td>\n</tr>\n";
+
+  //sleep_off_screen
+  webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
+  webpage += "<input size='8' type='number' required name='sleep_off_screen' min='0' max='1000' value="+String(config.sleep_off_screen)+" step='1'>\n";
+  webpage += "</select>\n</td><td>sleep_off_screen: from 11 - 99 its a matrix to use the matrix see the info on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19346141.jpg' target='_blank'>this Link</a> >100 are different single logos</td>\n</tr>\n";
+
+  //logOAO
+  webpage += "<tr><td>logOAO</td><td>\n<select id='logOAO' name='logOAO'>\n";
+  if(config.logOAO == 1) webpage += "<option value='1' selected>LOG OAO ON</option>\n"; else webpage += "<option value='1'>LOG OAO ON</option>\n";
+  if(config.logOAO == 0) webpage += "<option value='0' selected>LOG OAO OFF</option>\n"; else webpage += "<option value='0'>LOG OAO OFF</option>\n";
+  webpage += "</select>\n</td><td>logOAO: To save the GPS data in oao format. This is also the file that you can upload to gp3s. The oao format is ca 50% smaller then ubx.</td>\n</tr>\n";  
+
+  //logUBX
+  webpage += "<tr><td>logUBX</td><td>\n<select id='logUBX' name='logUBX'>\n";
+  if(config.logUBX == 1) webpage += "<option value='1' selected>LOG UBX ON</option>\n"; else webpage += "<option value='1'>LOG UBX ON</option>\n";
+  if(config.logUBX == 0) webpage += "<option value='0' selected>LOG UBX OFF</option>\n"; else webpage += "<option value='0'>LOG UBX OFF</option>\n";
+  webpage += "</select>\n</td><td>logUBX: To save the GPS data in ubx format. This is also the file that you can upload to gp3s.</td>\n</tr>\n";  
+
+  //dynamic_model
+  webpage += "<tr><td>dynamic_model</td><td>\n<select id='dynamic_model' name='dynamic_model'>\n";
+  if(config.dynamic_model == 0) webpage += "<option value='0' selected>portable</option>\n"; else webpage += "<option value='0'>portable</option>\n";
+  if(config.dynamic_model == 1) webpage += "<option value='1' selected>sea</option>\n"; else webpage += "<option value='1'>sea</option>\n";
+  if(config.dynamic_model == 2) webpage += "<option value='2' selected>automotive</option>\n"; else webpage += "<option value='2'>automotive</option>\n";
+  webpage += "</select>\n</td><td>dynamic_model: Here you can choose the dynamic model of the Ublox M8N (0=portable, 1=sea, 2=automotive). As “sea” has some disadvantages (max speed is limited to 40 knots, only sea-level..), my advice is to stay with “portable”. </td>\n</tr>\n"; 
+
+  //timezone
+  webpage += "<tr>\n<td>timezone</td><td>\n";
+  webpage += "<input size='2' type='number' required name='timezone' min='-12' max='14' value="+String(config.timezone)+" step='1'>\n";
+  webpage += "</select>\n</td><td>timezone: The local time difference in hours with UTC (can be negative ! )<a href='https://en.wikipedia.org/wiki/List_of_UTC_offsets' target='_blank'>this Link</a></td>\n</tr>\n";
+
+  //UBXfile
+  webpage += "<tr>\n<td>UBXfile</td><td>\n";
+  webpage += "<input size='10' type='text' required name='UBXfile' value="+String(config.UBXfile)+">\n";
+  webpage += "</select>\n</td><td>UBXfile: Here you can set the desired file name, this is completed with the (unique) MAC address of the ESP32 and a suffix from 000 to 999.</td>\n</tr>\n";
+
+  //Sleep_info
+  webpage += "<tr>\n<td>Sleep_info</td><td>\n";
+  webpage += "<input size='20' type='text' required name='Sleep_info' value="+String(config.Sleep_info)+">\n";
+  webpage += "</select>\n</td><td>Sleep_info:  Text appears in sleep_screen.</td>\n</tr>\n";
+
+  //ssid
+  webpage += "<tr>\n<td>ssid</td><td>\n";
+  webpage += "<input size='20' type='text' required name='ssid' value="+String(config.ssid)+">\n";
+  webpage += "</select>\n</td><td>ssid: the name of the wlan where the esp-logger should connect to</td>\n</tr>\n";
+
+  //password
+  webpage += "<tr>\n<td>password</td><td>\n";
+  webpage += "<input size='20' type='text' required name='password' value="+String(config.password)+">\n";
+  webpage += "</select>\n</td><td>password: the password of the wlan where the esp-logger should connect to</td>\n</tr>\n";
+
+  //reboot the esp
+  webpage += "<tr><td>reboot</td><td>\n<select id='reboot' name='reboot'>\n";
+  webpage += "<option value='yes' selected>yes</option>\n";
+  webpage += "<option value='no'>no</option>\n";
+  webpage += "</select>\n</td><td>reboot: reboot after upload</td>\n</tr>\n";  
 }
 
  const char html_config_footer[] PROGMEM = R"=====(

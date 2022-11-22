@@ -311,7 +311,8 @@ GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ ELINK_DC, /*RST=*/ ELINK_RESET);
 GxEPD_Class display(io, /*RST=*/ ELINK_RESET, /*BUSY=*/ ELINK_BUSY);
 SPIClass sdSPI(VSPI);
 
-const char *filename = "/config.txt"; 
+const char *filename = "/config.txt";
+const char *filename_backup = "/config_backup.txt"; 
 Config config;  
 
 
@@ -485,7 +486,7 @@ void setup() {
         uint64_t cardSize = SD.cardSize() / (1024 * 1024);
         Serial.printf("SD Card Size: %lluMB\n", cardSize); 
         Serial.println(F("Loading configuration..."));// Should load default config 
-        loadConfiguration(filename, config); // load config file
+        loadConfiguration(filename, filename_backup, config); // load config file
         Serial.print(F("Print config file...")); 
         printFile(filename); 
         } 
