@@ -326,22 +326,22 @@ void handleConfigUpload() {
     StaticJsonDocument<1024> doc;
   
     // Set the values in the document
-    doc["cal_bat"] = server.arg("cal_bat"); 
-    doc["cal_speed"] = server.arg("cal_speed"); 
-    doc["sample_rate"] = server.arg("sample_rate");
+    doc["cal_bat"] = server.arg("cal_bat").toFloat(); 
+    doc["cal_speed"] = server.arg("cal_speed").toFloat(); 
+    doc["sample_rate"] = server.arg("sample_rate").toInt();
     
-    doc["gnss"] = server.arg("gnss");
-    doc["speed_field"] = server.arg("speed_field");
-    doc["bar_length"] = server.arg("bar_length");
-    doc["Stat_screens"] = server.arg("Stat_screens"); 
-    doc["GPIO12_screens"] = server.arg("GPIO12_screens"); 
-    doc["Logo_choice"] = server.arg("Logo_choice");
-    doc["sleep_off_screen"] = server.arg("sleep_off_screen");
-    doc["logOAO"] = server.arg("logOAO"); 
-    doc["logUBX"] = server.arg("logUBX");
-    doc["dynamic_model"] = server.arg("dynamic_model");
-    doc["GPIO12_screens"] = server.arg("GPIO12_screens");
-    doc["timezone"] = server.arg("timezone");
+    doc["gnss"] = server.arg("gnss").toInt();
+    doc["speed_field"] = server.arg("speed_field").toInt();
+    doc["bar_length"] = server.arg("bar_length").toInt();
+    doc["Stat_screens"] = server.arg("Stat_screens").toInt(); 
+    doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt(); 
+    doc["Logo_choice"] = server.arg("Logo_choice").toInt();
+    doc["sleep_off_screen"] = server.arg("sleep_off_screen").toInt();
+    doc["logOAO"] = server.arg("logOAO").toInt(); 
+    doc["logUBX"] = server.arg("logUBX").toInt();
+    doc["dynamic_model"] = server.arg("dynamic_model").toInt();
+    doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt();
+    doc["timezone"] = server.arg("timezone").toInt();
     doc["UBXfile"] = server.arg("UBXfile");
     doc["Sleep_info"] = server.arg("Sleep_info");
     doc["ssid"] = server.arg("ssid");
