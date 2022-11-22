@@ -8,7 +8,20 @@ const char html_header[] PROGMEM = R"=====(
             background-color: #04aa6d; /* Green */
             border: none;
             color: white;
-            padding: 10px 24px;
+            padding: 8px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .button_del {
+            background-color: #ab7373; /* red */
+            border: none;
+            color: white;
+            padding: 8px 20px;
             text-align: center;
             text-decoration: none;
             display: inline-block;
@@ -290,11 +303,14 @@ void html_config(String& webpage){
   webpage += "<input size='4' type='number' required name='cal_bat' min='1.7' max='1.89' value="+String(config.cal_bat)+" step='0.01'>\n";
   webpage += "</select>\n</td><td>cal_bat: is the calibration <br> of the battery voltage measurement (1.7-1.8).</td>\n</tr>\n";
   
-  //cal_speed
-  webpage += "<tr><td>cal_speed</td><td>\n<select id='cal_speed' name='cal_speed'>\n";
-  if(config.cal_speed == 3.60) webpage += "<option value='3.60' selected>3.6 km/h</option>\n"; else webpage += "<option value='3.60'>3.6 km/h</option>\n";
-  if(config.cal_speed == 1.94) webpage += "<option value='1.94' selected>1.94 knots</option>\n"; else webpage += "<option value='1.94'>1.94 knots</option>\n";
+  //cal_speed 
+  webpage += "<tr><td>cal_speed</td><td>\n<select id='cal_speed' name='cal_speed' type='number'>\n";
+  if(config.cal_speed == 3.6) webpage += "<option value='3.60' selected>3.6 km/h</option>\n"; else webpage += "<option value=3.60>3.6 km/h</option>\n";
+  if(config.cal_speed == 1.94) webpage += "<option value='1.94' selected>1.94 knots</option>\n"; else webpage += "<option value=1.94>1.94 knots</option>\n";
   webpage += "</select>\n</td><td>cal_speed: is for the conversion from gps unit m/s to km/h (3.6)or knots (1.94).</td>\n</tr>\n";
+  //webpage += "<tr>\n<td>cal_speed</td><td>\n";
+  //webpage += "<input size='4' type='number' required name='cal_speed' min='1.94' max='3.6' value="+String(config.cal_speed)+" step='0.01'>\n";
+  //webpage += "</select>\n</td><td>cal_speed: is for the conversion from gps unit m/s to km/h (3.6)or knots (1.94).</td>\n</tr>\n";
   
   //sample_rate
   webpage += "<tr>\n<td>sample_rate(Hz)</td><td>\n<select id='sample_rate' name='sample_rate'>";
@@ -346,7 +362,7 @@ void html_config(String& webpage){
   //sleep_off_screen
   webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
   webpage += "<input size='8' type='number' required name='sleep_off_screen' min='0' max='1000' value="+String(config.sleep_off_screen)+" step='1'>\n";
-  webpage += "</select>\n</td><td>sleep_off_screen: from 11 - 99 its a matrix to use the matrix see the info on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19346141.jpg' target='_blank'>this Link</a> >100 are different single logos</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>sleep_off_screen: </td>\n</tr>\n";
 
   //logOAO
   webpage += "<tr><td>logOAO</td><td>\n<select id='logOAO' name='logOAO'>\n";

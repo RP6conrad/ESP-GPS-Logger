@@ -90,7 +90,6 @@ void SD_file_download(String filename)
     File download = SD.open("/"+filename);
     if (download) 
     {
-      //server.sendHeader("Content-Type", "text/text");
       server.sendHeader("Content-Disposition", "attachment; filename="+filename);
       server.sendHeader("Connection", "close");
       server.streamFile(download, "application/octet-stream");
@@ -118,7 +117,7 @@ void printDirectory(const char * dirname, uint8_t levels)
       SendHTML_Content();
     }
     if(file.isDirectory()){
-      webpage += "<tr>\n<td>"+String(file.isDirectory()?"Dir":"File")+"</td><td></td><td></td></tr>";
+      webpage += "<tr>\n<td>"+String(file.isDirectory()?"Dir":"File")+"</td><td></td><td></td><td></td></tr>";
       printDirectory(file.name(), levels-1);
     }
     else
@@ -138,9 +137,9 @@ void printDirectory(const char * dirname, uint8_t levels)
       webpage += F("' value='"); webpage +="download_"+String(file.name()); webpage +=F("'>Download</button>");
       webpage += "</td>";
       webpage += "<td>";
-      if(String(file.name()) != "config.txt" | String(file.name()) != "/config.txt" | String(file.name()) != "/config_backup.txt" | String(file.name()) != "config_backup.txt"){
+      if((String(file.name()) != "config.txt") & (String(file.name()) != "/config.txt") & (String(file.name()) != "/config_backup.txt") & (String(file.name()) != "config_backup.txt")){
         webpage += F("<FORM action='/' method='post'>"); 
-        webpage += F("<button type='submit' name='delete' class='button' onclick='return confirmdelete();'"); 
+        webpage += F("<button type='submit' name='delete' class='button_del' onclick='return confirmdelete();'"); 
         webpage += F("' value='"); webpage +="delete_"+String(file.name()); webpage +=F("'>Delete</button>");
       }
       webpage += "</td>\n";
@@ -324,10 +323,10 @@ void handleConfigUpload() {
       return;
     }
     StaticJsonDocument<1024> doc;
-  
     // Set the values in the document
-    doc["cal_bat"] = server.arg("cal_bat").toFloat(); 
-    doc["cal_speed"] = server.arg("cal_speed").toFloat(); 
+    Serial.println("calspeed:"+server.arg("cal_speed"));
+    doc["cal_bat"] = serialized(server.arg("cal_bat")); 
+    doc["cal_speed"] = serialized(server.arg("cal_speed")); 
     doc["sample_rate"] = server.arg("sample_rate").toInt();
     
     doc["gnss"] = server.arg("gnss").toInt();
@@ -355,7 +354,8 @@ void handleConfigUpload() {
       webpage += F("<tr><th>failed to Upload the file</th></tr></table></div>"); 
       webpage += F("<a href='/config"); webpage += "'>[Back]</a><br><br>";
       append_page_footer();
-      
+      SendHTML_Content();
+      SendHTML_Stop();  
     }else{
       // Close the file
       file.close();
@@ -364,9 +364,11 @@ void handleConfigUpload() {
       webpage += F("<tr><th>Upload was successful!</th></tr></table></div>"); 
       webpage += F("<a href='/config"); webpage += "'>[Back]</a><br><br>";
       append_page_footer();
+      SendHTML_Content();
+      SendHTML_Stop();  
       delay(2000);
       if(server.arg("reboot") == "yes"){
-        ESP.restart(); //possible restart
+        ESP.restart(); //restart as wanted
       }
     }
   }

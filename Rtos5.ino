@@ -486,7 +486,7 @@ void setup() {
         uint64_t cardSize = SD.cardSize() / (1024 * 1024);
         Serial.printf("SD Card Size: %lluMB\n", cardSize); 
         Serial.println(F("Loading configuration..."));// Should load default config 
-        loadConfiguration(filename, config); // load config file
+        loadConfiguration(filename, filename_backup, config); // load config file
         Serial.print(F("Print config file...")); 
         printFile(filename); 
         } 
