@@ -74,7 +74,7 @@ void Open_files(void);
 void Close_files(void);
 void Flush_files(void);
 void Log_to_SD(void); 
-void loadConfiguration(const char *filename, const char *filename_backup, Config &config) ;
+void loadConfiguration(const char *filename, Config &config) ;
 void Model_info(int model);
 void printFile(const char *filename);
 void Session_info(GPS_data G);

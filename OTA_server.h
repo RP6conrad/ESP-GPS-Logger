@@ -138,7 +138,7 @@ void printDirectory(const char * dirname, uint8_t levels)
       webpage += F("' value='"); webpage +="download_"+String(file.name()); webpage +=F("'>Download</button>");
       webpage += "</td>";
       webpage += "<td>";
-      if(String(file.name()) != "configx.txt" | String(file.name()) != "/configx.txt"){
+      if(String(file.name()) != "config.txt" | String(file.name()) != "/config.txt" | String(file.name()) != "/config_backup.txt" | String(file.name()) != "config_backup.txt"){
         webpage += F("<FORM action='/' method='post'>"); 
         webpage += F("<button type='submit' name='delete' class='button' onclick='return confirmdelete();'"); 
         webpage += F("' value='"); webpage +="delete_"+String(file.name()); webpage +=F("'>Delete</button>");

@@ -117,12 +117,9 @@ void Log_to_SD(void){
                 
 }              
 // Loads the configuration from a file
-void loadConfiguration(const char *filename, const char *filename_backup, Config &config) {
+void loadConfiguration(const char *filename, Config &config) {
   // Open file for reading
   File file = SD.open(filename);
-  if(!file){
-    File file = SD.open(filename_backup);
-  }
   //Serial.print((char)file.read());
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
