@@ -183,6 +183,10 @@
  * prevent delete on one click
  * SW5.57 (JH)
  * Added file timestamp to webserver !!
+ * SW5.58 Changes by tritondm !!
+ * fix the download issue with phps extionsion on android chrome
+ * add a config section for changing config - thats the base for the next step - config credentials for gps-speedsurfing.com and upload
+ * after before upload a config_backup will created
  */
 #include "FS.h"
 #include "SD.h"
@@ -263,7 +267,7 @@ float analog_mean;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.57";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[32]="SW-version 5.58";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;

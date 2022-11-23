@@ -6,7 +6,7 @@
 const char* host = "esp32";
 WebServer server(80);
 
-//SD Card webinterface downlaod section
+//SD Card webinterface download section
 
 String webpage = ""; //String to save the html code
 
@@ -96,12 +96,7 @@ void SD_file_download(String filename)
     File download = SD.open("/"+filename);
     if (download) 
     {
-<<<<<<< Updated upstream
       server.sendHeader("Content-Disposition", "attachment; filename="+filename);
-=======
-      server.sendHeader("Content-Type", "text/text");
-      server.sendHeader("Content-Disposition", "attachment; filename="+filename);//JH spatie verwijderd
->>>>>>> Stashed changes
       server.sendHeader("Connection", "close");
       server.streamFile(download, "application/octet-stream");
       download.close();
@@ -224,14 +219,9 @@ void SD_dir()
     File root = SD.open("/");
     if (root) {
       root.rewindDirectory();
-      SendHTML_Header();    
-<<<<<<< Updated upstream
-      webpage += F("<table id='esplogger'>\n");
-      webpage += F("<tr>\n<th>Name</th><th>Size</th><th>Download</th><th>Delete</th>\n</tr>");
-=======
+      SendHTML_Header();   
       webpage += F("<table id='esplogger'>");
       webpage += F("<tr><th>Name</th><th>Size</th><th>Timestamp</th><th>Download</th><th>Delete</th></tr>");
->>>>>>> Stashed changes
       printDirectory("/",0);
       webpage += F("\n</table>");
       SendHTML_Content();
@@ -346,11 +336,11 @@ void handleConfigUpload() {
     doc["cal_bat"] = serialized(server.arg("cal_bat")); 
     doc["cal_speed"] = serialized(server.arg("cal_speed")); 
     doc["sample_rate"] = server.arg("sample_rate").toInt();
-    
     doc["gnss"] = server.arg("gnss").toInt();
     doc["speed_field"] = server.arg("speed_field").toInt();
     doc["bar_length"] = server.arg("bar_length").toInt();
     doc["Stat_screens"] = server.arg("Stat_screens").toInt(); 
+    doc["stat_speed"] = server.arg("stat_speed").toInt(); 
     doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt(); 
     doc["Logo_choice"] = server.arg("Logo_choice").toInt();
     doc["sleep_off_screen"] = server.arg("sleep_off_screen").toInt();
@@ -392,7 +382,7 @@ void handleConfigUpload() {
   }
 }
 
-//end SD Card webinterface downlaod section
+//end SD Card webinterface download section
 
 //begin OTA
 /* Style */

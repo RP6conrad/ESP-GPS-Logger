@@ -202,12 +202,13 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
             config.gpio12_count=i+1;
             }
         //add special logos
-        if(config.Logo_choice > 99){
-          logo_choice[0]=config.Logo_choice;
+        int Logo_choice=config.Logo_choice;//preserve value config.Logo_choice for config.txt update !!
+        if(Logo_choice > 99){
+          logo_choice[0]=Logo_choice;
         }else{ // else default logos
-        logo_choice[i]=config.Logo_choice%10;//
-        config.Logo_choice=config.Logo_choice/10;
-        if(config.Logo_choice>0){
+        logo_choice[i]=Logo_choice%10;//
+        Logo_choice=Logo_choice/10;
+        if(Logo_choice>0){
             config.logo_count=i+1;
               }      
           }
