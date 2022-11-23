@@ -117,9 +117,18 @@ void Log_to_SD(void){
                 
 }              
 // Loads the configuration from a file
-void loadConfiguration(const char *filename, Config &config) {
+void loadConfiguration(const char *filename, const char *filename_backup, Config &config) {
   // Open file for reading
-  File file = SD.open(filename);
+  File file;
+  if(SD.exists(filename)){
+    Serial.println(F("open the config.txt"));
+    file = SD.open(filename);
+  }else if(SD.exists(filename_backup)){
+    Serial.println(F("open the config_backup.txt"));
+    file = SD.open(filename_backup);
+  }else{
+    Serial.println(F("no configuration file found"));
+  }
   //Serial.print((char)file.read());
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
@@ -128,9 +137,9 @@ void loadConfiguration(const char *filename, Config &config) {
   // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
   if (error) {
-              Serial.println(F("Failed to deserialize file, using default configuration"));
-              Serial.println(error.f_str());
-              config.config_fail=1;
+                Serial.println(F("Failed to deserialize file, using default configuration"));
+                Serial.println(error.f_str());
+                config.config_fail=1;
               }
   // Copy values from the JsonDocument to the Config
   config.cal_bat = doc["cal_bat"]|1.75;
@@ -141,7 +150,9 @@ void loadConfiguration(const char *filename, Config &config) {
   config.dynamic_model = doc["dynamic_model"]|0;//sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
   config.timezone = doc["timezone"]|2;
   config.Stat_screens = doc["Stat_screens"]|12;
+  config.Stat_screens_persist = config.Stat_screens;
   config.GPIO12_screens = doc["GPIO12_screens"]|12;
+  config.GPIO12_screens_persist = config.GPIO12_screens;
   config.Logo_choice = doc["Logo_choice"]|12;
   config.sleep_off_screen = doc["sleep_off_screen"]|11;
   config.stat_speed= doc["stat_speed"]|1;
