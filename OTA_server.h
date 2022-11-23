@@ -79,7 +79,13 @@ String file_size(int bytes)
   else                              fsize = String(bytes/1024.0/1024.0/1024.0,3)+" GB";
   return fsize;
 }
-
+//changes JH 19/11/2022, added for formatting timestamp file
+String Print_time(time_t timestamp) {
+  char message[120];
+  char buff[30];
+  strftime(buff, 30, "%Y-%m-%d  %H:%M:%S", localtime(&timestamp));
+  return buff;
+}
 
 
 //Download a file from the SD, it is called in void SD_dir()
@@ -90,7 +96,12 @@ void SD_file_download(String filename)
     File download = SD.open("/"+filename);
     if (download) 
     {
+<<<<<<< Updated upstream
       server.sendHeader("Content-Disposition", "attachment; filename="+filename);
+=======
+      server.sendHeader("Content-Type", "text/text");
+      server.sendHeader("Content-Disposition", "attachment; filename="+filename);//JH spatie verwijderd
+>>>>>>> Stashed changes
       server.sendHeader("Connection", "close");
       server.streamFile(download, "application/octet-stream");
       download.close();
@@ -125,12 +136,14 @@ void printDirectory(const char * dirname, uint8_t levels)
       webpage += "<tr>\n<td width='20%'>"+String(file.name())+"</td>";
       int bytes = file.size();
       String fsize = "";
+      time_t file_date = file.getLastWrite();//changes JH 19/11/2022
+      String fd = Print_time(file_date);
       if (bytes < 1024)                     fsize = String(bytes)+" B";
       else if(bytes < (1024 * 1024))        fsize = String(bytes/1024.0,3)+" KB";
       else if(bytes < (1024 * 1024 * 1024)) fsize = String(bytes/1024.0/1024.0,3)+" MB";
       else                                  fsize = String(bytes/1024.0/1024.0/1024.0,3)+" GB";
       webpage += "<td>"+fsize+"</td>";
-      //webpage += "<td>"+String(file.lastWriteDate)+"</td>"; //gettimestamp
+      webpage += "<td>"+fd+"</td>"; //
       webpage += "<td>";
       webpage += F("<FORM action='/' method='post'>"); 
       webpage += F("<button type='submit' class='button' name='download'"); 
@@ -212,8 +225,13 @@ void SD_dir()
     if (root) {
       root.rewindDirectory();
       SendHTML_Header();    
+<<<<<<< Updated upstream
       webpage += F("<table id='esplogger'>\n");
       webpage += F("<tr>\n<th>Name</th><th>Size</th><th>Download</th><th>Delete</th>\n</tr>");
+=======
+      webpage += F("<table id='esplogger'>");
+      webpage += F("<tr><th>Name</th><th>Size</th><th>Timestamp</th><th>Download</th><th>Delete</th></tr>");
+>>>>>>> Stashed changes
       printDirectory("/",0);
       webpage += F("\n</table>");
       SendHTML_Content();

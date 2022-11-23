@@ -181,6 +181,8 @@
  * Add a special LOGO section > 99 and add a special logo of a beer supplier hier @Achensee/Tirol
  * Change the Webinterface to a responsive design
  * prevent delete on one click
+ * SW5.57 (JH)
+ * Added file timestamp to webserver !!
  */
 #include "FS.h"
 #include "SD.h"
@@ -261,7 +263,7 @@ float analog_mean;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.56";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[32]="SW-version 5.57";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
