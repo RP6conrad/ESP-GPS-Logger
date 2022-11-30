@@ -306,8 +306,8 @@ void html_config(String& webpage){
   //cal_speed 
   webpage += "<tr><td>cal_speed</td><td>\n<select id='cal_speed' name='cal_speed' type='number'>\n";
   if(config.cal_speed == 3.6) webpage += "<option value='3.60' selected>3.6 km/h</option>\n"; else webpage += "<option value=3.60>3.6 km/h</option>\n";
-  if(config.cal_speed == 1.94) webpage += "<option value='1.94' selected>1.94 knots</option>\n"; else webpage += "<option value=1.94>1.94 knots</option>\n";
-  webpage += "</select>\n</td><td>cal_speed: is for the conversion from gps unit m/s to km/h (3.6)or knots (1.94).</td>\n</tr>\n";
+  if(config.cal_speed == 1.9438) webpage += "<option value='1.9438' selected>1.9438 knots</option>\n"; else webpage += "<option value=1.9438>1.9438 knots</option>\n";
+  webpage += "</select>\n</td><td>cal_speed: is for the conversion from gps unit m/s to km/h (3.6)or knots (1.9438).</td>\n</tr>\n";
   
   //sample_rate
   webpage += "<tr>\n<td>sample_rate(Hz)</td><td>\n<select id='sample_rate' name='sample_rate'>";
@@ -338,7 +338,7 @@ void html_config(String& webpage){
 
   //bar_length
   webpage += "<tr>\n<td>bar_length</td><td>\n";
-  webpage += "<input size='8' type='number' required name='bar_length' min='1000' max='1852' value="+String(config.bar_length)+" step='1'>\n";
+  webpage += "<input size='8' type='number' required name='bar_length' min='100' max='10000' value="+String(config.bar_length)+" step='1'>\n";
   webpage += "</select>\n</td><td>bar_length: Default length = 1852 m for 100% bar (=Nautical mile)</td>\n</tr>\n";
 
   //Stat_screens
@@ -357,18 +357,18 @@ void html_config(String& webpage){
   //Logo_choice
   webpage += "<tr>\n<td>Logo_choice</td><td>\n";
   webpage += "<input size='8' type='number' required name='Logo_choice' min='0' max='1000' value="+String(config.Logo_choice)+" step='1'>\n";
-  webpage += "</select>\n</td><td>Logo_choice: from 11 - 99. First digit is Board logo, second digit is Sail logo. Its a matrix to use the matrix see the info on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19346141.jpg' target='_blank'>this Link</a> >100 are different single logos</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>Logo_choice: from 11 - 99. First digit is Sail logo, second digit is Board logo. Its a matrix to use the matrix see the info on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19346141.jpg' target='_blank'>this Link</a> >100 are different single logos</td>\n</tr>\n";
 
   //sleep_off_screen
   webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
   webpage += "<input size='8' type='number' required name='sleep_off_screen' min='0' max='1000' value="+String(config.sleep_off_screen)+" step='1'>\n";
   webpage += "</select>\n</td><td>Choice for switch_off (first digit 0 or 1) and sleep_screen (second digit 0 or 1): </td>\n</tr>\n";
 
-  //logOAO
+  //logSBP
   webpage += "<tr><td>logOAO</td><td>\n<select id='logOAO' name='logOAO'>\n";
-  if(config.logOAO == 1) webpage += "<option value='1' selected>LOG OAO ON</option>\n"; else webpage += "<option value='1'>LOG OAO ON</option>\n";
-  if(config.logOAO == 0) webpage += "<option value='0' selected>LOG OAO OFF</option>\n"; else webpage += "<option value='0'>LOG OAO OFF</option>\n";
-  webpage += "</select>\n</td><td>logOAO: To save the GPS data in oao format. This is also the file that you can upload to gp3s. The oao format is ca 50% smaller then ubx.</td>\n</tr>\n";  
+  if(config.logSBP == 1) webpage += "<option value='1' selected>LOG SBP ON</option>\n"; else webpage += "<option value='1'>LOG SBP ON</option>\n";
+  if(config.logSBP == 0) webpage += "<option value='0' selected>LOG SBP OFF</option>\n"; else webpage += "<option value='0'>LOG SBP OFF</option>\n";
+  webpage += "</select>\n</td><td>logOAO: To save the GPS data in sbp format. This is also the file that you can upload to gp3s. The sbp format is ca 70% smaller then ubx.</td>\n</tr>\n";  
 
   //logUBX
   webpage += "<tr><td>logUBX</td><td>\n<select id='logUBX' name='logUBX'>\n";

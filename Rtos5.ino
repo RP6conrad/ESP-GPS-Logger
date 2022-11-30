@@ -1,10 +1,12 @@
+#include <SD.h>
+#include <sd_defines.h>
+#include <sd_diskio.h>
+
 #include <ETH.h>
 #include <WiFi.h>
 #include <WiFiAP.h>
 #include <WiFiClient.h>
 #include <WiFiGeneric.h>
-//#include <WiFiMulti.h>
-//#include <WiFiScan.h>
 #include <WiFiServer.h>
 #include <WiFiSTA.h>
 #include <WiFiType.h>
@@ -187,6 +189,12 @@
  * fix the download issue with phps extionsion on android chrome
  * add a config section for changing config - thats the base for the next step - config credentials for gps-speedsurfing.com and upload
  * after before upload a config_backup will created
+ * SW5.59 Bugfixes + added sbp file format
+ * Changed next file for compiling with Arduino IDE 2.02 (SD(esp32) to SD)
+ * C:\Users\andre\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.6\libraries\SD\library.properties
+ * Bugfix decoding config logo, GPIO12 and stat_screen
+ * Range bar_length now from 100 - 10000
+ * Added new fileformat .sbp
  */
 #include "FS.h"
 #include "SD.h"
@@ -228,20 +236,17 @@
 
 #define MIN_numSV_FIRST_FIX 4     //alvorens start loggen
 #define MAX_Sacc_FIRST_FIX 2     //alvorens start loggen
-
-
 #define MIN_numSV_GPS_SPEED_OK 4  //min aantal satellieten voor berekenen snelheid, anders 
 #define MAX_Sacc_GPS_SPEED_OK 1   //max waarde Sacc voor berekenen snelheid, anders 0
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
-//#define MAX_SPEED_DISPLAY_STATS 1 //max snelheid in m/s om stat schermen te zien
 
 String IP_adress="0.0.0.0";
 
 int sdTrouble=0;
 bool sdOK = false;
-//bool logCSV = false;
 bool logUBX = true;
 bool logOAO = true;
+bool logSBP = true;
 bool button = false;
 bool reed = false;
 bool deep_sleep = false;
@@ -267,7 +272,7 @@ float analog_mean;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.58";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[32]="SW-version 5.59";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
@@ -303,12 +308,12 @@ GPS_speed M1852(1852);
 GPS_time S2(2);
 GPS_time s2(2);
 GPS_time S10(10);
-GPS_time s10(10);//om tussentijdse stats, kan gereset worden !!
+GPS_time s10(10);//for  stats GPIO_12 screens, reset possible !!
 GPS_time S1800(1800);
 GPS_time S3600(3600);
 Alfa_speed A250(50);
 Alfa_speed A500(50);
-Alfa_speed a500(50);//tussentijdse Alfa stats
+Alfa_speed a500(50);//for  Alfa stats GPIO_12 screens, reset possible !!
 Button_push Short_push12 (12,100,15,1);//GPIO pin 12 is nog vrij, button_count 0 en 1 !!!
 Button_push Long_push12 (12,2000,10,4);
 Button_push Short_push39 (39,100,10,8);//was 39
@@ -320,8 +325,6 @@ SPIClass sdSPI(VSPI);
 const char *filename = "/config.txt";
 const char *filename_backup = "/config_backup.txt"; 
 Config config;  
-
-
   /*
 Method to print the reason by which ESP32 has been awaken from sleep
 */
@@ -381,7 +384,7 @@ void Shut_down(void){
         Ublox_off();
         GPS_Signal_OK=false;
         GPS_delay=0;
-        if(Time_Set_OK){    //Anly safe to RTC if new GPS data is available !!
+        if(Time_Set_OK){    //Only safe to RTC memory if new GPS data is available !!
             Time_Set_OK=false;
             RTC_year=(tmstruct.tm_year+1900);
             RTC_month=(tmstruct.tm_mon+1);
@@ -431,7 +434,7 @@ void OnWiFiEvent(WiFiEvent_t event){
       Serial.println("ESP32 Connected to SSID Station mode");
       WiFi.mode(WIFI_MODE_STA);//switch off softAP
       Serial.println("ESP32 Soft AP switched off");
-    case SYSTEM_EVENT_STA_GOT_IP://  Op dit moment nog geen IP !!!         SYSTEM_EVENT_STA_CONNECTED:
+    case SYSTEM_EVENT_STA_GOT_IP://  @this event no IP !!!         SYSTEM_EVENT_STA_CONNECTED:
       Serial.println("ESP32 Connected to WiFi Network");
       IP_adress =  WiFi.localIP().toString();
       break;
@@ -458,12 +461,12 @@ void setup() {
   SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
   print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
  
-  pinMode(25, OUTPUT);//Power beitian //standaard maar drive strength 2, haal dan 2.7V aan de ublox gps
+  pinMode(25, OUTPUT);//Power beitian //default drive strength 2, only 2.7V @ ublox gps
   pinMode(26, OUTPUT);//Power beitian
   pinMode(27, OUTPUT);//Power beitian
-  rtc_gpio_set_drive_capability(GPIO_NUM_25,GPIO_DRIVE_CAP_3);//zie ook https://www.esp32.com/viewtopic.php?t=5840
-  rtc_gpio_set_drive_capability(GPIO_NUM_26,GPIO_DRIVE_CAP_3);//haal nu 3.0V aan de ublox gps met 50 mA
-  gpio_set_drive_capability(GPIO_NUM_27,GPIO_DRIVE_CAP_3);//rtc noodzakelijk, anders geen spanning op RTC_pin 25 en 26, 13/3/2022
+  rtc_gpio_set_drive_capability(GPIO_NUM_25,GPIO_DRIVE_CAP_3);//see https://www.esp32.com/viewtopic.php?t=5840
+  rtc_gpio_set_drive_capability(GPIO_NUM_26,GPIO_DRIVE_CAP_3);//3.0V @ ublox gps current 50 mA
+  gpio_set_drive_capability(GPIO_NUM_27,GPIO_DRIVE_CAP_3);//rtc_gpio_ necessary, if not no output on RTC_pins 25 en 26, 13/3/2022
   
   Ublox_on();//beitian bn220 power supply over output 25,26,27
   Serial2.setRxBufferSize(1024); // increasing buffer size ?
@@ -480,7 +483,7 @@ void setup() {
    
  
 
-  sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//zou standaard op 20 MHz gezet worden !
+  sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
  
   struct timeval tv = { .tv_sec =  0, .tv_usec = 0 };
   settimeofday(&tv, NULL);
@@ -552,7 +555,6 @@ void setup() {
       Serial.print("IP address: ");
       Serial.println(IP_adress);
       Wifi_on=true;
-      //IP_adress =  WiFi.localIP().toString();
       ftpSrv.begin("esp32","esp32");    //username, password for ftp
       OTA_setup();  //start webserver for over the air update
       }
@@ -596,11 +598,11 @@ void taskOne( void * parameter )
  while(true){ 
    feedTheDog();
 
-   if (Short_push12.Button_pushed())GPIO12_screen++;//toggle scherm
+   if (Short_push12.Button_pushed())GPIO12_screen++;//toggle screen
    if (GPIO12_screen>config.gpio12_count)GPIO12_screen=0;
    if (Long_push12.Button_pushed()){ s10.Reset_stats(); s2.Reset_stats();a500.Reset_stats();} //resetten stats   
      
-   if(Long_push39.Button_pushed()) Shut_down();//was 39
+   if(Long_push39.Button_pushed()) Shut_down();
    if (Short_push39.Button_pushed()){
       config.field=Short_push39.button_count;
       }
@@ -619,9 +621,9 @@ void taskOne( void * parameter )
         ftpStatus=ftpSrv.cmdStatus;//for e-paper
         //delay(1);
         }
-   else msgType = processGPS(); //alleen decodering indien geen Wifi verbinding
+   else msgType = processGPS(); //only decoding if no Wifi connection
           //while (Serial2.available()) {
-          //    Serial.print(char(Serial2.read()));}   
+          //Serial.print(char(Serial2.read()));}   
    if ( msgType == MT_NAV_PVT ) { 
     static int nav_pvt_message=0;
     if((ubxMessage.navPvt.numSV>=MIN_numSV_FIRST_FIX)&((ubxMessage.navPvt.sAcc/1000.0f)<MAX_Sacc_FIRST_FIX)&(GPS_Signal_OK==false)){
@@ -636,7 +638,7 @@ void taskOne( void * parameter )
       int avg_speed=(avg_speed+ubxMessage.navPvt.gSpeed*19)/20; //FIR filter gem. snelheid laatste 20 metingen in mm/s
       if(avg_speed>MIN_SPEED_START_LOGGING){
         Time_Set_OK=true;
-        Open_files();//alleen maar openen indien ontvangst OK !!
+        Open_files();//only start logging if GPS signal is OK
         
         }
     } 
@@ -646,14 +648,12 @@ void taskOne( void * parameter )
               float sAcc=ubxMessage.navPvt.sAcc/1000;
               gps_speed=ubxMessage.navPvt.gSpeed; //hier alles naar mm/s !!
               static int last_flush_time=0;
-              //Log_to_SD();//hier wordt ook geprint naar serial !!
               if((millis()-last_flush_time)>60000){
                 Flush_files();
                 last_flush_time=millis();
                 }
               if((ubxMessage.navPvt.numSV<=MIN_numSV_GPS_SPEED_OK)|((ubxMessage.navPvt.sAcc/1000.0f)>MAX_Sacc_GPS_SPEED_OK)|(ubxMessage.navPvt.gSpeed/1000.0f>MAX_GPS_SPEED_OK)){
                 gps_speed=0;
-                //ubxMessage.navPvt.gSpeed=0;//checksum is wrong when setting navPvt, so first Log_to_SD !!!
                 } 
               Log_to_SD();//hier wordt ook geprint naar serial !!
               Ublox.push_data(ubxMessage.navPvt.lat/10000000.0f,ubxMessage.navPvt.lon/10000000.0f,gps_speed);   
@@ -686,8 +686,6 @@ void taskTwo( void * parameter)
    
     stat_count++;//ca 1s per screen update
     if (stat_count>config.screen_count)stat_count=0;//screen_count = 2
-    
-    // Serial.println(stat_count);
     analog_bat = analogRead(PIN_BAT);
     analog_mean=analog_bat*0.05+analog_mean*0.95;
     voltage_bat=analog_mean*calibration_bat/1000;
@@ -698,16 +696,9 @@ void taskTwo( void * parameter)
         Shut_down();
     }
     else if(millis()<2000)Update_screen(BOOT_SCREEN);
-    else if(GPS_Signal_OK==false) Update_screen(WIFI_ON);//((Wifi_on==true)&(ubxMessage.navPvt.gSpeed/1000.0f<2)) Update_screen(WIFI_ON);//toch wifi info indien GPS fix de eerste 100s, JH 14/2/2022
-   // else if(Short_push12.long_pulse){Update_screen(config.gpio12_screen[GPIO12_screen]);}//heeft voorrang, na drukken GPIO_pin 12, 10 STAT4 scherm !!!
-    else if((gps_speed/1000.0f<config.stat_speed)&(Field_choice==false)){//nu configureerbaar via config.txt
+    else if(GPS_Signal_OK==false) Update_screen(WIFI_ON);
+    else if((gps_speed/1000.0f<config.stat_speed)&(Field_choice==false)){
           Update_screen(config.stat_screen[stat_count]);
-          /*
-          if(stat_count<2)Update_screen(config.stat_screen[stat_count]);//STATS1=3, STATS5=7
-          else if(stat_count<4) Update_screen(config.stat_screen[1]);
-          else if(stat_count<6) Update_screen(config.stat_screen[2]);
-          else Update_screen(config.stat_screen[3]);//max 4 stat schermen !!
-          */
           }
     else {
           Update_screen(SPEED);

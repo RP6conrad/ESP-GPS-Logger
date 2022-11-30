@@ -22,16 +22,12 @@
 //  2021 : change so that timestamp file is working in ftp
 //  20/02/2022 Changes for Android, FEAT command comes before login, null-pointer detection (crash if FEAT)
 #include "ESP32FtpServerJH.h"
-
 #include <WiFi.h>
 #include <WiFiClient.h>
-//#include <ESP32WebServer.h>
 #include <FS.h>
-//#include "SD.h"
 #include "SD.h"
 #include "SPI.h"
 
-//#define FTP_DEBUG
 //changes JH 20/02/2021, added for timestamp file ftp
 String print_time(time_t timestamp) {
   char message[120];

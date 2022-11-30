@@ -1,6 +1,6 @@
 #ifndef E_PAPER_H
 #define E_PAPER_H
-#include <GxEPD.h>//was GxEPD.h
+#include <GxEPD.h>
 #include "Ublox.h"
 #include "GPS_data.h"
 //! There are four versions of the 2.13 screen,
@@ -22,8 +22,6 @@
 #include "Fonts/FreeSansBold12pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold18pt7b.h"//gebruikt
 #include "Fonts/SansSerif_bold_96_nr.h"//bijgevoegd in lib
-//Simon
-//#include "Fonts/Sea_Dog_2001_Italic7pt7b.h>//simon
 #include "Fonts/Sea_Dog_2001_Italic9pt7b.h"//simon
 #include "Fonts/Sea_Dog_2001_Italic12pt7b.h"//simon
 #include "Fonts/Sea_Dog_2001_Italic16pt7b.h"//simon
@@ -35,7 +33,7 @@
 #include "Fonts/BitmapSurfbuddies.h"
 #include <GxIO/GxIO_SPI/GxIO_SPI.h>
 #include <GxIO/GxIO.h>
-//Simon
+
 #define ELINK_SS 5
 #define ELINK_BUSY 4
 #define ELINK_RESET 16

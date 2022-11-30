@@ -1,3 +1,4 @@
+#include <SD.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <Update.h>
@@ -7,7 +8,6 @@ const char* host = "esp32";
 WebServer server(80);
 
 //SD Card webinterface download section
-
 String webpage = ""; //String to save the html code
 
 void append_page_header(){
@@ -93,6 +93,7 @@ void SD_file_download(String filename)
 {
   if (sdOK) 
   { 
+    //File download = SD.open(filename);//bugfix
     File download = SD.open("/"+filename);
     if (download) 
     {
@@ -142,6 +143,7 @@ void printDirectory(const char * dirname, uint8_t levels)
       webpage += "<td>";
       webpage += F("<FORM action='/' method='post'>"); 
       webpage += F("<button type='submit' class='button' name='download'"); 
+      //webpage += F("' value='"); webpage +="download_"+String(file.name()); webpage +=F("'>Download</button>");
       webpage += F("' value='"); webpage +="download_"+String(file.name()); webpage +=F("'>Download</button>");
       webpage += "</td>";
       webpage += "<td>";
@@ -203,7 +205,8 @@ void SD_dir()
       
       if (Order.indexOf("download_")>=0)
       {
-        Order.remove(0,9);
+        //Order.remove(0,9);
+        Order.remove(0,9);//JH, _bug filename
         SD_file_download(Order);
         Serial.println(Order);
       }

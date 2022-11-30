@@ -6,14 +6,18 @@
 File ubxfile;
 File errorfile;
 File oaofile;
-
+File sbpfile;
 char filenameUBX[64]="/";
 char filenameERR[64]="/";
 char filenameOAO[64]="/";
+char filenameSBP[64]="/";
 char dataStr[255] = "";//string for logging NMEA in txt, test for write 2000 chars !!
 char Buffer[50]= "";//string for logging
 union OAO_Frame oao_pvt ;
 union OAO_Header oao_header;
+struct SBP_Header sbp_header;
+struct SBP_frame sbp_frame;
+
 void logERR(const char * message){
   errorfile.print(message);
 }
@@ -21,7 +25,8 @@ void logERR(const char * message){
 void Open_files(void){
   logUBX=config.logUBX;
   logOAO=config.logOAO;
-  strcat(filenameERR,config.UBXfile);
+  logSBP=config.logSBP;
+  strcat(filenameERR,config.UBXfile);//copy filename from config
   char txt[16]="000.txt";
   char macAddr[32];
   sprintf(macAddr, "_%2X%2X%2X%2X%2X%2X_", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
@@ -48,20 +53,24 @@ void Open_files(void){
   filenameOAO[filenameSize+4]='o';
   filenameOAO[filenameSize+5]='a';
   filenameOAO[filenameSize+6]='o';
+
+  strcpy(filenameSBP,filenameERR);
+  filenameSBP[filenameSize+3]='.';
+  filenameSBP[filenameSize+4]='s';
+  filenameSBP[filenameSize+5]='b';
+  filenameSBP[filenameSize+6]='p';
            
             if(logUBX==true){
                   ubxfile=SD.open(filenameUBX, FILE_APPEND);
-                  /*ubxfile.print("T5 MAC adress: "); 
-                  for(int i=0;i<6;i++) ubxfile.print(mac[i],HEX);
-                  ubxfile.print(SW_version);
-                  ubxfile.println("");
-                  */
                   }
             if(logOAO==true){
                 oaofile=SD.open(filenameOAO,FILE_APPEND);
                 log_header_OAO();      
                 }
-            
+             if(logSBP==true){
+                sbpfile=SD.open(filenameSBP,FILE_APPEND);
+                log_header_SBP();      
+                }
             errorfile=SD.open(filenameERR, FILE_APPEND);
             Serial.println(filenameUBX); 
             Serial.println(filenameERR); 
@@ -71,12 +80,14 @@ void Close_files(void){
   ubxfile.close();
   errorfile.close();
   oaofile.close();
+  sbpfile.close();
 }
 void Flush_files(void){
   if(config.sample_rate<=10){//@18Hz still lost points !!!
     ubxfile.flush();
     errorfile.flush();
     oaofile.flush();
+    sbpfile.flush();
     }  
 }
 void Add_String(void){
@@ -95,6 +106,9 @@ void Log_to_SD(void){
                 if(logOAO==true){  
                   log_OAO();   
                   }
+                if(logSBP==true){  
+                  log_SBP();   
+                  }  
                 static long old_iTOW;
                 static int interval;
                 interval=ubxMessage.navPvt.iTOW-old_iTOW;
@@ -159,7 +173,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.bar_length = doc["bar_length"]|1852;
   config.logCSV=doc["logCSV"]|0;
   config.logUBX=doc["logUBX"]|1;
-  config.logOAO=doc["logOAO"]|1;
+  config.logSBP=doc["logSBP"]|1;
   strlcpy(config.UBXfile,                  // <- destination
           doc["UBXfile"] | "/ubxGPS",  // <- source
           sizeof(config.UBXfile));         // <- destination's capacity 
@@ -179,7 +193,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
               Serial.println(config.cal_bat);
               Serial.println(config.cal_speed);
               Serial.println(config.sample_rate);
-              Serial.println(config.logCSV);
+              Serial.println(config.logSBP);
               Serial.println(config.logUBX);
               Serial.println(config.ssid);
               Serial.println(config.password);
@@ -190,28 +204,30 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   time_out_nav_pvt=(1000/config.sample_rate+150);//max time out = 150 ms
   SLEEP_screen=config.sleep_off_screen%10;
   OFF_screen=config.sleep_off_screen/10%10;
+  int Logo_choice=config.Logo_choice;//preserve value config.Logo_choice for config.txt update !!
+  int stat_screen=config.Stat_screens;//preserve value config
+  int GPIO_12_screens=config.GPIO12_screens;//preserve value config  
   for (int i=0;i<9;i++){
-        config.stat_screen[i]=config.Stat_screens%10;//STATSx heeft geen offset !!! 641
-        config.Stat_screens=config.Stat_screens/10;
-        if(config.Stat_screens>0){
+        config.stat_screen[i]=stat_screen%10;//STATSx heeft geen offset !!! 641
+        stat_screen=stat_screen/10;
+        if(stat_screen>0){
             config.screen_count=i+1;
             }
-        config.gpio12_screen[i]=config.GPIO12_screens%10;//
-        config.GPIO12_screens=config.GPIO12_screens/10;
-        if(config.GPIO12_screens>0){
+        config.gpio12_screen[i]=GPIO_12_screens%10;//
+        GPIO_12_screens=GPIO_12_screens/10;
+        if(GPIO_12_screens>0){
             config.gpio12_count=i+1;
             }
         //add special logos
-        int Logo_choice=config.Logo_choice;//preserve value config.Logo_choice for config.txt update !!
         if(Logo_choice > 99){
           logo_choice[0]=Logo_choice;
         }else{ // else default logos
-        logo_choice[i]=Logo_choice%10;//
-        Logo_choice=Logo_choice/10;
-        if(Logo_choice>0){
-            config.logo_count=i+1;
-              }      
-          }
+          logo_choice[i]=Logo_choice%10;//
+          Logo_choice=Logo_choice/10;
+          if(Logo_choice>0){
+              config.logo_count=i+1;
+                }      
+            }
        }
 }
 // Prints the content of a file to the Serial
@@ -241,13 +257,11 @@ void Model_info(int model){
   errorfile.println(message); 
 }
 void Session_info(GPS_data G){
-  char tekst[20]="";char message[255]="";//Serial.print("T5 MAC adress: ");
+  char tekst[20]="";char message[255]="";
   errorfile.print("T5 MAC adress: "); 
   for(int i=0;i<6;i++) errorfile.print(mac[i],HEX);
   errorfile.println(" ");
   errorfile.println(SW_version);
- // strcat(message,"T5 MAC adress: ");  
- // strcat(message,(char*)mac);//Serial.println(WiFi.macAddress());
   strcat(message, "RTOS5, First_fix: "); 
   dtostrf(first_fix_GPS, 1, 0, tekst);
   strcat(message,tekst); 
@@ -389,11 +403,10 @@ void Session_results_Alfa(Alfa_speed A,GPS_speed M){
 void log_header_OAO(void){
   oao_header.mode=0x0AD0;
   oao_header.identifier=987;
-  //oao_header.nickname="HeynenJan";//moet exact 10 bytes zijn ??
   checksum_verify(512,oao_header.bytes);
   oaofile.write((const uint8_t *)&oao_header.bytes,512); 
-  //oaofile.seek(0);//test om file pointer naar een positie te zetten
 }
+
 void log_OAO(void){
 time_t utcSec=tmConvert_t(ubxMessage.navPvt.year, ubxMessage.navPvt.month, ubxMessage.navPvt.day, ubxMessage.navPvt.hour, ubxMessage.navPvt.minute, ubxMessage.navPvt.second);
 int64_t utc=(int64_t)utcSec*1000+(ubxMessage.navPvt.nano+500000)/1000000;//om af te ronden
@@ -416,4 +429,31 @@ oao_pvt.accuracy_heading=ubxMessage.navPvt.headingAcc;
 oao_pvt.accuracy_pDOP=ubxMessage.navPvt.pDOP;
 checksum_verify(52,oao_pvt.bytes_gnss);
 oaofile.write((const uint8_t *)&oao_pvt.bytes_gnss,52);
+}
+void log_header_SBP(void){
+  sbpfile.write((const uint8_t *)&sbp_header,64);
+}
+void log_SBP(void){
+uint32_t year=ubxMessage.navPvt.year;
+uint8_t month=ubxMessage.navPvt.month;
+uint8_t day=ubxMessage.navPvt.day;
+uint8_t hour=ubxMessage.navPvt.hour;
+uint16_t min=ubxMessage.navPvt.minute;
+uint16_t sec=ubxMessage.navPvt.second;
+uint32_t numSV=0xFFFFFFFF;
+uint32_t HDOP=(ubxMessage.navPvt.sAcc+5)/10;//rounding, then reformat sAcc to HDOP 8-bit !!
+if(HDOP>254)HDOP=254;//has to fit in 8 bit
+sbp_frame.UtcSec=ubxMessage.navPvt.second*1000+(ubxMessage.navPvt.nano+500000)/1000000;//om af te ronden
+sbp_frame.date_time_UTC_packed=(((year-2000)*12+month)<<22) +(day<<17)+(hour<<12)+(min<<6)+sec; 
+sbp_frame.Lat=ubxMessage.navPvt.lat;
+sbp_frame.Lon=ubxMessage.navPvt.lon;
+sbp_frame.AltCM=ubxMessage.navPvt.hMSL/10;//omrekenen naar cm/s
+sbp_frame.Sog=ubxMessage.navPvt.gSpeed/10;//omrekenen naar cm/s
+sbp_frame.Cog=ubxMessage.navPvt.heading/1000;//omrekenen naar 0.01 degrees
+sbp_frame.SVIDCnt=ubxMessage.navPvt.numSV;
+sbp_frame.SVIDList=numSV>>(32-ubxMessage.navPvt.numSV);
+sbp_frame.HDOP=HDOP;
+sbp_frame.ClmbRte=ubxMessage.navPvt.velD/10;//omrekenen naar cm/s
+sbpfile.write((const uint8_t *)&sbp_frame,32);
+sbp_frame.bitFlags=0;//only the first frame has this bit set, then 0, init in sbp.h !
 }
