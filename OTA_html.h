@@ -365,10 +365,10 @@ void html_config(String& webpage){
   webpage += "</select>\n</td><td>Choice for switch_off (first digit 0 or 1) and sleep_screen (second digit 0 or 1): </td>\n</tr>\n";
 
   //logSBP
-  webpage += "<tr><td>logOAO</td><td>\n<select id='logOAO' name='logOAO'>\n";
+  webpage += "<tr><td>logSBP</td><td>\n<select id='logSBP' name='logSBP'>\n";
   if(config.logSBP == 1) webpage += "<option value='1' selected>LOG SBP ON</option>\n"; else webpage += "<option value='1'>LOG SBP ON</option>\n";
   if(config.logSBP == 0) webpage += "<option value='0' selected>LOG SBP OFF</option>\n"; else webpage += "<option value='0'>LOG SBP OFF</option>\n";
-  webpage += "</select>\n</td><td>logOAO: To save the GPS data in sbp format. This is also the file that you can upload to gp3s. The sbp format is ca 70% smaller then ubx.</td>\n</tr>\n";  
+  webpage += "</select>\n</td><td>logSBP: To save the GPS data in sbp format. This is also the file that you can upload to gp3s. The sbp format is ca 70% smaller then ubx.</td>\n</tr>\n";  
 
   //logUBX
   webpage += "<tr><td>logUBX</td><td>\n<select id='logUBX' name='logUBX'>\n";

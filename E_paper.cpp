@@ -53,7 +53,10 @@ void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
       display.setCursor(offset,14);
       display.println("Saving gps session...");
       display.setCursor(offset,30);
-      display.print("Avg 5x10sec: ");display.print(RTC_avg_10s,2);display.println(" km/u");
+      display.print("Avg 5x10sec: ");display.print(RTC_avg_10s,2);
+      if((int)(calibration_speed*100000)==194) display.print(" knots");//1.94384449 m/s to knots !!!
+      if((int)(calibration_speed*1000000)==3600) display.print(" km/h");
+      //display.println(" km/u");
       display.setCursor(offset,46);
       display.print("Distance: ");display.print(Ublox.total_distance/1000000,0);display.println(" km");
       display.setCursor(offset,62);

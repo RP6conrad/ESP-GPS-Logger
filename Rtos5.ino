@@ -170,7 +170,7 @@
  * SW 5.54
  * Added extra Board / Sail logo's, design by Hans Scholten
  * Added variable to config.txt : "stat_speed":2,  // speed less then 2 m/s -> stat screens
- * Filenr depends now from existing .txt files !! Bug if only log OAO files was active should be ok now...
+ * Filenr depends now from existing .txt files !!
  * Shut down screen : add type of E-paper (in case you forgot...)
  * Webserver can now download and delete files from the SD-card !!! 
  * Contribution from Triton_dm on github !!
@@ -189,11 +189,12 @@
  * fix the download issue with phps extionsion on android chrome
  * add a config section for changing config - thats the base for the next step - config credentials for gps-speedsurfing.com and upload
  * after before upload a config_backup will created
- * SW5.59 Bugfixes + added sbp file format
+ * SW5.60 Bugfixes + added sbp file format
  * Changed next file for compiling with Arduino IDE 2.02 (SD(esp32) to SD)
  * C:\Users\andre\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.6\libraries\SD\library.properties
  * Bugfix decoding config logo, GPIO12 and stat_screen
  * Range bar_length now from 100 - 10000
+ * Removed fileformat .oao
  * Added new fileformat .sbp
  */
 #include "FS.h"
@@ -245,7 +246,7 @@ String IP_adress="0.0.0.0";
 int sdTrouble=0;
 bool sdOK = false;
 bool logUBX = true;
-bool logOAO = true;
+bool logGPS = true;
 bool logSBP = true;
 bool button = false;
 bool reed = false;
@@ -272,7 +273,7 @@ float analog_mean;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.59";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[32]="SW-version 5.60";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;

@@ -2,7 +2,7 @@
 #define SBP_H
 /* Locosys SBP structures */
 struct SBP_Header{//length = 64 bytes
-   uint16_t Header_length = 0x22;//byte 0-1 : nr of meaningfull bytes in header (MID_FILE_ID)
+   uint16_t Header_length = 34;//byte 0-1 : nr of meaningfull bytes in header (MID_FILE_ID)
    char str[62] ="unknown,0,unknown,unknown";//byte 2~63:  MID_FILE_ID(0xfd) will stuff    0xff for remaining bytes
    };
 struct SBP_frame{//length = 32 bytes
@@ -17,8 +17,8 @@ struct SBP_frame{//length = 32 bytes
    uint16_t Sog;            /* Speed Over Ground in m/sec with resolution 0.01 */
    uint16_t Cog;            /* Course Over Ground [0 to 360] in degrees with resolution 0.01 */
    int16_t ClmbRte;        /* Climb rate in m/sec with resolution 0.01 */
-   uint8_t bitFlags=1;     /* bitFlags, default 0x00,    bit 0=1 indicate the first point after power on */
-   uint8_t reserved;
+   uint8_t sdop;     /* GT31 */
+   uint8_t vsdop;
 };
 
 #endif

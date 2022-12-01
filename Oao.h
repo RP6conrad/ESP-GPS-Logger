@@ -1,3 +1,5 @@
+#ifndef GPS_H
+#define GPS_H
 union OAO_Frame {
   struct {
     uint16_t  mode;
@@ -124,4 +126,37 @@ time_t tmConvert_t(int YYYY, byte MM, byte DD, byte hh, byte mm, byte ss)
   tmSet.Second = ss;
   return makeTime(tmSet); 
 }
+extern File gpsfile;
+union OAO_Header oao_header;
+union OAO_Frame oao_pvt ;
 
+void log_header_GPS(void){
+  oao_header.mode=0x0AD0;
+  oao_header.identifier=987;
+  checksum_verify(512,oao_header.bytes);
+  gpsfile.write((const uint8_t *)&oao_header.bytes,512); 
+}
+
+void log_GPS(void){
+time_t utcSec=tmConvert_t(ubxMessage.navPvt.year, ubxMessage.navPvt.month, ubxMessage.navPvt.day, ubxMessage.navPvt.hour, ubxMessage.navPvt.minute, ubxMessage.navPvt.second);
+int64_t utc=(int64_t)utcSec*1000+(ubxMessage.navPvt.nano+500000)/1000000;//om af te ronden
+oao_pvt.utc_gnss=utc;
+//Serial.printf("UTC littleEndian: %llu\n", oao_pvt.utc_gnss); 
+if(ubxMessage.navPvt.nano/1000000==0){oao_pvt.mode=0x0AD4;}
+else {oao_pvt.mode=0x0AD5;}
+oao_pvt.latitude=ubxMessage.navPvt.lat;
+oao_pvt.longitude=ubxMessage.navPvt.lon;
+oao_pvt.altitude=ubxMessage.navPvt.hMSL;
+oao_pvt.speed=ubxMessage.navPvt.gSpeed;//hier kan de max versnelling begrensd worden !!
+oao_pvt.heading=ubxMessage.navPvt.heading;
+oao_pvt.fix=ubxMessage.navPvt.fixType;
+oao_pvt.satellites=ubxMessage.navPvt.numSV;
+oao_pvt.accuracy_speed=ubxMessage.navPvt.sAcc;
+oao_pvt.accuracy_horizontal=ubxMessage.navPvt.hAcc;
+oao_pvt.accuracy_vertical=ubxMessage.navPvt.vAcc;
+oao_pvt.accuracy_heading=ubxMessage.navPvt.headingAcc;
+oao_pvt.accuracy_pDOP=ubxMessage.navPvt.pDOP;
+checksum_verify(52,oao_pvt.bytes_gnss);
+gpsfile.write((const uint8_t *)&oao_pvt.bytes_gnss,52);
+}
+#endif
