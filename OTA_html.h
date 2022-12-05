@@ -311,10 +311,10 @@ void html_config(String& webpage){
   
   //sample_rate
   webpage += "<tr>\n<td>sample_rate(Hz)</td><td>\n<select id='sample_rate' name='sample_rate'>";
-  if(config.sample_rate == 1) webpage += "<option value='1' selected>1</option>\n"; else  webpage += "<option value='1'>1 Hz</option>\n";
-  if(config.sample_rate == 2) webpage += "<option value='2' selected>2</option>\n"; else webpage += "<option value='2'>2 Hz</option>\n";
-  if(config.sample_rate == 5) webpage += "<option value='5' selected>5</option>\n"; else webpage += "<option value='5'>5 Hz</option>\n";
-  if(config.sample_rate == 10) webpage += "<option value='10' selected>10</option>\n"; else webpage += "<option value='10'>10 Hz</option>\n";
+  if(config.sample_rate == 1) webpage += "<option value='1' selected>1 Hz</option>\n"; else  webpage += "<option value='1'>1 Hz</option>\n";
+  if(config.sample_rate == 2) webpage += "<option value='2' selected>2 Hz</option>\n"; else webpage += "<option value='2'>2 Hz</option>\n";
+  if(config.sample_rate == 5) webpage += "<option value='5' selected>5 Hz</option>\n"; else webpage += "<option value='5'>5 Hz</option>\n";
+  if(config.sample_rate == 10) webpage += "<option value='10' selected>10 Hz</option>\n"; else webpage += "<option value='10'>10 Hz</option>\n";
   webpage += "</select>\n</td><td>sample_rate: can be 1,2,5 or 10Hz. The higher, the more accurate,<br> but also the larger the files become! One UBX NavPVT message is 100byte, <br>so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!</td>\n</tr>\n";
 
   //gnss

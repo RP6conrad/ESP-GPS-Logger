@@ -124,7 +124,7 @@ void printDirectory(const char * dirname, uint8_t levels)
       SendHTML_Content();
     }
     if(file.isDirectory()){
-      webpage += "<tr>\n<td>"+String(file.isDirectory()?"Dir":"File")+"</td><td></td><td></td><td></td></tr>";
+      webpage += "<tr>\n<td>"+String(file.isDirectory()?"Dir":"File")+"</td><td></td><td></td><td></td><td></td></tr>";
       printDirectory(file.name(), levels-1);
     }
     else
