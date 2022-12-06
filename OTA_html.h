@@ -251,6 +251,7 @@ const char html_header[] PROGMEM = R"=====(
     <a href="/" class="home-link">
       <div class="navbar-logo"></div>
       ESP-GPS-Logger
+      </a>
     <button type="button" id="navbar-toggle" aria-controls="navbar-menu" aria-label="Toggle menu" aria-expanded="false">
       <span class="icon-bar"></span>
       <span class="icon-bar"></span>
