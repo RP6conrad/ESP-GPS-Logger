@@ -196,6 +196,13 @@
  * Range bar_length now from 100 - 10000
  * Removed fileformat .oao
  * Added new fileformat .sbp
+ * SW5.61 First draft new open source fileformat
+ * Some minor changes for the webserver (triton_dm)
+ * Separate Board_logo and Sail_logo config
+ * Test with other fonts in speed screen, added "speed_large_font" to the config : Run, Alfa and NM can have a bigger font.
+ * Changed order config.field, 1=Auto between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= 0.5h, 8= 1h
+ * Font 46pt_nr and 84pt_nr added, condensed format only digits and decimal point to save memory 
+ * Added Github link to main menu
  */
 #include "FS.h"
 #include "SD.h"
@@ -273,7 +280,7 @@ float analog_mean;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.60";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[32]="SW-version 5.61";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
@@ -293,10 +300,11 @@ RTC_DATA_ATTR float RTC_R2_10s;
 RTC_DATA_ATTR float RTC_R3_10s;
 RTC_DATA_ATTR float RTC_R4_10s;
 RTC_DATA_ATTR float RTC_R5_10s;
-RTC_DATA_ATTR char Sleep_txt[32]="Your ID";
-RTC_DATA_ATTR int logo_choice[10];
-RTC_DATA_ATTR int SLEEP_screen=0;
-RTC_DATA_ATTR int OFF_screen=0;
+RTC_DATA_ATTR char RTC_Sleep_txt[32]="Your ID";
+RTC_DATA_ATTR int RTC_Board_Logo;
+RTC_DATA_ATTR int RTC_Sail_Logo;
+RTC_DATA_ATTR int RTC_SLEEP_screen=0;
+RTC_DATA_ATTR int RTC_OFF_screen=0;
 //Simon
 RTC_DATA_ATTR float calibration_bat=1.75;//bij ontwaken uit deepsleep niet noodzakelijk config file lezen
 RTC_DATA_ATTR float voltage_bat;
@@ -325,7 +333,7 @@ SPIClass sdSPI(VSPI);
 
 const char *filename = "/config.txt";
 const char *filename_backup = "/config_backup.txt"; 
-Config config;  
+//Config config;  
   /*
 Method to print the reason by which ESP32 has been awaken from sleep
 */
@@ -351,7 +359,7 @@ void print_wakeup_reason(){
                                         }
                                   voltage_bat=analog_mean*calibration_bat/1000;
                                   esp_sleep_enable_ext0_wakeup(GPIO_NUM_39,0); //was 39  1 = High, 0 = Low
-                                  Sleep_screen(SLEEP_screen);
+                                  Sleep_screen(RTC_SLEEP_screen);
                                   go_to_sleep(3000);//was 4000
                                   break;                               
     case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); 
@@ -693,7 +701,7 @@ void taskTwo( void * parameter)
     if(voltage_bat<3.1) low_bat_count++;
     else low_bat_count=0;
     if((long_push==true)|(low_bat_count>10)){
-        Off_screen(OFF_screen);
+        Off_screen(RTC_OFF_screen);
         Shut_down();
     }
     else if(millis()<2000)Update_screen(BOOT_SCREEN);

@@ -197,7 +197,7 @@ int processGPS() {
   while ( Serial2.available() ) {
     
     byte c = Serial2.read();    
-      //Serial.write(c);
+    //Serial.write(c);
     
     if ( fpos < 2 ) {
       // For the first two bytes we are simply looking for a match with the UBX header bytes (0xB5,0x62)

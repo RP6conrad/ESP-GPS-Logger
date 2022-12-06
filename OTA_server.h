@@ -143,7 +143,6 @@ void printDirectory(const char * dirname, uint8_t levels)
       webpage += "<td>";
       webpage += F("<FORM action='/' method='post'>"); 
       webpage += F("<button type='submit' class='button' name='download'"); 
-      //webpage += F("' value='"); webpage +="download_"+String(file.name()); webpage +=F("'>Download</button>");
       webpage += F("' value='"); webpage +="download_"+String(file.name()); webpage +=F("'>Download</button>");
       webpage += "</td>";
       webpage += "<td>";
@@ -341,14 +340,17 @@ void handleConfigUpload() {
     doc["sample_rate"] = server.arg("sample_rate").toInt();
     doc["gnss"] = server.arg("gnss").toInt();
     doc["speed_field"] = server.arg("speed_field").toInt();
+    doc["speed_large_font"] = server.arg("speed_large_font").toInt();
     doc["bar_length"] = server.arg("bar_length").toInt();
     doc["Stat_screens"] = server.arg("Stat_screens").toInt(); 
     doc["stat_speed"] = server.arg("stat_speed").toInt(); 
     doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt(); 
-    doc["Logo_choice"] = server.arg("Logo_choice").toInt();
+    doc["Board_Logo"] = server.arg("Board_Logo").toInt();
+    doc["Sail_Logo"] = server.arg("Sail_Logo").toInt();
     doc["sleep_off_screen"] = server.arg("sleep_off_screen").toInt();
-    doc["logOAO"] = server.arg("logOAO").toInt(); 
+    doc["logSBP"] = server.arg("logSBP").toInt(); 
     doc["logUBX"] = server.arg("logUBX").toInt();
+    doc["logGPS"] = server.arg("logGPS").toInt();
     doc["dynamic_model"] = server.arg("dynamic_model").toInt();
     doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt();
     doc["timezone"] = server.arg("timezone").toInt();

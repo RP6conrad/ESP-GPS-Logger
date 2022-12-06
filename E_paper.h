@@ -14,6 +14,7 @@
 //#include <GxGDEP015OC1/GxGDEP015OC1.h>    //  GDEH015OC1 1.54" screen for Jeff Turner !!!
 
 // https://oleddisplay.squix.ch/#/home font-converter online, used for 48pt font !!
+// https://tchapi.github.io/Adafruit-GFX-Font-Customiser/ used for extracting only needed digits and decimal point !!
 // FreeFonts from Adafruit_GFX
 #include "Fonts/FreeMonoBold9pt7b.h"//gebruikt
 #include "Fonts/FreeMonoBold12pt7b.h"//gebruikt
@@ -21,6 +22,8 @@
 #include "Fonts/FreeSansBold9pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold12pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold18pt7b.h"//gebruikt
+#include "Fonts/SansSerif_bold_46_nr.h"//bijgevoegd in lib
+#include "Fonts/SansSerif_bold_84_nr.h"//bijgevoegd in lib
 #include "Fonts/SansSerif_bold_96_nr.h"//bijgevoegd in lib
 #include "Fonts/Sea_Dog_2001_Italic9pt7b.h"//simon
 #include "Fonts/Sea_Dog_2001_Italic12pt7b.h"//simon
@@ -67,7 +70,7 @@ extern int bootCount,run_count,stat_count;
 extern int ftpStatus;
 extern String IP_adress;
 extern char SW_version[32];
-extern int logo_choice[10];
+//xtern int logo_choice[10];
 extern RTC_DATA_ATTR int offset;
 extern RTC_DATA_ATTR float RTC_distance;
 extern RTC_DATA_ATTR float RTC_avg_10s;

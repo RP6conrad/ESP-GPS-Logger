@@ -1,21 +1,24 @@
 #include "SD_card.h"
 #include <SD.h>
 #include "Rtos5.h"
-//#include "Oao.h"
+//#include "gps.h"
 
 File ubxfile;
 File errorfile;
 File gpsfile;//new open source file format, work in progress !!
 File sbpfile;
-char filenameUBX[64]="/";
+char filename_NO_EXT[64]="/";
 char filenameERR[64]="/";
+char filenameUBX[64]="/";
 char filenameGPS[64]="/";
 char filenameSBP[64]="/";
-char dataStr[255] = "";//string for logging NMEA in txt, test for write 2000 chars !!
-char Buffer[50]= "";//string for logging
 
+char dataStr[255] = "";//string for logging  !!
+char Buffer[50]= "";//string for logging
+uint64_t GPS_UTC_ms; //Absolute UTC timewith ms resolution @start logging
 struct SBP_Header sbp_header;
 struct SBP_frame sbp_frame;
+struct Config config;
 
 void logERR(const char * message){
   errorfile.print(message);
@@ -41,31 +44,23 @@ void Open_files(void){
                           break;
                         }
         }
-  strcpy(filenameUBX,filenameERR);
-  filenameUBX[filenameSize+3]='.';
-  filenameUBX[filenameSize+4]='u';
-  filenameUBX[filenameSize+5]='b';
-  filenameUBX[filenameSize+6]='x';
- 
-  strcpy(filenameGPS,filenameERR);
-  filenameGPS[filenameSize+3]='.';
-  filenameGPS[filenameSize+4]='o';
-  filenameGPS[filenameSize+5]='a';
-  filenameGPS[filenameSize+6]='o';
-
-  strcpy(filenameSBP,filenameERR);
-  filenameSBP[filenameSize+3]='.';
-  filenameSBP[filenameSize+4]='s';
-  filenameSBP[filenameSize+5]='b';
-  filenameSBP[filenameSize+6]='p';
-           
+  strcpy(filename_NO_EXT,filenameERR);
+  filename_NO_EXT [strlen(filename_NO_EXT) - 3] = 0;  // move null-terminator three positions back
+  strcpy(filenameUBX,filename_NO_EXT);
+  strcat(filenameUBX,"ubx");
+  strcpy(filenameSBP,filename_NO_EXT);
+  strcat(filenameSBP,"sbp");
+  strcpy(filenameGPS,filename_NO_EXT);
+  strcat(filenameGPS,"gps");
+       
             if(logUBX==true){
                   ubxfile=SD.open(filenameUBX, FILE_APPEND);
                   }
             #if defined(GPS_H)
             if(logGPS==true){
                 gpsfile=SD.open(filenameGPS,FILE_APPEND);
-                log_header_GPS();      
+                //log_header_GPS(); 
+                GPS_UTC_ms=log_header_GPS();    //retrieve UTC ms @ start logging  
                 }
             #endif
             if(logSBP==true){
@@ -104,9 +99,9 @@ void Log_to_SD(void){
                     ubxfile.write((const uint8_t *)&ubxMessage.navPvt, sizeof(ubxMessage.navPvt));
                     ubxfile.write(checksumA);ubxfile.write(checksumB);//checksum toevoegen
                     }
-                 #if defined(GPS_H)    
+                #if defined(GPS_H)    
                 if(logGPS==true){  
-                  log_GPS();   
+                  log_GPS(GPS_UTC_ms);   
                   }
                 #endif  
                 if(logSBP==true){  
@@ -161,26 +156,30 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.sample_rate = doc["sample_rate"]|1;
   config.gnss = doc["gnss"]|2;
   config.field = doc["speed_field"]|1;
-  config.dynamic_model = doc["dynamic_model"]|0;//sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
-  config.timezone = doc["timezone"]|2;
+  config.speed_large_font=doc["speed_large_font"]|0;
+  config.bar_length = doc["bar_length"]|1852;
   config.Stat_screens = doc["Stat_screens"]|12;
+  config.stat_speed= doc["stat_speed"]|1;
   config.Stat_screens_persist = config.Stat_screens;
   config.GPIO12_screens = doc["GPIO12_screens"]|12;
-  config.GPIO12_screens_persist = config.GPIO12_screens;
-  config.Logo_choice = doc["Logo_choice"]|12;
+  config.GPIO12_screens_persist = config.GPIO12_screens; 
+  config.Board_Logo = doc["Board_Logo"]|1;
+  config.Sail_Logo = doc["Sail_Logo"]|1;
   config.sleep_off_screen = doc["sleep_off_screen"]|11;
-  config.stat_speed= doc["stat_speed"]|1;
-  config.bar_length = doc["bar_length"]|1852;
   config.logCSV=doc["logCSV"]|0;
   config.logUBX=doc["logUBX"]|1;
   config.logSBP=doc["logSBP"]|1;
+  config.logGPS=doc["logGPS"]|1;
+  config.dynamic_model = doc["dynamic_model"]|0;//sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
+  config.timezone = doc["timezone"]|2;
+  
   strlcpy(config.UBXfile,                  // <- destination
           doc["UBXfile"] | "/ubxGPS",  // <- source
           sizeof(config.UBXfile));         // <- destination's capacity 
   strlcpy(config.Sleep_info,                  // <- destination
           doc["Sleep_info"] | "My ID",  // <- source
           sizeof(config.Sleep_info));         // <- destination's capacity
-          strcpy(Sleep_txt,config.Sleep_info);    //copy into RTC mem     
+          strcpy(RTC_Sleep_txt,config.Sleep_info);    //copy into RTC mem     
   strlcpy(config.ssid,                  // <- destination
           doc["ssid"] | "ssidNOK",  // <- source
           sizeof(config.ssid));         // <- destination's capacity
@@ -197,14 +196,16 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
               Serial.println(config.logUBX);
               Serial.println(config.ssid);
               Serial.println(config.password);
-              Serial.println(config.Logo_choice);
+              Serial.println(config.Sail_Logo);
               }
+  RTC_Board_Logo=config.Board_Logo;//copy RTC memory !!
+  RTC_Sail_Logo=config.Sail_Logo;//copy to RTC memory !!
   calibration_bat=config.cal_bat;
   calibration_speed=config.cal_speed/1000;//3.6=km/h, 1.94384449 = knots, speed is now in mm/s
   time_out_nav_pvt=(1000/config.sample_rate+150);//max time out = 150 ms
-  SLEEP_screen=config.sleep_off_screen%10;
-  OFF_screen=config.sleep_off_screen/10%10;
-  int Logo_choice=config.Logo_choice;//preserve value config.Logo_choice for config.txt update !!
+  RTC_SLEEP_screen=config.sleep_off_screen%10;
+  RTC_OFF_screen=config.sleep_off_screen/10%10;
+  //int Logo_choice=config.Logo_choice;//preserve value config.Logo_choice for config.txt update !!
   int stat_screen=config.Stat_screens;//preserve value config
   int GPIO_12_screens=config.GPIO12_screens;//preserve value config  
   for (int i=0;i<9;i++){
@@ -217,16 +218,6 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
         GPIO_12_screens=GPIO_12_screens/10;
         if(GPIO_12_screens>0){
             config.gpio12_count=i+1;
-            }
-        //add special logos
-        if(Logo_choice > 99){
-          logo_choice[0]=Logo_choice;
-        }else{ // else default logos
-          logo_choice[i]=Logo_choice%10;//
-          Logo_choice=Logo_choice/10;
-          if(Logo_choice>0){
-              config.logo_count=i+1;
-                }      
             }
        }
 }
