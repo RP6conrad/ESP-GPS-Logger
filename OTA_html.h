@@ -250,7 +250,7 @@ const char html_header[] PROGMEM = R"=====(
   <nav class="navbar-container container">
     <a href="/" class="home-link">
       <div class="navbar-logo"></div>
-      ESP-GPS-Logger
+      ESP-GPS-Logger 
       </a>
     <button type="button" id="navbar-toggle" aria-controls="navbar-menu" aria-label="Toggle menu" aria-expanded="false">
       <span class="icon-bar"></span>
@@ -378,11 +378,16 @@ void html_config(String& webpage){
   if(config.logUBX == 1) webpage += "<option value='1' selected>LOG UBX ON</option>\n"; else webpage += "<option value='1'>LOG UBX ON</option>\n";
   if(config.logUBX == 0) webpage += "<option value='0' selected>LOG UBX OFF</option>\n"; else webpage += "<option value='0'>LOG UBX OFF</option>\n";
   webpage += "</select>\n</td><td>logUBX: To save the GPS data in ubx format. This is also the file that you can upload to gp3s.</td>\n</tr>\n";  
-  //logGPS  
-  webpage += "<tr><td>logGPS</td><td>\n<select id='logGPS' name='logGPS'>\n";
-  if(config.logGPS == 1) webpage += "<option value='1' selected>LOG GPS ON</option>\n"; else webpage += "<option value='1'>LOG GPS ON</option>\n";
-  if(config.logGPS == 0) webpage += "<option value='0' selected>LOG GPS OFF</option>\n"; else webpage += "<option value='0'>LOG GPS OFF</option>\n";
-  webpage += "</select>\n</td><td>logGPS: To save the GPS data in a new open source format, not yet defined. </td>\n</tr>\n";  //<a href='https://logiqx.github.io/open-gnss/thoughts.html' target='_blank'>this Link</a>
+  //logGPY  
+  webpage += "<tr><td>logGPY</td><td>\n<select id='logGPY' name='logGPY'>\n";
+  if(config.logGPY == 1) webpage += "<option value='1' selected>LOG GPY ON</option>\n"; else webpage += "<option value='1'>LOG GPY ON</option>\n";
+  if(config.logGPY == 0) webpage += "<option value='0' selected>LOG GPY OFF</option>\n"; else webpage += "<option value='0'>LOG GPY OFF</option>\n";
+  webpage += "</select>\n</td><td>logGPY: To save the GPS data in a new open source format .gpy, not yet defined. </td>\n</tr>\n";  
+  //logGPX  
+  webpage += "<tr><td>logGPX</td><td>\n<select id='logGPX' name='logGPX'>\n";
+  if(config.logGPX == 1) webpage += "<option value='1' selected>LOG GPX ON</option>\n"; else webpage += "<option value='1'>LOG GPX ON</option>\n";
+  if(config.logGPX == 0) webpage += "<option value='0' selected>LOG GPX OFF</option>\n"; else webpage += "<option value='0'>LOG GPX OFF</option>\n";
+  webpage += "</select>\n</td><td>logGPX: To save the GPS data in gpx format @ 1Hz, for video overlay or other purposes.</td>\n</tr>\n";  
   //dynamic_model
   webpage += "<tr><td>dynamic_model</td><td>\n<select id='dynamic_model' name='dynamic_model'>\n";
   if(config.dynamic_model == 0) webpage += "<option value='0' selected>portable</option>\n"; else webpage += "<option value='0'>portable</option>\n";

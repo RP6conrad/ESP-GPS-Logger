@@ -204,8 +204,7 @@ void SD_dir()
       
       if (Order.indexOf("download_")>=0)
       {
-        //Order.remove(0,9);
-        Order.remove(0,9);//JH, _bug filename
+        Order.remove(0,9);
         SD_file_download(Order);
         Serial.println(Order);
       }
@@ -350,7 +349,8 @@ void handleConfigUpload() {
     doc["sleep_off_screen"] = server.arg("sleep_off_screen").toInt();
     doc["logSBP"] = server.arg("logSBP").toInt(); 
     doc["logUBX"] = server.arg("logUBX").toInt();
-    doc["logGPS"] = server.arg("logGPS").toInt();
+    doc["logGPY"] = server.arg("logGPY").toInt();
+    doc["logGPX"] = server.arg("logGPX").toInt();
     doc["dynamic_model"] = server.arg("dynamic_model").toInt();
     doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt();
     doc["timezone"] = server.arg("timezone").toInt();

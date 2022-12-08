@@ -5,19 +5,16 @@
 #include "GPS_data.h"
 #include <SD.h>
 #include "ArduinoJson.h"
-#include "sbp.h"
+
  
 extern struct tm tmstruct ;
 extern int Time_Set_OK;
 extern int first_fix_GPS;
+extern int wifi_search;
 extern byte checksumA;
 extern byte checksumB;
 extern int sdTrouble;
 extern bool sdOK,button;
-extern bool logCSV;
-extern bool logUBX;
-extern bool logGPS;
-extern bool logSBP;
 extern bool GPS_logging;
 extern float Mean_heading,heading_SD;
 extern float calibration_bat;
@@ -65,7 +62,8 @@ struct Config {
   bool logCSV=0;//not used anymore...
   bool logUBX=1;//log to .ubx
   bool logSBP=1;//log to .sbp
-  bool logGPS=1;//log to .gps
+  bool logGPY=1;//log to .gps
+  bool logGPX=0;//log to .gpx
   char UBXfile[32]="BN220A000";//your preferred filename
   char Sleep_info[32]="Your ID";//your preferred sleep text
   char ssid[32];//your SSID
@@ -86,6 +84,8 @@ void Session_info(GPS_data G);
 void Session_results_M(GPS_speed M);
 void Session_results_S(GPS_time S);
 void Session_results_Alfa(Alfa_speed A,GPS_speed M);
+/*
 void log_header_SBP(void);
 void log_SBP(void);
+*/
 #endif

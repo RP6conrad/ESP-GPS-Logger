@@ -203,6 +203,9 @@
  * Changed order config.field, 1=Auto between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= 0.5h, 8= 1h
  * Font 46pt_nr and 84pt_nr added, condensed format only digits and decimal point to save memory 
  * Added Github link to main menu
+ * SW 5.62
+ * Added gpx file format
+ * Added gpy file format
  */
 #include "FS.h"
 #include "SD.h"
@@ -249,12 +252,10 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-
+char SW_version[32]="SW-version 5.62";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 int sdTrouble=0;
+
 bool sdOK = false;
-bool logUBX = true;
-bool logGPS = true;
-bool logSBP = true;
 bool button = false;
 bool reed = false;
 bool deep_sleep = false;
@@ -280,7 +281,7 @@ float analog_mean;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
-char SW_version[32]="SW-version 5.61";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
@@ -692,7 +693,7 @@ void taskTwo( void * parameter)
 {
   while(true){
     feedTheDog();
-   
+    
     stat_count++;//ca 1s per screen update
     if (stat_count>config.screen_count)stat_count=0;//screen_count = 2
     analog_bat = analogRead(PIN_BAT);

@@ -1,23 +1,23 @@
 #include "SD_card.h"
 #include <SD.h>
 #include "Rtos5.h"
-//#include "gps.h"
-
+#include "gpx.h"
+#include "sbp.h"
 File ubxfile;
 File errorfile;
-File gpsfile;//new open source file format, work in progress !!
+File gpyfile;//new open source file format, work in progress !!
 File sbpfile;
+File gpxfile;
 char filename_NO_EXT[64]="/";
 char filenameERR[64]="/";
 char filenameUBX[64]="/";
-char filenameGPS[64]="/";
+char filenameGPY[64]="/";
 char filenameSBP[64]="/";
-
+char filenameGPX[64]="/";
 char dataStr[255] = "";//string for logging  !!
 char Buffer[50]= "";//string for logging
 uint64_t GPS_UTC_ms; //Absolute UTC timewith ms resolution @start logging
-struct SBP_Header sbp_header;
-struct SBP_frame sbp_frame;
+
 struct Config config;
 
 void logERR(const char * message){
@@ -25,9 +25,7 @@ void logERR(const char * message){
 }
 //test for existing GPSLOGxxxfiles, open txt,gps + ubx file with new name !
 void Open_files(void){
-  logUBX=config.logUBX;
-  logGPS=config.logGPS;
-  logSBP=config.logSBP;
+ 
   strcat(filenameERR,config.UBXfile);//copy filename from config
   char txt[16]="000.txt";
   char macAddr[32];
@@ -50,40 +48,44 @@ void Open_files(void){
   strcat(filenameUBX,"ubx");
   strcpy(filenameSBP,filename_NO_EXT);
   strcat(filenameSBP,"sbp");
-  strcpy(filenameGPS,filename_NO_EXT);
-  strcat(filenameGPS,"gps");
+  strcpy(filenameGPY,filename_NO_EXT);
+  strcat(filenameGPY,"gpy");
+  strcpy(filenameGPX,filename_NO_EXT);
+  strcat(filenameGPX,"gpx");  
        
-            if(logUBX==true){
+            if(config.logUBX==true){
                   ubxfile=SD.open(filenameUBX, FILE_APPEND);
                   }
-            #if defined(GPS_H)
-            if(logGPS==true){
-                gpsfile=SD.open(filenameGPS,FILE_APPEND);
-                //log_header_GPS(); 
-                GPS_UTC_ms=log_header_GPS();    //retrieve UTC ms @ start logging  
+            #if defined(GPY_H)
+            if(config.logGPY==true){
+                gpyfile=SD.open(filenameGPY,FILE_APPEND);
                 }
             #endif
-            if(logSBP==true){
+            if(config.logSBP==true){
                 sbpfile=SD.open(filenameSBP,FILE_APPEND);
-                log_header_SBP();      
+                log_header_SBP(sbpfile);      
                 }
+             if(config.logGPX==true){
+                gpxfile=SD.open(filenameGPX,FILE_APPEND); 
+                log_GPX(GPX_HEADER,gpxfile);    
+                }    
             errorfile=SD.open(filenameERR, FILE_APPEND);
-            Serial.println(filenameUBX); 
-            Serial.println(filenameERR); 
-            Serial.println(filenameGPS); 
 }
 void Close_files(void){
   ubxfile.close();
   errorfile.close();
-  gpsfile.close();
+  gpyfile.close();
   sbpfile.close();
+  log_GPX(GPX_END,gpxfile);
+  gpxfile.close();
 }
 void Flush_files(void){
   if(config.sample_rate<=10){//@18Hz still lost points !!!
     ubxfile.flush();
     errorfile.flush();
-    gpsfile.flush();
+    gpyfile.flush();
     sbpfile.flush();
+    gpxfile.flush();
     }  
 }
 void Add_String(void){
@@ -92,21 +94,24 @@ void Add_String(void){
       }
 void Log_to_SD(void){
             if(Time_Set_OK==true){
-                if(logUBX==true){    
+                if(config.logUBX==true){    
                     //write ubx string to sd, last 2 bytes with checksum are missing !!
                     nav_pvt_message_nr++; 
                     ubxfile.write(0xB5);ubxfile.write(0x62);//ook nog header toevoegen !
                     ubxfile.write((const uint8_t *)&ubxMessage.navPvt, sizeof(ubxMessage.navPvt));
                     ubxfile.write(checksumA);ubxfile.write(checksumB);//checksum toevoegen
                     }
-                #if defined(GPS_H)    
-                if(logGPS==true){  
-                  log_GPS(GPS_UTC_ms);   
+                #if defined(GPY_H)    
+                if(config.logGPY==true){  
+                  log_GPY(gpyfile);   
                   }
                 #endif  
-                if(logSBP==true){  
-                  log_SBP();   
-                  }  
+                if(config.logSBP==true){  
+                  log_SBP(sbpfile); 
+                  } 
+                 if(config.logGPX==true){   
+                  log_GPX(GPX_FRAME,gpxfile); 
+                 }
                 static long old_iTOW;
                 static int interval;
                 interval=ubxMessage.navPvt.iTOW-old_iTOW;
@@ -137,6 +142,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
     file = SD.open(filename_backup);
   }else{
     Serial.println(F("no configuration file found"));
+    wifi_search=120;//elongation SoftAP mode to 120s !!!
   }
   //Serial.print((char)file.read());
   // Allocate a temporary JsonDocument
@@ -169,7 +175,8 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.logCSV=doc["logCSV"]|0;
   config.logUBX=doc["logUBX"]|1;
   config.logSBP=doc["logSBP"]|1;
-  config.logGPS=doc["logGPS"]|1;
+  config.logGPY=doc["logGPY"]|1;
+  config.logGPX=doc["logGPX"]|0;
   config.dynamic_model = doc["dynamic_model"]|0;//sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
   config.timezone = doc["timezone"]|2;
   
@@ -391,7 +398,7 @@ void Session_results_Alfa(Alfa_speed A,GPS_speed M){
       errorfile.print(message);   
       }
 }
-
+/*
 void log_header_SBP(void){
   for (int i=35;i<62;i++){sbp_header.str[i]=0xFF;}//fill with 0xFF
   sbpfile.write((const uint8_t *)&sbp_header,64);
@@ -425,3 +432,4 @@ sbp_frame.sdop=sdop;
 sbp_frame.vsdop=vsdop;
 sbpfile.write((const uint8_t *)&sbp_frame,32);
 }
+*/

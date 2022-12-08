@@ -285,7 +285,7 @@ void Sats_level(int offset){
    
 void Update_screen(int screen){
     static int count,offset,old_screen,update_delay;
-    if(screen!=old_screen)update_epaper=2;//klopt niet, altijd wit scherm tussendoor 
+    //if(screen!=old_screen)update_epaper=2;//klopt niet, altijd wit scherm tussendoor 
     update_epaper=1; //was zonder else
     if(count%20<10) offset++;
     else offset--; 
@@ -354,7 +354,7 @@ void Update_screen(int screen){
             bar_length=250*1000/240;//full bar length with Alfa = 250 meter
             if((alfa_window<99)&(Ublox.alfa_distance/1000<255)){  //Window alleen indien Window<100 en Run>350 meter !!!!&(A500.alfa_speed_max*calibration_speed<1)
                 display.setFont(&FreeSansBold12pt7b);
-				        display.print("Wind ");                                                                     // en nog geen geldige alfa
+				        display.print("Gate ");                                                                     // en nog geen geldige alfa
                 display.setFont(&FreeSansBold18pt7b);   
                 display.print(alfa_window,0);           
 			        	display.print(" Ex ");
@@ -385,7 +385,7 @@ void Update_screen(int screen){
             if((alfa_window<99)&(Ublox.alfa_distance/1000<255)){  //Window alleen indien Window<100 en Run>350 meter !!!!&(A500.alfa_speed_max*calibration_speed<1)
                 display.setCursor(offset,38);
                 display.setFont(&FreeSansBold12pt7b);
-				        display.print("Wind");                                                                     // en nog geen geldige alfa
+				        display.print("Gate");                                                                     // en nog geen geldige alfa
                 display.setFont(&SansSerif_bold_46_nr);   
                 display.print(alfa_window,0);
                 display.setFont(&FreeSansBold12pt7b);           
@@ -779,7 +779,7 @@ if(screen==STATS7){ //Simon bar graph screen
     }
             
     if(screen==WIFI_ON){  
-        update_delay=250;
+        update_delay=1000;
         if(count%20<10) offset++;
         else offset--;    
         display.setFont(&FreeSansBold18pt7b);
@@ -846,7 +846,6 @@ if(screen==STATS7){ //Simon bar graph screen
     else {
           if(update_epaper==2){display.fillScreen(GxEPD_WHITE);}//test
           if(update_epaper>0) display.updateWindow(0,0,250,122,true);//was 244,122, true !!!
-          //if(update_epaper>0) display.updateToWindow(0,0,0,0,250,122,true);//was 244,122, true !!!
           delay(update_delay);//update delay function of screen to show
           }
     old_screen=screen;
