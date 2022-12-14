@@ -1,7 +1,0 @@
-Open GNSS format with minimal format for uploading to GP3S / GPSTC / ......
-Add GPX format, 1s interval for overlay video
-Add buzzer output for feedback with two configurable speeds : Desired speed / Achieved speed
-Add audio feedback I2S and or BT
-Add logo's from SD-card
-Bigger font for speed_screen
-Auto upload tracks to GP3S
