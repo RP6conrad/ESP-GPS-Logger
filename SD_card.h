@@ -21,7 +21,7 @@ extern float calibration_bat;
 extern float calibration_speed;
 extern int time_out_nav_pvt;
 extern byte mac[6];
-extern char SW_version[32];
+extern char SW_version[16];
 extern char RTC_Sleep_txt[32];
 extern GPS_speed M100;
 extern GPS_speed M250;

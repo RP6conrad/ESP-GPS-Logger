@@ -91,7 +91,7 @@ void Init_ublox(void){
       for(int i = 0; i < sizeof(UBX_SEA); i++) {                        
         Serial2.write( pgm_read_byte(UBX_SEA+i) );
         }
-      Ublox_serial2(500); 
+  Ublox_serial2(500); 
   }
   if(config.dynamic_model==2){
       Serial.print("Set ublox UBX_AUTOMOTIVE ");
@@ -124,24 +124,10 @@ void Init_ublox(void){
         Serial2.write( pgm_read_byte(UBLOX_UBX_BD19200+i) );
         //delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
         } 
-      
-  //Ublox_serial2(500);   
-  /*Print info about length struct
-  static int payloadSize = sizeof(NAV_POSLLH);
-  Serial.print("NAV_POSLLH ");
-  Serial.println(payloadSize);
-  payloadSize = sizeof(NAV_STATUS);
-  Serial.print("NAV_NAV_STATUS ");
-  Serial.println(payloadSize);
-  payloadSize = sizeof(NAV_PVT);
-  Serial.print("NAV_PVT ");
-  Serial.println(payloadSize);
-  */
   Serial2.flush();
   //delay(15);
   Serial2.begin(19200,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 19200, necessary for 10 Hz !!!
-  Ublox_serial2(500);   
-  
+  Ublox_serial2(500);    
 }
 //Initialization of the ublox M8N  rate with binary commands, choice between 1..4
 void Set_rate_ublox(int rate){
@@ -154,16 +140,40 @@ void Set_rate_ublox(int rate){
     case 18:sample_rate=6;break;
     default:sample_rate=2;
     config.sample_rate=1;
-  }
+    }
   Serial.print("Set rate Ublox ");
   for(int i = (sample_rate*14-14); i < sample_rate*14; i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_RATE+i) );
-        
-        //delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
         }
   Ublox_serial2(500);      
 }
-void Set_GPS_Time(void){       
+//Initialization of the ublox M10N with binary commands
+void Init_ubloxM10(void){
+   Serial.print("Set ublox M10 NMEA OFF");     
+  for(int i = 0; i < sizeof(UBLOX_M10_NMEA_OFF); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_M10_NMEA_OFF+i) );
+        }
+  Serial.print("Set ublox M10 UBX");     
+  for(int i = 0; i < sizeof(UBLOX_M10_UBX); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_M10_UBX+i) );
+        }
+  //send configuration data in UBX M10 protocol 
+  Serial.print("Set ublox M10 UBX_NAV-PVT 1Hz ");     
+  for(int i = 0; i < sizeof(UBLOX_M10_INIT); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_M10_INIT+i) );
+        }
+  //send configuration data in UBX M10 protocol, set baudrate to 19200 
+  Serial.print("Set ublox M10 baudrate to 19200 ");     
+  for(int i = 0; i < sizeof(UBLOX_M10_UBX_BD19200); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_M10_UBX_BD19200+i) );
+        }
+  Serial2.flush();
+  Serial2.begin(19200,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 19200, necessary for 10 Hz !!!            
+}
+
+void Set_GPS_Time(int time_offset){  
+        setenv("TZ", "GMT0", 0);//timezone UTC = GMT0
+        tzset();     //timezone is set
         // convert a date and time into unix time, offset 1970
         my_time.Second = ubxMessage.navPvt.second;
         my_time.Hour = ubxMessage.navPvt.hour;
@@ -172,9 +182,9 @@ void Set_GPS_Time(void){
         my_time.Month = ubxMessage.navPvt.month;      // months start from 0, so deduct 1
         my_time.Year = ubxMessage.navPvt.year - 1970; // years since 1900, so deduct 1900
         unix_timestamp =  makeTime(my_time);
-        struct timeval tv = { .tv_sec = (unix_timestamp+config.timezone*3600), .tv_usec = 0 };//timezone aanpassen voor Belgie, UTC + 3600 s, zomertijd = UTC + 7200 !!
+        //struct timeval tv = { .tv_sec = (unix_timestamp+config.timezone*3600), .tv_usec = 0 };//timezone aanpassen voor Belgie, UTC + 3600 s, zomertijd = UTC + 7200 !!
+        struct timeval tv = { .tv_sec = (unix_timestamp+time_offset*3600), .tv_usec = 0 };  //clean utc time !!     
         settimeofday(&tv, NULL);
-        //setenv("TZ", "CET-1", 1);//timezone aanpassen voor Belgie, GMT + 1 uur
         getLocalTime(&tmstruct);//was tmstruct,5000 ???
         Serial.printf("\nNow is : %d-%02d-%02d %02d:%02d:%02d\n",(tmstruct.tm_year)+1900,( tmstruct.tm_mon)+1, tmstruct.tm_mday,tmstruct.tm_hour , tmstruct.tm_min, tmstruct.tm_sec);
         Serial.println("GPS Time is set");

@@ -203,9 +203,11 @@
  * Changed order config.field, 1=Auto between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= 0.5h, 8= 1h
  * Font 46pt_nr and 84pt_nr added, condensed format only digits and decimal point to save memory 
  * Added Github link to main menu
- * SW 5.62
- * Added gpx file format
- * Added gpy file format
+ * SW5.62
+ * Added GPX file format
+ * Added GPY file format
+ * If no config file : Wifi AP waiting time = 120 s
+ * Bugfix config webserver : no switching to km/h if knots was set
  */
 #include "FS.h"
 #include "SD.h"
@@ -252,7 +254,7 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-char SW_version[32]="SW-version 5.62";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[16]="SW-version 5.62";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 int sdTrouble=0;
 
 bool sdOK = false;
@@ -267,7 +269,7 @@ bool Field_choice = false;
 
 int analog_bat;
 int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay;
-int wifi_search=10;
+int wifi_search=10;//was 10
 int ftpStatus=0;
 int time_out_nav_pvt=1200;
 int nav_pvt_message_nr=0;
@@ -328,8 +330,15 @@ Button_push Short_push12 (12,100,15,1);//GPIO pin 12 is nog vrij, button_count 0
 Button_push Long_push12 (12,2000,10,4);
 Button_push Short_push39 (39,100,10,8);//was 39
 Button_push Long_push39 (39,1500,10,8);//was 39
+
+#if defined(_GxDEPG0266BN_H_) //only for screen BN266, Rolzz... !!!
+GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ 19, /*RST=*/4);
+GxEPD_Class display(io, /*RST=*/4, /*BUSY=*/34);
+#else
 GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ ELINK_DC, /*RST=*/ ELINK_RESET);
 GxEPD_Class display(io, /*RST=*/ ELINK_RESET, /*BUSY=*/ ELINK_BUSY);
+#endif
+
 SPIClass sdSPI(VSPI);
 
 const char *filename = "/config.txt";
@@ -509,8 +518,9 @@ void setup() {
         Serial.print(F("Print config file...")); 
         printFile(filename); 
         } 
-  Init_ublox(); //switch to ubx protocol+ baudrate 19200
-  Set_rate_ublox(config.sample_rate);//after reading config file !!    
+  Init_ublox(); //switch to ubx protocol
+  //Init_ubloxM10();  
+  Set_rate_ublox(config.sample_rate);//after reading config file !!      
   Update_screen(BOOT_SCREEN);
   
   const char* ssid = config.ssid; //WiFi SSID
@@ -629,7 +639,9 @@ void taskOne( void * parameter )
         ftpSrv.handleFTP();        //make sure in loop you call handleFTP()!! 
         server.handleClient();
         ftpStatus=ftpSrv.cmdStatus;//for e-paper
-        //delay(1);
+        #if defined (STATIC_DEBUG)
+         msgType = processGPS(); //debug purposes
+        #endif
         }
    else msgType = processGPS(); //only decoding if no Wifi connection
           //while (Serial2.available()) {
@@ -638,7 +650,7 @@ void taskOne( void * parameter )
     static int nav_pvt_message=0;
     if((ubxMessage.navPvt.numSV>=MIN_numSV_FIRST_FIX)&((ubxMessage.navPvt.sAcc/1000.0f)<MAX_Sacc_FIRST_FIX)&(GPS_Signal_OK==false)){
                 GPS_Signal_OK=true;
-                Set_GPS_Time();
+                Set_GPS_Time(0);
                 first_fix_GPS=millis()/1000;
                 }
     if(GPS_Signal_OK==true){

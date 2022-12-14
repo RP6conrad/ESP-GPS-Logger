@@ -458,12 +458,12 @@ void Update_screen(int screen){
             } 
          if(field==7){ 
             display.setFont(&FreeSansBold12pt7b);
-            display.print(".5A ");
+            display.print(".5hA");
             display.setFont(&FreeSansBold18pt7b);
             display.print(S1800.avg_s*calibration_speed,1);   //actual average last 30 min
             display.setCursor(offset+124,24);
             display.setFont(&FreeSansBold12pt7b);
-            display.print(".5B ");
+            display.print(".5hB");
             display.setFont(&FreeSansBold18pt7b);
             display.print(S1800.display_max_speed*calibration_speed,1);   //best average over 30 min
             }    
@@ -561,7 +561,7 @@ void Update_screen(int screen){
         else{
           display.print("3600S: ");display.println(S3600.display_max_speed*calibration_speed);
           display.setCursor(offset,120);
-          display.print(tmstruct.tm_hour);
+          display.print((tmstruct.tm_hour+config.timezone)%24);//correction for local time !!
           display.print(":");display.print(tmstruct.tm_min);
           display.print(":");display.print(tmstruct.tm_sec);
           toggle=0;
@@ -806,7 +806,7 @@ if(screen==STATS7){ //Simon bar graph screen
         if(screen!=old_screen)count=0;//eerste keer full update 
       }
     if(screen==WIFI_STATION){  
-        update_delay=0;   
+        update_delay=500;   
         display.setFont(&FreeSansBold12pt7b);
         display.setCursor(offset,26);
         display.println("Connecting to ");
@@ -823,7 +823,7 @@ if(screen==STATS7){ //Simon bar graph screen
         if(screen!=old_screen)count=0;//eerste keer full update 
       }
        if(screen==WIFI_SOFT_AP){  
-        update_delay=0;   
+        update_delay=500;   
         display.setFont(&FreeSansBold18pt7b);
         display.setCursor(offset,26);
         display.print("Wifi AP:  ");

@@ -10,6 +10,7 @@
 //#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen
 #include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen
 //#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
+//#include <GxDEPG0266BN/GxDEPG0266BN.h>  //2.66 screen for rollz...
 //#include <GxGDEW0213M21/GxGDEW0213M21.h>  //nog een andere versie, resolutie NIET OK vanwege resolutie !!!
 //#include <GxGDEP015OC1/GxGDEP015OC1.h>    //  GDEH015OC1 1.54" screen for Jeff Turner !!!
 
@@ -69,7 +70,7 @@ extern  double delta_heading,ref_heading;
 extern int bootCount,run_count,stat_count;
 extern int ftpStatus;
 extern String IP_adress;
-extern char SW_version[32];
+extern char SW_version[16];
 //xtern int logo_choice[10];
 extern RTC_DATA_ATTR int offset;
 extern RTC_DATA_ATTR float RTC_distance;

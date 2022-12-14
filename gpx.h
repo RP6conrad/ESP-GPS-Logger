@@ -24,35 +24,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 //See https://www.topografix.com/gpx_manual.asp#creator
+//Doppler speed is not part of the gpx 1.1 frame, speed is then calculated as distance/time !!!
+//gpx 1.0 is used here ! 
+//https://logiqx.github.io/gps-wizard/gpx/
+//Always 1Hz points
 #define GPX_HEADER 0
 #define GPX_FRAME 1
 #define GPX_END 2
-
+/*
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx creator="ESP-GPS"
+     version="1.0"
+     xmlns="http://www.topografix.com/GPX/1/0"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd">
+*/     
 void log_GPX(int part,File file){
-char bufferTx[256]; 
+char bufferTx[512]; 
 int i,y; 
-if(part==GPX_HEADER){
-  int year,month,day,hour,minute,sec;
-  year=ubxMessage.navPvt.year;
-      month=ubxMessage.navPvt.month;
-      day=ubxMessage.navPvt.day;
-      hour=ubxMessage.navPvt.hour;
-      minute=ubxMessage.navPvt.minute;
-      sec=ubxMessage.navPvt.second;
+int year,month,day,hour,minute,sec,sat;
+if(part==GPX_HEADER){ 
   i= sprintf(bufferTx,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");y=y+i;
-  i= sprintf(&bufferTx[y],"<gpx version=\"1.0\">\n");y=y+i;
-  i= sprintf(&bufferTx[y],"<time>%d-%d-%dT%d:%d:%dZ</time>\n",year,month,day,hour,minute,sec);y=y+i;
-  i= sprintf(&bufferTx[y],"<trk>\n<name>ESP-GPS LOG</name>\n<trkseg>\n");y=y+i;
+  i= sprintf(&bufferTx[y],"<gpx creator= \"GPS Wizard\"\nversion=\"1.0\"\n xmlns=\"http://www.topografix.com/GPX/1/0\"\n");y=y+i;
+  i= sprintf(&bufferTx[y],"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n");y=y+i;
+  i= sprintf(&bufferTx[y],"xsi:schemaLocation=\"http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd\">\n");y=y+i;
+  i= sprintf(&bufferTx[y],"<trk><trkseg>");y=y+i;
   file.write((const uint8_t *)&bufferTx,y);
   } 
-
 if(part==GPX_FRAME){  
     if(ubxMessage.navPvt.nano/1000000==0){//only log every full second !!!!
-      float lat,lon,hdop,speed;
-      int year,month,day,hour,minute,sec;
-      lat=(float)ubxMessage.navPvt.lat/10000000.0f;
+      float lat,lon,hdop,speed,msl,course;
+      lat=ubxMessage.navPvt.lat/10000000.0f;
       lon=ubxMessage.navPvt.lon/10000000.0f;
       hdop=ubxMessage.navPvt.pDOP/1000.0f;
+      course=ubxMessage.navPvt.heading/100000.0f;
+      speed=ubxMessage.navPvt.gSpeed/1000.0f;
+      msl=ubxMessage.navPvt.hMSL/1000.0f;
+      sat=ubxMessage.navPvt.numSV;
       speed=ubxMessage.navPvt.gSpeed/1000.0f;
       year=ubxMessage.navPvt.year;
       month=ubxMessage.navPvt.month;
@@ -60,29 +68,20 @@ if(part==GPX_FRAME){
       hour=ubxMessage.navPvt.hour;
       minute=ubxMessage.navPvt.minute;
       sec=ubxMessage.navPvt.second;
-      i= sprintf(bufferTx,"<trkpt lat=%f lon=%f >\n",lat,lon);y=y+i;
-      i= sprintf(&bufferTx[y],"<time>%d-%d-%dT%d:%d:%dZ</time>\n",year,month,day,hour,minute,sec);y=y+i;
-      i= sprintf(&bufferTx[y],"<hdop>%f</hdop>\n",hdop);y=y+i;
-      i= sprintf(&bufferTx[y],"<extensions>\n<speed>%f</speed>\n</extensions>\n</trkpt>\n",speed);y=y+i;
+      i= sprintf(bufferTx,"<trkpt lat=\"%f\" lon=\"%f\" >\n",lat,lon);y=y+i;
+      i= sprintf(&bufferTx[y],"<ele>%f</ele>\n",msl);y=y+i;
+      i= sprintf(&bufferTx[y],"<time>%d-%d-%dT%'02d:%'02d:%'02dZ</time>",year,month,day,hour,minute,sec);y=y+i;
+      i= sprintf(&bufferTx[y],"<course>%f</course>",course);y=y+i;
+      i= sprintf(&bufferTx[y],"<speed>%f</speed>",speed);y=y+i;
+      i= sprintf(&bufferTx[y],"<sat>%d</sat>",sat);y=y+i;
+      i= sprintf(&bufferTx[y],"<hdop>%f</hdop></trkpt>\n",hdop);y=y+i;
+     
       file.write((const uint8_t *)&bufferTx,y);
+      }
     }
   if(part==GPX_END){
      y= sprintf(bufferTx,"</trkseg>\n</trk></gpx>\n");
      file.write((const uint8_t *)&bufferTx,y);
-     }  
-}    
-/*  
- </trkseg>
-  </trk>
-</gpx>
-<trkpt lat="51.5115702" lon="5.3231929">
-    <ele>10.175</ele>
-    <time>2019-11-10T13:02:37Z</time>
-    <hdop>4</hdop>
-    <extensions>
-      <speed>1.176</speed>
-    </extensions>
-  </trkpt>
-  */
+     }      
 }
 #endif
