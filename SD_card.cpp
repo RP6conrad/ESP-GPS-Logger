@@ -287,6 +287,12 @@ void Session_info(GPS_data G){
   if(config.gnss==3) strcat(message,"GNSS = GPS + GLONAS");
   if(config.gnss==11) strcat(message,"GNSS = GPS + GLONAS + GALILEO");
   strcat(message," \n");
+  strcat(message,"Ublox SW-version : ");
+  strcat(message,ubxMessage.monVER.swVersion);
+  strcat(message," \n");
+   strcat(message,"Ublox HW-version : ");
+  strcat(message,ubxMessage.monVER.hwVersion);
+  strcat(message," \n");
   errorfile.print(message);                  
 }
 

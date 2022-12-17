@@ -208,6 +208,12 @@
  * Added GPY file format
  * If no config file : Wifi AP waiting time = 120 s
  * Bugfix config webserver : no switching to km/h if knots was set
+ * SW5.63
+ * Added support for BN266 e-paper
+ * Changed GPS-parser union to struct, every ubx message has its own struct now
+ * Added ubx nav dop Msg for extracting HDOP
+ * Added ubx mon ver Msf for extracting sw / hw version ublox
+ * Changed baudrate ublox to 38400, necessary for 10Hz navDOP + navPVT  
  */
 #include "FS.h"
 #include "SD.h"
@@ -254,7 +260,7 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-char SW_version[16]="SW-version 5.62";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[16]="SW-version 5.63";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 int sdTrouble=0;
 
 bool sdOK = false;
@@ -500,10 +506,8 @@ void setup() {
      delay(2);   //was delay (1)
      }
    
- 
-
   sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
- 
+
   struct timeval tv = { .tv_sec =  0, .tv_usec = 0 };
   settimeofday(&tv, NULL);
   if (!SD.begin(SDCARD_SS, sdSPI)) {
@@ -519,6 +523,10 @@ void setup() {
         printFile(filename); 
         } 
   Init_ublox(); //switch to ubx protocol
+  Serial.print("SW Ublox=");
+  Serial.println(ubxMessage.monVER.swVersion);
+  Serial.print ("HW Ublox=");
+  Serial.println (ubxMessage.monVER.hwVersion);
   //Init_ubloxM10();  
   Set_rate_ublox(config.sample_rate);//after reading config file !!      
   Update_screen(BOOT_SCREEN);
@@ -640,43 +648,46 @@ void taskOne( void * parameter )
         server.handleClient();
         ftpStatus=ftpSrv.cmdStatus;//for e-paper
         #if defined (STATIC_DEBUG)
-         msgType = processGPS(); //debug purposes
+        msgType = processGPS(); //debug purposes
         #endif
         }
    else msgType = processGPS(); //only decoding if no Wifi connection
           //while (Serial2.available()) {
-          //Serial.print(char(Serial2.read()));}   
-   if ( msgType == MT_NAV_PVT ) { 
+          //Serial.print(char(Serial2.read()));}  
+ if ( msgType == MT_NAV_DOP ) {      //Logging after NAV_DOP, ublox sends first NAV_PVT, and then NAV_DOP.  
+    #if defined (STATIC_DEBUG)
+    Serial.print(" DOPiTOW P ");Serial.print (ubxMessage.navPvt.iTOW);
+    Serial.print(" DOPiTOW N ");Serial.println (ubxMessage.navDOP.iTOW);
+    #endif     
     static int nav_pvt_message=0;
     if((ubxMessage.navPvt.numSV>=MIN_numSV_FIRST_FIX)&((ubxMessage.navPvt.sAcc/1000.0f)<MAX_Sacc_FIRST_FIX)&(GPS_Signal_OK==false)){
-                GPS_Signal_OK=true;
-                Set_GPS_Time(0);
-                first_fix_GPS=millis()/1000;
-                }
+          GPS_Signal_OK=true;
+          Set_GPS_Time(0);
+          first_fix_GPS=millis()/1000;
+          }
     if(GPS_Signal_OK==true){
-           GPS_delay++;
+          GPS_delay++;
           }
     if ((Time_Set_OK==false)&(GPS_Signal_OK==true)&(GPS_delay>(TIME_DELAY_FIRST_FIX*config.sample_rate))){//vertraging Time_Set_OK is nu 10 s!!
       int avg_speed=(avg_speed+ubxMessage.navPvt.gSpeed*19)/20; //FIR filter gem. snelheid laatste 20 metingen in mm/s
       if(avg_speed>MIN_SPEED_START_LOGGING){
         Time_Set_OK=true;
         Open_files();//only start logging if GPS signal is OK
-        
         }
-    } 
-//    Alleen speed>0 indien snelheid groter is dan 1m/s + sACC<1 + sat<5 + speed>35 m/s !!!
+      }      //    Alleen speed>0 indien snelheid groter is dan 1m/s + sACC<1 + sat<5 + speed>35 m/s !!!
     if(Time_Set_OK==true)nav_pvt_message++;
     if ((sdOK==true)&(Time_Set_OK==true)&(nav_pvt_message>10)){
+               
               float sAcc=ubxMessage.navPvt.sAcc/1000;
               gps_speed=ubxMessage.navPvt.gSpeed; //hier alles naar mm/s !!
               static int last_flush_time=0;
               if((millis()-last_flush_time)>60000){
-                Flush_files();
-                last_flush_time=millis();
-                }
+                  Flush_files();
+                  last_flush_time=millis();
+                  }
               if((ubxMessage.navPvt.numSV<=MIN_numSV_GPS_SPEED_OK)|((ubxMessage.navPvt.sAcc/1000.0f)>MAX_Sacc_GPS_SPEED_OK)|(ubxMessage.navPvt.gSpeed/1000.0f>MAX_GPS_SPEED_OK)){
-                gps_speed=0;
-                } 
+                  gps_speed=0;
+                  } 
               Log_to_SD();//hier wordt ook geprint naar serial !!
               Ublox.push_data(ubxMessage.navPvt.lat/10000000.0f,ubxMessage.navPvt.lon/10000000.0f,gps_speed);   
               run_count=New_run_detection(ubxMessage.navPvt.heading/100000.0f,S2.avg_s); 
@@ -696,9 +707,15 @@ void taskOne( void * parameter )
               A250.Update_Alfa(M250);
               A500.Update_Alfa(M500);
               a500.Update_Alfa(M500);
-              }  
+              }     
       } 
-  }  
+     else if( msgType == MT_NAV_PVT )  { 
+      #if defined (STATIC_DEBUG)
+      Serial.print(" PVTiTOW P ");Serial.print (ubxMessage.navPvt.iTOW);
+      Serial.print(" PVTiTOW N ");Serial.println (ubxMessage.navDOP.iTOW);
+      #endif
+       }  
+  }   
 }
  
 void taskTwo( void * parameter)

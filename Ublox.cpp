@@ -9,29 +9,12 @@ struct tm tmstruct ;
 tmElements_t my_time;  // time elements structure
 
 time_t unix_timestamp; // a timestamp
-// The last two bytes of the message is a checksum value, used to confirm that the received payload is valid.
-// The procedure used to calculate this is given as pseudo-code in the uBlox manual.
-void calcChecksum(unsigned char* CK, int msgSize) {
-  memset(CK, 0, 2);
-  for (int i = 0; i < msgSize; i++) {
-    CK[0] += ((unsigned char*)(&ubxMessage))[i];
-    CK[1] += CK[0];
-  }
-}
-// Compares the first two bytes of the ubxMessage struct with a specific message header.
-// Returns true if the two bytes match.
-boolean compareMsgHeader(const unsigned char* msgHeader) {
-  unsigned char* ptr = (unsigned char*)(&ubxMessage);
-  return ptr[0] == msgHeader[0] && ptr[1] == msgHeader[1];
-}
+
 void Ublox_on(){
    //F(19, HIGH);//Groene LED
    digitalWrite(25, HIGH); 
    digitalWrite(26, HIGH);
    digitalWrite(27, HIGH);
-   //digitalWrite(0, HIGH); 
-   //digitalWrite(12, HIGH);
-   //digitalWrite(34, HIGH);
    delay(20);
 }
 void Ublox_off(){
@@ -39,9 +22,6 @@ void Ublox_off(){
   digitalWrite(25, LOW);
   digitalWrite(26, LOW);
   digitalWrite(27, LOW);
-  //digitalWrite(0, LOW);
-  //digitalWrite(12, LOW);
-  //digitalWrite(34, LOW);
 }
 void Ublox_serial2(int delay_ms){
  for(int i=0;i<delay_ms;i++){//string van ublox to serial, ca 424 char !!
@@ -68,6 +48,12 @@ void Ublox_serial2(int delay_ms){
           Serial.print (ubxMessage.monGNSS.default_Gnss);
           Serial.println (ubxMessage.monGNSS.enabled_Gnss);
           }
+      if ( msgType == MT_MON_VER){
+          Serial.print("SW Ublox=");
+          Serial.println(ubxMessage.monVER.swVersion);
+          Serial.print ("HW Ublox=");
+          Serial.println (ubxMessage.monVER.hwVersion);
+          }    
      delay(2);   
      } 
 }
@@ -81,53 +67,64 @@ void Ask_ID(void){
 //Initialization of the ublox M8N with binary commands
 void Init_ublox(void){
   //send configuration data in UBX protocol 
-  Serial.print("Set ublox UBX_OUT ");     
+  Serial.println("Set ublox UBX_OUT ");     
   for(int i = 0; i < sizeof(UBLOX_UBX_OUT); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_UBX_OUT+i) );
         }
-  Ublox_serial2(500);
+  Ublox_serial2(100);
   if(config.dynamic_model==1){
-      Serial.print("Set ublox UBX_SEA ");
+      Serial.println("Set ublox UBX_SEA ");
       for(int i = 0; i < sizeof(UBX_SEA); i++) {                        
         Serial2.write( pgm_read_byte(UBX_SEA+i) );
         }
-  Ublox_serial2(500); 
+  Ublox_serial2(100); 
   }
   if(config.dynamic_model==2){
-      Serial.print("Set ublox UBX_AUTOMOTIVE ");
+      Serial.println("Set ublox UBX_AUTOMOTIVE ");
       for(int i = 0; i < sizeof(UBX_AUTOMOTIVE); i++) {                        
         Serial2.write( pgm_read_byte(UBX_AUTOMOTIVE+i) );
         }
-      Ublox_serial2(500); 
+      Ublox_serial2(100); 
   }
   if(config.gnss=3){
-      Serial.print("Set ublox UBX_GNSS3 : GPS, GLONAS & GALILEO ");
+      Serial.println("Set ublox UBX_GNSS3 : GPS, GLONAS & GALILEO ");
       for(int i = 0; i < sizeof(UBX_GNSS3); i++) {                        
         Serial2.write( pgm_read_byte(UBX_GNSS3+i) );
         }
       Ublox_serial2(500); 
-      Serial.print("Check MON_GNSS settings ");
+      Serial.println("Check MON_GNSS settings ");
       for(int i = 0; i < sizeof(UBX_MON_GNSS); i++) {                        
         Serial2.write( pgm_read_byte(UBX_MON_GNSS+i) );
         }
-      Ublox_serial2(500); 
+      Ublox_serial2(100); 
   }
   //Ask_ID();  //Works only if M8N has sw-version 3, beitian BN180 has 2.01 !!!
-  Serial.print("Set ublox NAV_PVT_ON ");   
+  Serial.println("Set ublox NAV_PVT_ON ");   
   for(int i = 0; i < sizeof(UBLOX_UBX_NAVPVT_ON); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_UBX_NAVPVT_ON+i) );
-        //delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
+        delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
         }
-  Ublox_serial2(500); 
-  Serial.print("Set ublox to 19200BD "); 
-  for(int i = 0; i < sizeof(UBLOX_UBX_BD19200); i++) {                        
-        Serial2.write( pgm_read_byte(UBLOX_UBX_BD19200+i) );
+  Serial.println("Set ublox NAV_DOP_ON ");   
+  for(int i = 0; i < sizeof(UBLOX_UBX_NAVDOP_ON); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_UBX_NAVDOP_ON+i) );
+        delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
+        }
+  Serial.println("Check UBX_MON_VER ");     
+   for(int i = 0; i < sizeof(UBX_MON_VER); i++) {                        
+        Serial2.write( pgm_read_byte(UBX_MON_VER+i) );
         //delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
+        }                 
+  Ublox_serial2(100); 
+  
+  Serial.println("Set ublox to 38400BD "); 
+  for(int i = 0; i < sizeof(UBLOX_UBX_BD38400); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_UBX_BD38400+i) );
+        delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
         } 
   Serial2.flush();
-  //delay(15);
-  Serial2.begin(19200,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 19200, necessary for 10 Hz !!!
-  Ublox_serial2(500);    
+  Serial2.begin(38400,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 38400, necessary for 10 Hz  NAV_PVT + NAV_DOP!!!
+  Ublox_serial2(100); 
+     
 }
 //Initialization of the ublox M8N  rate with binary commands, choice between 1..4
 void Set_rate_ublox(int rate){
@@ -189,26 +186,47 @@ void Set_GPS_Time(int time_offset){
         Serial.printf("\nNow is : %d-%02d-%02d %02d:%02d:%02d\n",(tmstruct.tm_year)+1900,( tmstruct.tm_mon)+1, tmstruct.tm_mday,tmstruct.tm_hour , tmstruct.tm_min, tmstruct.tm_sec);
         Serial.println("GPS Time is set");
 }
+void AddString(void){
+        strcat(dataStr, Buffer);//add it onto the end
+        strcat(dataStr, ":"); //append the delimeter
+        }
+// The last two bytes of the message is a checksum value, used to confirm that the received payload is valid.
+// The procedure used to calculate this is given as pseudo-code in the uBlox manual.
+void calcChecksum(unsigned char* CK,int msgType, int msgSize) {
+  memset(CK, 0, 2);
+  for (int i = 0; i < msgSize; i++) {
+    if(msgType==MT_NAV_PVT) {CK[0] += ((unsigned char*)(&ubxMessage.navPvt))[i];}
+    else if(msgType==MT_NAV_DOP) {CK[0] += ((unsigned char*)(&ubxMessage.navDOP))[i];} 
+    else if(msgType==MT_MON_GNSS){CK[0] += ((unsigned char*)(&ubxMessage.monGNSS))[i];} 
+    else if(msgType==MT_MON_VER){CK[0] += ((unsigned char*)(&ubxMessage.monVER))[i];} 
+    else if(msgType==MT_NAV_ACK){CK[0] += ((unsigned char*)(&ubxMessage.navAck))[i];} 
+    else {CK[0] += ((unsigned char*)(&ubxMessage))[i];}
+    CK[1] += CK[0];
+  }
+}
+// Compares the first two bytes of the ubxMessage struct with a specific message header.
+// Returns true if the two bytes match.
+boolean compareMsgHeader(const unsigned char* msgHeader) {
+  unsigned char* ptr = (unsigned char*)(&ubxMessage);
+  return ptr[0] == msgHeader[0] && ptr[1] == msgHeader[1];
+}
 // Reads in bytes from the GPS module and checks to see if a valid message has been constructed.
 // Returns the type of the message found if successful, or MT_NONE if no message was found.
 // After a successful return the contents of the ubxMessage union will be valid, for the 
 // message type that was found. Note that further calls to this function can invalidate the
 // message content, so you must use the obtained values before calling this function again.
-void AddString(void){
-        strcat(dataStr, Buffer);//add it onto the end
-        strcat(dataStr, ":"); //append the delimeter
-        }
+
 int processGPS() {
   static int fpos = 0;
   static unsigned char checksum[2];
   static byte currentMsgType = MT_NONE;
   static int payloadSize = sizeof(UBXMessage);
-  
+  static unsigned char cls;
+  static unsigned char id;
+  static uint16_t len;
   while ( Serial2.available() ) {
-    
     byte c = Serial2.read();    
     //Serial.write(c);
-    
     if ( fpos < 2 ) {
       // For the first two bytes we are simply looking for a match with the UBX header bytes (0xB5,0x62)
       if ( c == UBX_HEADER[fpos] )
@@ -220,72 +238,85 @@ int processGPS() {
     else {
       // If we come here then fpos >= 2, which means we have found a match with the UBX_HEADER
       // and we are now reading in the bytes that make up the payload.
-      
       // Place the incoming byte into the ubxMessage struct. The position is fpos-2 because
       // the struct does not include the initial two-byte header (UBX_HEADER).
       // the struct does not include the 2 last bytes which are the checksums
       // checksums are not placed in the ubxMessage !!!
-      if ( (fpos-2) < payloadSize )
-        ((unsigned char*)(&ubxMessage))[fpos-2] = c;
-
-      fpos++;
-      
-      if ( fpos == 4 ) {
+      if (((fpos-2) < payloadSize)&(fpos<4)){((unsigned char*)(&ubxMessage))[fpos-2] = c;} 
+      if(fpos==2) cls=c;
+      if(fpos==3) id=c;
+      if (fpos==3) {
         // We have just received the second byte of the message type header, 
         // so now we can check to see what kind of message it is.
+        //We have to restore cls and id to the correct substructure
         if ( compareMsgHeader(NAV_PVT_HEADER) ) {
           currentMsgType = MT_NAV_PVT;
           payloadSize = sizeof(NAV_PVT);
-          //Serial.print("NAV_PVT\n");
+          ubxMessage.navPvt.cls=cls;
+          ubxMessage.navPvt.id=id;
+          //Serial.print("hPVT ");
         }
         else if ( compareMsgHeader(MON_GNSS_HEADER) ) {
           currentMsgType = MT_MON_GNSS;
           payloadSize = sizeof(MON_GNSS);
-          Serial.println("MT_MON_GNSS\n");
+          ubxMessage.monGNSS.cls=cls;
+          ubxMessage.monGNSS.id=id;
+          //Serial.println("MT_MON_GNSS\n");
         }
-        /*
-        else if ( compareMsgHeader(NAV_STATUS_HEADER) ) {
-          currentMsgType = MT_NAV_STATUS;
-          payloadSize = sizeof(NAV_STATUS);
-          Serial.println("NAV_STATUS\n");
+        else if ( compareMsgHeader(NAV_DOP_HEADER) ) {
+          currentMsgType = MT_NAV_DOP;
+          payloadSize = sizeof(NAV_DOP);
+          ubxMessage.navDOP.cls=cls;
+          ubxMessage.navDOP.id=id;
+          //Serial.print("hDOP ");
         }
-        else if ( compareMsgHeader(NAV_ODO_HEADER) ) {
-          currentMsgType = MT_NAV_ODO;
-          payloadSize = sizeof(NAV_ODO);
-          Serial.println("NAV_ODO");
+        else if ( compareMsgHeader(MON_VER_HEADER) ) {
+          currentMsgType = MT_MON_VER;
+          payloadSize = sizeof(MON_VER);
+          ubxMessage.monVER.cls=cls;
+          ubxMessage.monVER.id=id;
+          Serial.println("MT_MON_VER\n");
         }
-         else if ( compareMsgHeader(NAV_ACK_HEADER) ) {
+        else if ( compareMsgHeader(NAV_ACK_HEADER) ) {
           currentMsgType = MT_NAV_ACK;
           payloadSize = sizeof(NAV_ACK);
-          //Serial.println("NAV_ACK");
+          ubxMessage.navAck.cls=cls;
+          ubxMessage.navAck.id=id;
+          Serial.println("NAV_ACK\n");
         }
-        */
         else {
           // unknown message type, bail
+          currentMsgType = MT_NONE;
           fpos = 0;
           continue;
         }
       }
-
+      if (((fpos-2) < payloadSize)&(fpos>=4)){
+        if(currentMsgType==MT_NAV_PVT) {((unsigned char*)(&ubxMessage.navPvt))[fpos-2] = c;} 
+        if(currentMsgType==MT_NAV_DOP) {((unsigned char*)(&ubxMessage.navDOP))[fpos-2] = c;} 
+        if(currentMsgType==MT_MON_GNSS) {((unsigned char*)(&ubxMessage.monGNSS))[fpos-2] = c;} 
+        if(currentMsgType==MT_MON_VER) {((unsigned char*)(&ubxMessage.monVER))[fpos-2] = c;} 
+        if(currentMsgType==MT_NAV_ACK) {((unsigned char*)(&ubxMessage.navAck))[fpos-2] = c;} 
+      }
+      fpos++;
       if ( fpos == (payloadSize+2) ) {
-        // All payload bytes have now been received, so we can calculate the 
-        // expected checksum value to compare with the next two incoming bytes.
-        calcChecksum(checksum, payloadSize);
+      // All payload bytes have now been received, so we can calculate the 
+      // expected checksum value to compare with the next two incoming bytes.
+      // checksum has to calculated out of the correct sustructure !!!
+        calcChecksum(checksum,currentMsgType,payloadSize);
       }
       else if ( fpos == (payloadSize+3) ) {
         // First byte after the payload, ie. first byte of the checksum.
         // Does it match the first byte of the checksum we calculated?
         checksumA=c;
         if ( c != checksum[0] ) {
-          static int count=0;//ignore first checksum fail !!
+          static int countA=0;//ignore first checksum fail !!
           // Checksum doesn't match, reset to beginning state and try again.
-          //if(currentMsgType == MT_NAV_ACK) Serial.print("ACK");
-          Serial.println("ChecksumNIO");
-          if ((sdOK==true)&(Time_Set_OK==true)&(count>1)){
-              logERR("ChecksumNIO\n");
-              //appendFile(SD,filenameERR, "ChecksumNIO\n");
+          // Serial.println("CkA NIO");
+          if ((sdOK==true)&(Time_Set_OK==true)&(countA>1)){
+              logERR("ChecksumA_NIO\n");
               }
-          count++;
+          countA++;
           fpos = 0; 
         }
       }
@@ -294,11 +325,18 @@ int processGPS() {
         // Does it match the second byte of the checksum we calculated?
         fpos = 0; // We will reset the state regardless of whether the checksum matches.
         checksumB=c;
+        static int countB=0;
         if ( c == checksum[1] ) {
           // Checksum matches, we have a valid message.
           return currentMsgType; 
         }
-      }
+        else{ if ((sdOK==true)&(Time_Set_OK==true)&(countB>1)){
+              //Serial.println("CkB NIO");
+              logERR("ChecksumB_NIO\n");
+              }
+              countB++;
+            }
+      }    
       else if ( fpos > (payloadSize+4) ) {
         // We have now read more bytes than both the expected payload and checksum 
         // together, so something went wrong. Reset to beginning state and try again.
@@ -306,6 +344,7 @@ int processGPS() {
       }
     }
   }
+  //currentMsgType=MT_NONE;
   return MT_NONE;
 }
 
