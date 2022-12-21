@@ -45,7 +45,7 @@ int i,y;
 int year,month,day,hour,minute,sec,sat;
 if(part==GPX_HEADER){ 
   i= sprintf(bufferTx,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");y=y+i;
-  i= sprintf(&bufferTx[y],"<gpx creator= \"GPS Wizard\"\nversion=\"1.0\"\n xmlns=\"http://www.topografix.com/GPX/1/0\"\n");y=y+i;
+  i= sprintf(&bufferTx[y],"<gpx creator= \"ESP-GPS\"\nversion=\"1.0\"\n xmlns=\"http://www.topografix.com/GPX/1/0\"\n");y=y+i;
   i= sprintf(&bufferTx[y],"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n");y=y+i;
   i= sprintf(&bufferTx[y],"xsi:schemaLocation=\"http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd\">\n");y=y+i;
   i= sprintf(&bufferTx[y],"<trk><trkseg>");y=y+i;
@@ -56,7 +56,7 @@ if(part==GPX_FRAME){
       float lat,lon,hdop,speed,msl,course;
       lat=ubxMessage.navPvt.lat/10000000.0f;
       lon=ubxMessage.navPvt.lon/10000000.0f;
-      hdop=ubxMessage.navPvt.pDOP/1000.0f;
+      hdop=ubxMessage.navDOP.hDOP/100.0f;//resolution in ubx nav dop is 0.01
       course=ubxMessage.navPvt.heading/100000.0f;
       speed=ubxMessage.navPvt.gSpeed/1000.0f;
       msl=ubxMessage.navPvt.hMSL/1000.0f;

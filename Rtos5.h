@@ -12,4 +12,3 @@
 #endif
 
 #endif
-//for debug : rtos5.ino, process gps always on regel 635

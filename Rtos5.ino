@@ -208,6 +208,18 @@
  * Added GPY file format
  * If no config file : Wifi AP waiting time = 120 s
  * Bugfix config webserver : no switching to km/h if knots was set
+ * SW5.63
+ * Added support for BN266 e-paper
+ * Changed GPS-parser union to struct, every ubx message has its own struct now
+ * Added ubx nav dop Msg for extracting HDOP
+ * Added ubx mon ver Msf for extracting sw / hw version ublox
+ * Changed baudrate ublox to 38400, necessary for 10Hz navDOP + navPVT
+ * Correction timestamp list files with FTP 
+ * Added sail logo "Severne" = 10
+ * Added board logo "F2" = 10
+ * Bugfix for SSID with white space
+ * Added watchtdog for WAKE UP screen (hangs sometimes after OTA)
+ * Added loadbalance for flushfiles()
  */
 #include "FS.h"
 #include "SD.h"
@@ -254,7 +266,7 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-char SW_version[16]="SW-version 5.62";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[16]="SW-version 5.63";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 int sdTrouble=0;
 
 bool sdOK = false;
@@ -272,6 +284,7 @@ int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay;
 int wifi_search=10;//was 10
 int ftpStatus=0;
 int time_out_nav_pvt=1200;
+int next_gpy_full_frame=0;
 int nav_pvt_message_nr=0;
 int msgType;
 int stat_screen=5;//keuze stat scherm indien stilstand
@@ -438,15 +451,17 @@ void Shut_down(void){
 }
 
 //For RTOS, the watchdog has to be triggered
-void feedTheDog(){
+void feedTheDog_Task0(){
   TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable
   TIMERG0.wdt_feed=1;                       // feed dog
   TIMERG0.wdt_wprotect=0;                   // write protect
- 
+}
+void feedTheDog_Task1(){ 
   TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable
   TIMERG1.wdt_feed=1;                       // feed dog
   TIMERG1.wdt_wprotect=0;                   // write protect
 } 
+
 void OnWiFiEvent(WiFiEvent_t event){
   switch (event) {
     case SYSTEM_EVENT_STA_CONNECTED:
@@ -473,13 +488,16 @@ void OnWiFiEvent(WiFiEvent_t event){
   }
 }
 void setup() {
+  Serial.println("Configuring WDT...");
+  esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
+  esp_task_wdt_add(NULL); //add current thread to WDT watch
   Serial.begin(115200);
   Serial.println("setup Serial");
   Serial.println("Serial Txd is on pin: "+String(TX));
   Serial.println("Serial Rxd is on pin: "+String(RX));
   SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
   print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
- 
+ //sometimes after OTA hangs here ???
   pinMode(25, OUTPUT);//Power beitian //default drive strength 2, only 2.7V @ ublox gps
   pinMode(26, OUTPUT);//Power beitian
   pinMode(27, OUTPUT);//Power beitian
@@ -493,17 +511,15 @@ void setup() {
   Serial.println("Serial2 9600bd Txd is on pin: "+String(TXD2));
   Serial.println("Serial2 9600bd Rxd is on pin: "+String(RXD2));
   
-  for(int i=0;i<600;i++){//Startup string van ublox to serial, ca 424 char !!
+  for(int i=0;i<425;i++){//Startup string van ublox to serial, ca 424 char !!
      while (Serial2.available()) {
               Serial.print(char(Serial2.read()));
               }
      delay(2);   //was delay (1)
      }
    
- 
-
   sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
- 
+
   struct timeval tv = { .tv_sec =  0, .tv_usec = 0 };
   settimeofday(&tv, NULL);
   if (!SD.begin(SDCARD_SS, sdSPI)) {
@@ -519,6 +535,10 @@ void setup() {
         printFile(filename); 
         } 
   Init_ublox(); //switch to ubx protocol
+  Serial.print("SW Ublox=");
+  Serial.println(ubxMessage.monVER.swVersion);
+  Serial.print ("HW Ublox=");
+  Serial.println (ubxMessage.monVER.hwVersion);
   //Init_ubloxM10();  
   Set_rate_ublox(config.sample_rate);//after reading config file !!      
   Update_screen(BOOT_SCREEN);
@@ -537,6 +557,7 @@ void setup() {
   // Wait for connection during 10s in station mode
   bool ota_notrunning=true;
   while ((WiFi.status() != WL_CONNECTED)&(SoftAP_connection==false)) {
+    esp_task_wdt_reset();
     server.handleClient(); // wait for client handle, and update BAT Status, this section should be moved to the loop... //client coutner wait until download is finished to prevent stoping the server during download
     analog_bat = analogRead(PIN_BAT);
     analog_mean=analog_bat*0.1+analog_mean*0.9;
@@ -606,7 +627,9 @@ void setup() {
 }
  
 void loop() {  
-  feedTheDog();
+  feedTheDog_Task0();
+  feedTheDog_Task1();
+  esp_task_wdt_reset();
   analog_bat = analogRead(PIN_BAT);
   analog_mean=analog_bat*0.1+analog_mean*0.9;
   voltage_bat=analog_mean*calibration_bat/1000;
@@ -616,8 +639,6 @@ void loop() {
 void taskOne( void * parameter )
 {
  while(true){ 
-   feedTheDog();
-
    if (Short_push12.Button_pushed())GPIO12_screen++;//toggle screen
    if (GPIO12_screen>config.gpio12_count)GPIO12_screen=0;
    if (Long_push12.Button_pushed()){ s10.Reset_stats(); s2.Reset_stats();a500.Reset_stats();} //resetten stats   
@@ -640,43 +661,46 @@ void taskOne( void * parameter )
         server.handleClient();
         ftpStatus=ftpSrv.cmdStatus;//for e-paper
         #if defined (STATIC_DEBUG)
-         msgType = processGPS(); //debug purposes
+        msgType = processGPS(); //debug purposes
         #endif
         }
    else msgType = processGPS(); //only decoding if no Wifi connection
           //while (Serial2.available()) {
-          //Serial.print(char(Serial2.read()));}   
-   if ( msgType == MT_NAV_PVT ) { 
+          //Serial.print(char(Serial2.read()));}  
+ if ( msgType == MT_NAV_DOP ) {      //Logging after NAV_DOP, ublox sends first NAV_PVT, and then NAV_DOP.  
+    #if defined (STATIC_DEBUG)
+    Serial.print(" DOPiTOW P ");Serial.print (ubxMessage.navPvt.iTOW);
+    Serial.print(" DOPiTOW N ");Serial.println (ubxMessage.navDOP.iTOW);
+    #endif     
     static int nav_pvt_message=0;
     if((ubxMessage.navPvt.numSV>=MIN_numSV_FIRST_FIX)&((ubxMessage.navPvt.sAcc/1000.0f)<MAX_Sacc_FIRST_FIX)&(GPS_Signal_OK==false)){
-                GPS_Signal_OK=true;
-                Set_GPS_Time(0);
-                first_fix_GPS=millis()/1000;
-                }
+          GPS_Signal_OK=true;
+          Set_GPS_Time(0);
+          first_fix_GPS=millis()/1000;
+          }
     if(GPS_Signal_OK==true){
-           GPS_delay++;
+          GPS_delay++;
           }
     if ((Time_Set_OK==false)&(GPS_Signal_OK==true)&(GPS_delay>(TIME_DELAY_FIRST_FIX*config.sample_rate))){//vertraging Time_Set_OK is nu 10 s!!
       int avg_speed=(avg_speed+ubxMessage.navPvt.gSpeed*19)/20; //FIR filter gem. snelheid laatste 20 metingen in mm/s
       if(avg_speed>MIN_SPEED_START_LOGGING){
         Time_Set_OK=true;
         Open_files();//only start logging if GPS signal is OK
-        
         }
-    } 
-//    Alleen speed>0 indien snelheid groter is dan 1m/s + sACC<1 + sat<5 + speed>35 m/s !!!
+      }      //    Alleen speed>0 indien snelheid groter is dan 1m/s + sACC<1 + sat<5 + speed>35 m/s !!!
     if(Time_Set_OK==true)nav_pvt_message++;
     if ((sdOK==true)&(Time_Set_OK==true)&(nav_pvt_message>10)){
+               
               float sAcc=ubxMessage.navPvt.sAcc/1000;
               gps_speed=ubxMessage.navPvt.gSpeed; //hier alles naar mm/s !!
               static int last_flush_time=0;
               if((millis()-last_flush_time)>60000){
-                Flush_files();
-                last_flush_time=millis();
-                }
+                  Flush_files();
+                  last_flush_time=millis();
+                  }
               if((ubxMessage.navPvt.numSV<=MIN_numSV_GPS_SPEED_OK)|((ubxMessage.navPvt.sAcc/1000.0f)>MAX_Sacc_GPS_SPEED_OK)|(ubxMessage.navPvt.gSpeed/1000.0f>MAX_GPS_SPEED_OK)){
-                gps_speed=0;
-                } 
+                  gps_speed=0;
+                  } 
               Log_to_SD();//hier wordt ook geprint naar serial !!
               Ublox.push_data(ubxMessage.navPvt.lat/10000000.0f,ubxMessage.navPvt.lon/10000000.0f,gps_speed);   
               run_count=New_run_detection(ubxMessage.navPvt.heading/100000.0f,S2.avg_s); 
@@ -696,16 +720,20 @@ void taskOne( void * parameter )
               A250.Update_Alfa(M250);
               A500.Update_Alfa(M500);
               a500.Update_Alfa(M500);
-              }  
+              }     
       } 
-  }  
+     else if( msgType == MT_NAV_PVT )  { 
+      #if defined (STATIC_DEBUG)
+      Serial.print(" PVTiTOW P ");Serial.print (ubxMessage.navPvt.iTOW);
+      Serial.print(" PVTiTOW N ");Serial.println (ubxMessage.navDOP.iTOW);
+      #endif
+       }  
+  }   
 }
  
 void taskTwo( void * parameter)
 {
-  while(true){
-    feedTheDog();
-    
+  while(true){  
     stat_count++;//ca 1s per screen update
     if (stat_count>config.screen_count)stat_count=0;//screen_count = 2
     analog_bat = analogRead(PIN_BAT);

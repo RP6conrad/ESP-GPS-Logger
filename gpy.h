@@ -111,7 +111,8 @@ time_t tmConvert_t(int YYYY, byte MM, byte DD, byte hh, byte mm, byte ss)
 }
 
 void log_GPY_Header(File file){
-  strcat(gpy_header.firmwareVersion,SW_version);
+ 
+  for (int i=0;i<16;i++){gpy_header.firmwareVersion[i]=SW_version[i];}
   sprintf(gpy_header.serialNumber, "_%2X%2X%2X%2X%2X%2X_", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	Fletcher16((uint8_t*)&gpy_header,72);
 	file.write((const uint8_t *)&gpy_header,72);
@@ -127,7 +128,7 @@ void log_GPY(File file){
  frame_time.Day = ubxMessage.navPvt.day;
  frame_time.Month = ubxMessage.navPvt.month;     
  frame_time.Year = ubxMessage.navPvt.year - 1970; // years since 1970, so deduct 1970
- utc_Sec =  makeTime(frame_time)-3600;//1 hour difference with ubx ???
+ utc_Sec =  makeTime(frame_time);//-3600;//1 hour difference with ubx ???
  int64_t utc_ms= utc_Sec*1000LL+(ubxMessage.navPvt.nano+500000)/1000000LL;
 
 //calcultation of delta values
@@ -146,10 +147,10 @@ if((delta_Speed_error>SIGNED_INT)|(delta_Speed_error<-SIGNED_INT))full_frame=1;
 if((delta_Latitude>SIGNED_INT)|(delta_Latitude<-SIGNED_INT))full_frame=1;
 if((delta_Longitude>SIGNED_INT)|(delta_Longitude<-SIGNED_INT))full_frame=1;
 if((delta_COG>SIGNED_INT)|(delta_COG<-SIGNED_INT))full_frame=1;
-if (first_frame==0)full_frame=1;//first frame is always a full frame
-
+if(first_frame==0)full_frame=1;//first frame is always a full frame
+if(next_gpy_full_frame){full_frame=1;next_gpy_full_frame=0;}//if a navPvt frame is lost, next frame = full frame !!!
 if(full_frame==1){
-    gpy_frame.HDOP=ubxMessage.navPvt.pDOP;
+    gpy_frame.HDOP=ubxMessage.navDOP.hDOP;//ubxMessage.navPvt.pDOP;
     gpy_frame.Unix_time=utc_ms;
     gpy_frame.Speed=ubxMessage.navPvt.gSpeed;
     gpy_frame.Speed_error=ubxMessage.navPvt.sAcc;
@@ -164,7 +165,7 @@ if(full_frame==1){
     //Serial.println(" full ");
     }   
 else{
-    gpy_frame_compressed.HDOP=ubxMessage.navPvt.pDOP;	//HDOP
+    gpy_frame_compressed.HDOP=ubxMessage.navDOP.hDOP;//ubxMessage.navPvt.pDOP
     gpy_frame_compressed.delta_time=delta_time;//ms 
     gpy_frame_compressed.delta_Speed=delta_Speed; //mm/
     gpy_frame_compressed.delta_Speed_error=delta_Speed_error;//sAccCourse_Over_Ground;
