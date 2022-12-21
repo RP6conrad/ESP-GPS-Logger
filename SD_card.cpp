@@ -83,11 +83,13 @@ void Close_files(void){
 }
 void Flush_files(void){
   if(config.sample_rate<=10){//@18Hz still lost points !!!
-    ubxfile.flush();
-    errorfile.flush();
-    gpyfile.flush();
-    sbpfile.flush();
-    gpxfile.flush();
+    static int load_balance=0;
+    if(load_balance==0)ubxfile.flush();
+    if(load_balance==1)errorfile.flush();
+    if(load_balance==2)gpyfile.flush();
+    if(load_balance==3)sbpfile.flush();
+    if(load_balance==4){gpxfile.flush();load_balance=-1;}
+    load_balance++;
     }  
 }
 void Add_String(void){
@@ -96,12 +98,27 @@ void Add_String(void){
       }
 void Log_to_SD(void){
             if(Time_Set_OK==true){
+                static long old_iTOW;
+                static int interval;
+                interval=ubxMessage.navPvt.iTOW-old_iTOW;
+                old_iTOW=ubxMessage.navPvt.iTOW;            
+                if((interval>time_out_nav_pvt)&(sdOK==true)&(Time_Set_OK==true)){//check for timeout navPvt message !!
+                     next_gpy_full_frame=1;
+                     dataStr[0] = 0;
+                     dtostrf(ubxMessage.navPvt.hour, 2, 0, Buffer);AddString(); 
+                     dtostrf(ubxMessage.navPvt.minute, 2, 0, Buffer);AddString(); 
+                     dtostrf(ubxMessage.navPvt.second, 2, 0, Buffer);AddString(); 
+                     ltoa(nav_pvt_message_nr,Buffer,10);AddString();
+                     strcat(dataStr, "Lost ubx frame!\n");
+                     errorfile.print(dataStr);
+                     Serial.print("Lost ubx frame");
+                     Serial.println(interval);
+                    }
                 if(config.logUBX==true){    
-                    //write ubx string to sd, last 2 bytes with checksum are missing !!
+                    //write ubx string to sd
                     nav_pvt_message_nr++; 
                     ubxfile.write(0xB5);ubxfile.write(0x62);//ook nog header toevoegen !
                     ubxfile.write((const uint8_t *)&ubxMessage.navPvt, sizeof(ubxMessage.navPvt));
-                    ubxfile.write(checksumA);ubxfile.write(checksumB);//checksum toevoegen
                     }
                 #if defined(GPY_H)    
                 if(config.logGPY==true){  
@@ -114,21 +131,7 @@ void Log_to_SD(void){
                  if(config.logGPX==true){   
                   log_GPX(GPX_FRAME,gpxfile); 
                  }
-                static long old_iTOW;
-                static int interval;
-                interval=ubxMessage.navPvt.iTOW-old_iTOW;
-                old_iTOW=ubxMessage.navPvt.iTOW;            
-                if((interval>time_out_nav_pvt)&(sdOK==true)&(Time_Set_OK==true)){
-                     dataStr[0] = 0;
-                     dtostrf(ubxMessage.navPvt.hour, 2, 0, Buffer);AddString(); 
-                     dtostrf(ubxMessage.navPvt.minute, 2, 0, Buffer);AddString(); 
-                     dtostrf(ubxMessage.navPvt.second, 2, 0, Buffer);AddString(); 
-                     ltoa(interval,Buffer,10);AddString();
-                     strcat(dataStr, "Lost ubx frame!\n");
-                     errorfile.print(dataStr);
-                     Serial.print("Lost ubx frame");
-                     Serial.println(interval);
-              }
+                
         }
                 
 }              
@@ -211,7 +214,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   RTC_Sail_Logo=config.Sail_Logo;//copy to RTC memory !!
   calibration_bat=config.cal_bat;
   calibration_speed=config.cal_speed/1000;//3.6=km/h, 1.94384449 = knots, speed is now in mm/s
-  time_out_nav_pvt=(1000/config.sample_rate+150);//max time out = 150 ms
+  time_out_nav_pvt=(1000/config.sample_rate+50);//max time out = 150 ms
   RTC_SLEEP_screen=config.sleep_off_screen%10;
   RTC_OFF_screen=config.sleep_off_screen/10%10;
   //int Logo_choice=config.Logo_choice;//preserve value config.Logo_choice for config.txt update !!
@@ -246,6 +249,11 @@ void printFile(const char *filename) {
   // Close the file
   file.close();
 }
+void AddString(void){
+        strcat(dataStr, Buffer);//add it onto the end
+        strcat(dataStr, ":"); //append the delimeter
+        }
+
 void Model_info(int model){
   char tekst[20]="";char message[255]="";
   errorfile.print("Dynamic model: "); 

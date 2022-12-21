@@ -100,9 +100,6 @@ private:
            bytesTransfered;           //
   String   _FTP_USER;
   String   _FTP_PASS;
-
-  
-
 };
 
 #endif // FTP_SERVERESP_H

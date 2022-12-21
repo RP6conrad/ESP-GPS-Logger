@@ -273,7 +273,6 @@ float Alfa_speed::Update_Alfa(GPS_speed M){
     }
   //if((alfa_speed_max>0.0f)&(straight_dist_square>(alfa_circle_square*1.4))){//alfa max gaat pas op 0 indien 500 m na de gijp, rechte afstand na de gijp
   if(run_count!=old_run_count){ 
-    
       sort_run_alfa(avg_speed,real_distance,message_nr,time_hour,time_min,time_sec,alfa_distance,this_run,10);
       char tekst[20]="";char message[255]=""; 
       strcat(message, " alfa_speed "); 
@@ -297,13 +296,19 @@ void Alfa_speed::Reset_stats(void){
 }
 int New_run_detection(float actual_heading, float S2_speed){
    /*Berekening van de gemiddelde heading over de laatste 10s************************************************************************/
+   #define SPEED_DETECTION_MIN 4000       //min average speed over 2s for new run detection (mm/s)
+   #define STANDSTILL_DETECTION_MAX 1000  //max average speed over 2s voor stand still detection (mm/s)
+   #define MEAN_HEADING_TIME 15           //tijd in s voor berekening gemiddelde heading
+   #define STRAIGHT_COURSE_MAX_DEV 10     //max hoek afwijking voor rechtdoor herkenning (graden)
+   #define JIBE_COURSE_DEVIATION_MIN 50   //min hoek afwijking voor dettectie jibe (graden)
+
    static float old_heading,delta_heading,heading;
    static uint32_t delay_counter;
    static int run_counter;
    static bool velocity_0 = false;
    static bool velocity_5 = false;
-   int speed_detection_min=4000;//minimum snelheid 4m/s (14 km/h)voor snelheid display
-   int standstill_detection_max=1000;//maximum snelheid 1 m/s (3.6 km/h) voor stilstand herkenning, was 1.5 m/s change SW5.51
+   int speed_detection_min=SPEED_DETECTION_MIN;//minimum snelheid 4m/s (14 km/h)voor snelheid display
+   int standstill_detection_max=STANDSTILL_DETECTION_MAX;//maximum snelheid 1 m/s (3.6 km/h) voor stilstand herkenning, was 1.5 m/s change SW5.51
    //float headAcc=ubxMessage.navPvt.headingAcc/100000.0f;  //heading Accuracy wordt niet gebruikt ???  
    //actual_heading=ubxMessage.navPvt.heading/100000.0f;
    if((actual_heading-old_heading)>300.0f) delta_heading=delta_heading-360.0f;
@@ -311,9 +316,9 @@ int New_run_detection(float actual_heading, float S2_speed){
    old_heading=actual_heading;
    heading=actual_heading+delta_heading;
    /*detectie heading change over 15s is more then 40°, nieuwe run wordt gestart !!***************************************************************************/
-   int mean_heading_time=15;//tijd in s voor berekening gemiddelde heading
-   int straight_course_max=10;//max hoek afwijking voor rechtdoor herkenning
-   int course_deviation_min=50;//min hoek afwijking om gijp te detecteren, was 40
+   int mean_heading_time=MEAN_HEADING_TIME;//tijd in s voor berekening gemiddelde heading
+   int straight_course_max=STRAIGHT_COURSE_MAX_DEV;//max hoek afwijking voor rechtdoor herkenning
+   int course_deviation_min=JIBE_COURSE_DEVIATION_MIN;//min hoek afwijking om gijp te detecteren, was 40
    int time_delay_new_run=TIME_DELAY_NEW_RUN;//vertraging om nieuwe run te starten, sw 4.59
    heading_SD=heading;
    Mean_heading=Mean_heading*(mean_heading_time*config.sample_rate-1)/(mean_heading_time*config.sample_rate)+heading/(mean_heading_time*config.sample_rate);

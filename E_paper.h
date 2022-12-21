@@ -6,15 +6,22 @@
 //! There are four versions of the 2.13 screen,
 //  if you are not sure which version, please test each one,
 //  if it is successful then it belongs to the model of the file name
-
+// The 2.66 screen has other SPI pins, and more pixels. Partof the pixels are now unused.
 //#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen
-#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen
+//#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen
 //#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
-//#include <GxDEPG0266BN/GxDEPG0266BN.h>  //2.66 screen for rollz...
+#include <GxDEPG0266BN/GxDEPG0266BN.h>  //2.66 screen for rollz...
 //#include <GxGDEW0213M21/GxGDEW0213M21.h>  //nog een andere versie, resolutie NIET OK vanwege resolutie !!!
 //#include <GxGDEP015OC1/GxGDEP015OC1.h>    //  GDEH015OC1 1.54" screen for Jeff Turner !!!
 
-// https://oleddisplay.squix.ch/#/home font-converter online, used for 48pt font !!
+/* https://oleddisplay.squix.ch/#/home font-converter online, used for 48pt font !!
+Canvas size(s):   48 x 48                                
+Background color: White 
+Brightness / alpha threshold: zelf instelllen zodat het voorbeeld er het mooiste uitziet in de preview eronder
+Scaling: scale to fit, keeping proportions
+Center: horizontally & vertically
+Flip: horizontally 
+*/
 // https://tchapi.github.io/Adafruit-GFX-Font-Customiser/ used for extracting only needed digits and decimal point !!
 // FreeFonts from Adafruit_GFX
 #include "Fonts/FreeMonoBold9pt7b.h"//gebruikt

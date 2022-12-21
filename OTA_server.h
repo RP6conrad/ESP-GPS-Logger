@@ -133,7 +133,7 @@ void printDirectory(const char * dirname, uint8_t levels)
       int bytes = file.size();
       String fsize = "";
       time_t file_date = file.getLastWrite();//changes JH 19/11/2022
-      String fd = Print_time(file_date);
+      String fd = Print_time(file_date);//Winscp does always a timezone correction !!!
       if (bytes < 1024)                     fsize = String(bytes)+" B";
       else if(bytes < (1024 * 1024))        fsize = String(bytes/1024.0,3)+" KB";
       else if(bytes < (1024 * 1024 * 1024)) fsize = String(bytes/1024.0/1024.0,3)+" MB";

@@ -147,8 +147,8 @@ if((delta_Speed_error>SIGNED_INT)|(delta_Speed_error<-SIGNED_INT))full_frame=1;
 if((delta_Latitude>SIGNED_INT)|(delta_Latitude<-SIGNED_INT))full_frame=1;
 if((delta_Longitude>SIGNED_INT)|(delta_Longitude<-SIGNED_INT))full_frame=1;
 if((delta_COG>SIGNED_INT)|(delta_COG<-SIGNED_INT))full_frame=1;
-if (first_frame==0)full_frame=1;//first frame is always a full frame
-
+if(first_frame==0)full_frame=1;//first frame is always a full frame
+if(next_gpy_full_frame){full_frame=1;next_gpy_full_frame=0;}//if a navPvt frame is lost, next frame = full frame !!!
 if(full_frame==1){
     gpy_frame.HDOP=ubxMessage.navDOP.hDOP;//ubxMessage.navPvt.pDOP;
     gpy_frame.Unix_time=utc_ms;

@@ -213,7 +213,13 @@
  * Changed GPS-parser union to struct, every ubx message has its own struct now
  * Added ubx nav dop Msg for extracting HDOP
  * Added ubx mon ver Msf for extracting sw / hw version ublox
- * Changed baudrate ublox to 38400, necessary for 10Hz navDOP + navPVT  
+ * Changed baudrate ublox to 38400, necessary for 10Hz navDOP + navPVT
+ * Correction timestamp list files with FTP 
+ * Added sail logo "Severne" = 10
+ * Added board logo "F2" = 10
+ * Bugfix for SSID with white space
+ * Added watchtdog for WAKE UP screen (hangs sometimes after OTA)
+ * Added loadbalance for flushfiles()
  */
 #include "FS.h"
 #include "SD.h"
@@ -278,6 +284,7 @@ int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay;
 int wifi_search=10;//was 10
 int ftpStatus=0;
 int time_out_nav_pvt=1200;
+int next_gpy_full_frame=0;
 int nav_pvt_message_nr=0;
 int msgType;
 int stat_screen=5;//keuze stat scherm indien stilstand
@@ -444,15 +451,17 @@ void Shut_down(void){
 }
 
 //For RTOS, the watchdog has to be triggered
-void feedTheDog(){
+void feedTheDog_Task0(){
   TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable
   TIMERG0.wdt_feed=1;                       // feed dog
   TIMERG0.wdt_wprotect=0;                   // write protect
- 
+}
+void feedTheDog_Task1(){ 
   TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable
   TIMERG1.wdt_feed=1;                       // feed dog
   TIMERG1.wdt_wprotect=0;                   // write protect
 } 
+
 void OnWiFiEvent(WiFiEvent_t event){
   switch (event) {
     case SYSTEM_EVENT_STA_CONNECTED:
@@ -479,13 +488,16 @@ void OnWiFiEvent(WiFiEvent_t event){
   }
 }
 void setup() {
+  Serial.println("Configuring WDT...");
+  esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
+  esp_task_wdt_add(NULL); //add current thread to WDT watch
   Serial.begin(115200);
   Serial.println("setup Serial");
   Serial.println("Serial Txd is on pin: "+String(TX));
   Serial.println("Serial Rxd is on pin: "+String(RX));
   SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
   print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
- 
+ //sometimes after OTA hangs here ???
   pinMode(25, OUTPUT);//Power beitian //default drive strength 2, only 2.7V @ ublox gps
   pinMode(26, OUTPUT);//Power beitian
   pinMode(27, OUTPUT);//Power beitian
@@ -499,7 +511,7 @@ void setup() {
   Serial.println("Serial2 9600bd Txd is on pin: "+String(TXD2));
   Serial.println("Serial2 9600bd Rxd is on pin: "+String(RXD2));
   
-  for(int i=0;i<600;i++){//Startup string van ublox to serial, ca 424 char !!
+  for(int i=0;i<425;i++){//Startup string van ublox to serial, ca 424 char !!
      while (Serial2.available()) {
               Serial.print(char(Serial2.read()));
               }
@@ -545,6 +557,7 @@ void setup() {
   // Wait for connection during 10s in station mode
   bool ota_notrunning=true;
   while ((WiFi.status() != WL_CONNECTED)&(SoftAP_connection==false)) {
+    esp_task_wdt_reset();
     server.handleClient(); // wait for client handle, and update BAT Status, this section should be moved to the loop... //client coutner wait until download is finished to prevent stoping the server during download
     analog_bat = analogRead(PIN_BAT);
     analog_mean=analog_bat*0.1+analog_mean*0.9;
@@ -614,7 +627,9 @@ void setup() {
 }
  
 void loop() {  
-  feedTheDog();
+  feedTheDog_Task0();
+  feedTheDog_Task1();
+  esp_task_wdt_reset();
   analog_bat = analogRead(PIN_BAT);
   analog_mean=analog_bat*0.1+analog_mean*0.9;
   voltage_bat=analog_mean*calibration_bat/1000;
@@ -624,8 +639,6 @@ void loop() {
 void taskOne( void * parameter )
 {
  while(true){ 
-   feedTheDog();
-
    if (Short_push12.Button_pushed())GPIO12_screen++;//toggle screen
    if (GPIO12_screen>config.gpio12_count)GPIO12_screen=0;
    if (Long_push12.Button_pushed()){ s10.Reset_stats(); s2.Reset_stats();a500.Reset_stats();} //resetten stats   
@@ -720,9 +733,7 @@ void taskOne( void * parameter )
  
 void taskTwo( void * parameter)
 {
-  while(true){
-    feedTheDog();
-    
+  while(true){  
     stat_count++;//ca 1s per screen update
     if (stat_count>config.screen_count)stat_count=0;//screen_count = 2
     analog_bat = analogRead(PIN_BAT);

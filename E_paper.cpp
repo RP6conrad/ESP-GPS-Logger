@@ -142,15 +142,17 @@ void Sleep_screen(int choice){
       display.drawExampleBitmap(Severne_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
     if(RTC_Board_Logo==9)
       display.drawExampleBitmap(Tabou_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
+    if(RTC_Board_Logo==10)
+      display.drawExampleBitmap(F2_logo_zwart, 195, 0, 48, 48, GxEPD_BLACK);  
     // Zeil Logo's:
     if(RTC_Sail_Logo==1)//Logo's Simon Dijkstra
       display.drawExampleBitmap(GAsails_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
     if(RTC_Sail_Logo==2)
       display.drawExampleBitmap(DuoTone_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
     if(RTC_Sail_Logo==3)
-      display.drawExampleBitmap(Pryde_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
-    if(RTC_Sail_Logo==4)
       display.drawExampleBitmap(NP_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
+    if(RTC_Sail_Logo==4)
+      display.drawExampleBitmap(Pryde_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
     if(RTC_Sail_Logo==5)//Logo's Jan Scholten
       display.drawExampleBitmap(Loftsails_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
     if(RTC_Sail_Logo==6)
@@ -161,6 +163,9 @@ void Sleep_screen(int choice){
       display.drawExampleBitmap(Simmer_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
     if(RTC_Sail_Logo==9)
       display.drawExampleBitmap(Naish_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK); 
+    if(RTC_Sail_Logo==10) //Severne as Sail logo !!! 
+      display.drawExampleBitmap(Severne_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
+
       display.setFont(&SF_Distant_Galaxy7pt7b);//font ??
       display.setCursor(col1,105);
       display.print(RTC_hour);display.print(":");display.print(RTC_min);display.print(" ");display.print(RTC_day);display.print("-");display.print(RTC_month);display.print("-");display.print(RTC_year);
@@ -285,6 +290,11 @@ void Sats_level(int offset){
    
 void Update_screen(int screen){
     static int count,offset,old_screen,update_delay;
+    char time_now[16];
+    char time_now_sec[16];
+    getLocalTime(&tmstruct, 0);
+    sprintf(time_now,"%02d:%02d",(tmstruct.tm_hour+config.timezone)%24,tmstruct.tm_min);
+    sprintf(time_now_sec,"%02d:%02d:%02d",(tmstruct.tm_hour+config.timezone)%24,tmstruct.tm_min,tmstruct.tm_sec);
     //if(screen!=old_screen)update_epaper=2;//klopt niet, altijd wit scherm tussendoor 
     update_epaper=1; //was zonder else
     if(count%20<10) offset++;
@@ -539,7 +549,6 @@ void Update_screen(int screen){
       }
      if(screen==STATS2){                        //alfa 500m,1852m, 1800s,total_dist
         update_delay=1000;
-        getLocalTime(&tmstruct, 0);
         static int toggle=0;
         display.setFont(&FreeSansBold18pt7b);
         display.setCursor(offset,24);
@@ -561,9 +570,7 @@ void Update_screen(int screen){
         else{
           display.print("3600S: ");display.println(S3600.display_max_speed*calibration_speed);
           display.setCursor(offset,120);
-          display.print((tmstruct.tm_hour+config.timezone)%24);//correction for local time !!
-          display.print(":");display.print(tmstruct.tm_min);
-          display.print(":");display.print(tmstruct.tm_sec);
+          display.print(time_now_sec);
           toggle=0;
           }
         Bat_level(offset);
@@ -598,8 +605,9 @@ void Update_screen(int screen){
               display.setFont(&FreeSansBold18pt7b);display.print(s10.display_speed[i-3]*calibration_speed,1);
               }
           else{
-              display.print(tmstruct.tm_hour);
-              display.print(":");display.print(tmstruct.tm_min);
+              display.print(time_now);
+              //display.print((tmstruct.tm_hour+config.timezone)%24);//correction for local time !!
+              //display.print(":");display.print(tmstruct.tm_min);
               }
           }
       }
@@ -619,8 +627,9 @@ void Update_screen(int screen){
                   display.setFont(&FreeSansBold18pt7b);display.print(a500.avg_speed[i-3]*calibration_speed,1);
                   }
               else{
-                  display.print(tmstruct.tm_hour);
-                  display.print(":");display.print(tmstruct.tm_min);
+                  display.print(time_now);
+                  //display.print((tmstruct.tm_hour+config.timezone)%24);//correction for local time !!
+                  //display.print(":");display.print(tmstruct.tm_min);
                   }
               }
           }
@@ -650,7 +659,9 @@ void Update_screen(int screen){
           
           display.setCursor(offset,122);
           display.setFont(&FreeSansBold9pt7b);
-          display.print(tmstruct.tm_hour);display.print(":");display.print(tmstruct.tm_min);
+          display.print(time_now);
+          //display.print((tmstruct.tm_hour+config.timezone)%24);//correction for local time !!
+          //display.print(":");display.print(tmstruct.tm_min);
           
           display.setFont(&FreeMonoBold12pt7b);
           display.setCursor(col1,row1);

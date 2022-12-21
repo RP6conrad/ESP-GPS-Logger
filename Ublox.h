@@ -67,8 +67,10 @@ const char UBX_MON_GNSS[] PROGMEM = {0xB5,0x62,0x0A,0x28,0x00,0x00,0x32,0xA0};//
 const char UBX_MON_VER[] PROGMEM =  {0xB5,0x62,0x0A,0x04,0x00,0x00,0x0E,0x34};//poll SW version
 
 const unsigned char UBX_HEADER[] = { 0xB5, 0x62 };
+const unsigned char NAV_DUMMY_HEADER[] = { 0x01, 0x00 };
 const unsigned char NAV_PVT_HEADER[] = { 0x01, 0x07 };
 const unsigned char NAV_ACK_HEADER[] = { 0x05, 0x01 };
+const unsigned char NAV_NACK_HEADER[] = { 0x05, 0x00 };
 const unsigned char NAV_ID_HEADER[] = { 0x27, 0x03 };
 const unsigned char MON_GNSS_HEADER[] = { 0x0A, 0x28 };
 const unsigned char NAV_DOP_HEADER[] = { 0x01, 0x04 };
@@ -76,13 +78,24 @@ const unsigned char MON_VER_HEADER[] = { 0x0A, 0x04 };
 
 enum _ubxMsgType {
   MT_NONE,
+  MT_NAV_DUMMY,
   MT_NAV_PVT,
   MT_NAV_ACK,
+  MT_NAV_NACK,
   MT_NAV_ID,
   MT_MON_GNSS,
   MT_NAV_DOP,
   MT_MON_VER
 };
+struct NAV_DUMMY {
+  unsigned char cls;
+  unsigned char id;
+  unsigned short len;
+  unsigned char msg_cls;
+  unsigned char msg_id;
+  unsigned char chkA;
+  unsigned char chkB;
+}__attribute__((__packed__));
 struct NAV_PVT {  // 88 bytes payload, 92 bytes total, with Beitian BN220 100 bytes total ????
   unsigned char cls;
   unsigned char id;
@@ -120,14 +133,27 @@ struct NAV_PVT {  // 88 bytes payload, 92 bytes total, with Beitian BN220 100 by
   long headVeh;              //only valid for adr4.1, beitian bn220 !
   short magDec;              //only valid for adr4.1,beitian bn220 !
   short magAcc;              //only valid for adr4.1,beitian bn220 !
-};
+  unsigned char chkA;
+  unsigned char chkB;
+}__attribute__((__packed__));
 struct NAV_ACK {
   unsigned char cls;
   unsigned char id;
   unsigned short len;
   unsigned char msg_cls;
   unsigned char msg_id;
-};
+  unsigned char chkA;
+  unsigned char chkB;
+}__attribute__((__packed__));
+struct NAV_NACK {
+  unsigned char cls;
+  unsigned char id;
+  unsigned short len;
+  unsigned char msg_cls;
+  unsigned char msg_id;
+  unsigned char chkA;
+  unsigned char chkB;
+}__attribute__((__packed__));
 struct NAV_ID {
   unsigned char cls;
   unsigned char id;
@@ -141,7 +167,9 @@ struct NAV_ID {
   byte ubx_id_3;
   byte ubx_id_4;
   byte ubx_id_5;
-};
+  unsigned char chkA;
+  unsigned char chkB;
+}__attribute__((__packed__));
 struct MON_GNSS {
   unsigned char cls;
   unsigned char id;
@@ -154,7 +182,9 @@ struct MON_GNSS {
   byte reserved1;
   byte reserved2;
   byte reserved3;
-};
+  unsigned char chkA;
+  unsigned char chkB;
+}__attribute__((__packed__));
 struct NAV_DOP {  //payload 18 bytes, total 22 bytes, without (__packed__) 24 bytes !!!
   unsigned char cls;
   unsigned char id;
@@ -167,6 +197,8 @@ struct NAV_DOP {  //payload 18 bytes, total 22 bytes, without (__packed__) 24 by
   unsigned short hDOP;//14
   unsigned short nDOP;//16
   unsigned short eDOP;//18
+  unsigned char chkA;
+  unsigned char chkB;
 }__attribute__((__packed__));
 
 struct MON_VER {
@@ -175,15 +207,16 @@ struct MON_VER {
         unsigned short len;
         char swVersion[30];
         char hwVersion[10];
-        //char extension1[30];
-        //char extension2[30];
+        unsigned char chkA;
+        unsigned char chkB;
     }__attribute__((__packed__));
 
 struct UBXMessage {//was union, but messages are overwritten by next message
-  //NONE none;
+  NAV_DUMMY navDummy;
   NAV_PVT navPvt;
   NAV_DOP navDOP;
   NAV_ACK navAck;
+  NAV_NACK navNack;
   NAV_ID ubxId; 
   MON_GNSS monGNSS;
   MON_VER monVER;
@@ -205,6 +238,5 @@ void Init_ublox(void);
 void Init_ubloxM10(void);
 void Set_rate_ublox(int);
 void Set_GPS_Time(int time_offset);
-void AddString(void);
 int processGPS();
 #endif

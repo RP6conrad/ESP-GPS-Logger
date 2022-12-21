@@ -27,12 +27,14 @@
 #include <FS.h>
 #include "SD.h"
 #include "SPI.h"
+#include "SD_card.h"
 
 //changes JH 20/02/2021, added for timestamp file ftp
+
 String print_time(time_t timestamp) {
   char message[120];
   char buff[20];
-  strftime(buff, 20, "%Y%m%d%H%M%S", localtime(&timestamp));
+  strftime(buff, 20, "%Y%m%d%H%M%S", localtime(&timestamp));//was localtime
   return buff;
 }
 
@@ -497,7 +499,7 @@ boolean FtpServer::processCommand()
           fn = file.name();
     	  fn.remove(0, 1);
 		  time_t file_date = file.getLastWrite();//changes JH 20/02/2021
-		  fd = print_time(file_date);
+		  fd = print_time(file_date-config.timezone*3600);
       		#ifdef FTP_DEBUG
   			  Serial.println("File Name = "+ fn);
       		#endif
@@ -557,7 +559,7 @@ boolean FtpServer::processCommand()
     	  String fn,fs,fd;
           fn = file.name();
 		  time_t file_date = file.getLastWrite();//changes JH 20/02/2021
-		  fd = print_time(file_date);
+		  fd = print_time(file_date-config.timezone*3600);
           //Serial.println(fn);//**********************************************************************************************************
     	  fn.remove(0, strlen(cwdName));
           if(fn[0] == '/') fn.remove(0, 1);
