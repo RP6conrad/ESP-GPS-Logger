@@ -329,7 +329,8 @@ void html_config(String& webpage){
   //gnss
   webpage += "<tr><td>gnss</td><td>\n<select id='gnss' name='gnss'>\n";
   if(config.gnss == 2) webpage += "<option value='2' selected>GPS + GLONAS</option>\n"; else webpage += "<option value='2'>GPS + GLONAS</option>\n";
-  if(config.gnss == 3 | config.gnss == 11) webpage += "<option value='3' selected>GPS + GLONAS + GALILEO</option>\n"; else webpage += "<option value='3'>GPS + GLONAS + GALILEO</option>\n";
+  if(config.gnss == 3) webpage += "<option value='3' selected>GPS + GLONAS + GALILEO</option>\n"; else webpage += "<option value='3'>GPS + GLONAS + GALILEO</option>\n";
+  if(config.gnss == 4) webpage += "<option value='4' selected>GPS + GLONAS + BEIDOU</option>\n"; else webpage += "<option value='4'>GPS + GLONAS + BEIDOU</option>\n";
   webpage += "</select>\n</td><td>gnss: gnss = 3 : GPS + GLONAS + GALILEO (only possible with ublox ROM version 3.01 !!). <br> Default is only GPS + GLONAS used. Some Beitian modules still have a old firmware, ROM 2.01. Here, Galileo can't be activated.</td>\n</tr>\n";
   Serial.println("gnss: "+String(config.gnss)+"\n");
   //speed_field
@@ -354,8 +355,12 @@ void html_config(String& webpage){
   webpage += "</select>\n</td><td>bar_length: Default length = 1852 m for 100% bar (=Nautical mile)</td>\n</tr>\n";
   //Stat_screens
   webpage += "<tr>\n<td>Stat_screens</td><td>\n";
-  webpage += "<input size='8' type='number' required name='Stat_screens' min='0' max='1000' value="+String(config.Stat_screens_persist)+" step='1'>\n";
+  webpage += "<input size='8' type='number' required name='Stat_screens' min='0' max='9999' value="+String(config.Stat_screens_persist)+" step='1'>\n";
   webpage += "</select>\n</td><td>Stat_screens choice : every digit shows the according stat_screen after each other</td>\n</tr>\n";
+  //Stat_screens_time
+  webpage += "<tr>\n<td>Stat_screens_time</td><td>\n";
+  webpage += "<input size='8' type='number' required name='Stat_screens_time' min='1' max='10' value="+String(config.Stat_screens_time)+" step='1'>\n";
+  webpage += "</select>\n</td><td>The time between toggle the different stat screens</td>\n</tr>\n";
   //Stat_speed
   webpage += "<tr>\n<td>stat_speed</td><td>\n";
   webpage += "<input size='8' type='number' required name='stat_speed' min='0' max='1000' value="+String(config.stat_speed)+" step='1'>\n";
@@ -396,12 +401,14 @@ void html_config(String& webpage){
   if(config.logGPX == 1) webpage += "<option value='1' selected>LOG GPX ON</option>\n"; else webpage += "<option value='1'>LOG GPX ON</option>\n";
   if(config.logGPX == 0) webpage += "<option value='0' selected>LOG GPX OFF</option>\n"; else webpage += "<option value='0'>LOG GPX OFF</option>\n";
   webpage += "</select>\n</td><td>logGPX: To save the GPS data in gpx format @ 1Hz, for video overlay or other purposes.</td>\n</tr>\n";  
+  #if !defined(UBLOX_M10)
   //dynamic_model
   webpage += "<tr><td>dynamic_model</td><td>\n<select id='dynamic_model' name='dynamic_model'>\n";
   if(config.dynamic_model == 0) webpage += "<option value='0' selected>portable</option>\n"; else webpage += "<option value='0'>portable</option>\n";
   if(config.dynamic_model == 1) webpage += "<option value='1' selected>sea</option>\n"; else webpage += "<option value='1'>sea</option>\n";
   if(config.dynamic_model == 2) webpage += "<option value='2' selected>automotive</option>\n"; else webpage += "<option value='2'>automotive</option>\n";
   webpage += "</select>\n</td><td>dynamic_model: Here you can choose the dynamic model of the Ublox M8N (0=portable, 1=sea, 2=automotive). As 'sea' has some disadvantages (max speed is limited to 40 knots, only sea-level..), my advice is to stay with 'portable'. </td>\n</tr>\n"; 
+  #endif
   //timezone
   webpage += "<tr>\n<td>timezone</td><td>\n";
   webpage += "<input size='2' type='number' required name='timezone' min='-12' max='14' value="+String(config.timezone)+" step='1'>\n";

@@ -53,7 +53,10 @@ void Open_files(void){
   strcpy(filenameGPX,filename_NO_EXT);
   strcat(filenameGPX,"gpx");   
             if(config.logUBX==true){
+                  
                   ubxfile=SD.open(filenameUBX, FILE_APPEND);
+                  //ubxfile.setBufferSize(4096);
+                  //if(setvbuf(file, NULL, _IOFBF, 4096) != 0) {}//enlarge buffer SD handle error
                   }
             #if defined(GPY_H)
             if(config.logGPY==true){
@@ -102,7 +105,7 @@ void Log_to_SD(void){
                 static int interval;
                 interval=ubxMessage.navPvt.iTOW-old_iTOW;
                 old_iTOW=ubxMessage.navPvt.iTOW;            
-                if((interval>time_out_nav_pvt)&(sdOK==true)&(Time_Set_OK==true)){//check for timeout navPvt message !!
+                if((interval>time_out_nav_pvt)&(sdOK==true)&(nav_pvt_message_nr>10)){//check for timeout navPvt message !!
                      next_gpy_full_frame=1;
                      dataStr[0] = 0;
                      dtostrf(ubxMessage.navPvt.hour, 2, 0, Buffer);AddString(); 
@@ -115,10 +118,15 @@ void Log_to_SD(void){
                      Serial.println(interval);
                     }
                 if(config.logUBX==true){    
-                    //write ubx string to sd
+                    //write ubx string to sd, added check for nr of bytes written
+                    int total_bytes_written=0;
+                    int bytes_written=0;
                     nav_pvt_message_nr++; 
-                    ubxfile.write(0xB5);ubxfile.write(0x62);//ook nog header toevoegen !
-                    ubxfile.write((const uint8_t *)&ubxMessage.navPvt, sizeof(ubxMessage.navPvt));
+                    bytes_written=ubxfile.write(0xB5);total_bytes_written=bytes_written;
+                    bytes_written=ubxfile.write(0x62);total_bytes_written=total_bytes_written+bytes_written;
+                    bytes_written=ubxfile.write((const uint8_t *)&ubxMessage.navPvt, sizeof(ubxMessage.navPvt));
+                    total_bytes_written+bytes_written;
+                    if(total_bytes_written>100) {errorfile.print("Write_error SD");Serial.print("Write error SD");}
                     }
                 #if defined(GPY_H)    
                 if(config.logGPY==true){  
@@ -170,6 +178,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.speed_large_font=doc["speed_large_font"]|0;
   config.bar_length = doc["bar_length"]|1852;
   config.Stat_screens = doc["Stat_screens"]|12;
+  config.Stat_screens_time = doc["Stat_screens_time"]|2;
   config.stat_speed= doc["stat_speed"]|1;
   config.Stat_screens_persist = config.Stat_screens;
   config.GPIO12_screens = doc["GPIO12_screens"]|12;
@@ -214,7 +223,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   RTC_Sail_Logo=config.Sail_Logo;//copy to RTC memory !!
   calibration_bat=config.cal_bat;
   calibration_speed=config.cal_speed/1000;//3.6=km/h, 1.94384449 = knots, speed is now in mm/s
-  time_out_nav_pvt=(1000/config.sample_rate+50);//max time out = 150 ms
+  time_out_nav_pvt=(1000/config.sample_rate+75);//max time out = 175 ms
   RTC_SLEEP_screen=config.sleep_off_screen%10;
   RTC_OFF_screen=config.sleep_off_screen/10%10;
   //int Logo_choice=config.Logo_choice;//preserve value config.Logo_choice for config.txt update !!
@@ -265,7 +274,7 @@ void Model_info(int model){
   errorfile.println(message); 
 }
 void Session_info(GPS_data G){
-  char tekst[20]="";char message[255]="";
+  char tekst[32]="";char message[512]="";
   errorfile.print("T5 MAC adress: "); 
   for(int i=0;i<6;i++) errorfile.print(mac[i],HEX);
   errorfile.println(" ");
@@ -292,20 +301,30 @@ void Session_info(GPS_data G){
   else if (config.dynamic_model==2) strcat(message,"Automotive");
   else strcat(message,"Portable");
   strcat(message," \n");
-  if(config.gnss==3) strcat(message,"GNSS = GPS + GLONAS");
-  if(config.gnss==11) strcat(message,"GNSS = GPS + GLONAS + GALILEO");
+  strcat(message,"Ublox MON GNSS : ");
+  dtostrf(ubxMessage.monGNSS.enabled_Gnss,1,0,tekst);
+  strcat(message,tekst); 
+  strcat(message," \n");
+  if(ubxMessage.monGNSS.enabled_Gnss==3) strcat(message,"GNSS = GPS + GLONAS");
+  if(ubxMessage.monGNSS.enabled_Gnss==9) strcat(message,"GNSS = GPS + GALILEO");  
+  if(ubxMessage.monGNSS.enabled_Gnss==11) strcat(message,"GNSS = GPS + GLONAS + GALILEO");
+  if(ubxMessage.monGNSS.enabled_Gnss==13) strcat(message,"GNSS = GPS + GLONAS + BEIDOU");
   strcat(message," \n");
   strcat(message,"Ublox SW-version : ");
   strcat(message,ubxMessage.monVER.swVersion);
   strcat(message," \n");
-   strcat(message,"Ublox HW-version : ");
+  strcat(message,"Ublox HW-version : ");
   strcat(message,ubxMessage.monVER.hwVersion);
+  strcat(message," \n");
+  strcat(message,"Ublox GNSS-enabled : ");
+  dtostrf(ubxMessage.monGNSS.enabled_Gnss, 1, 0, tekst);
+  strcat(message,tekst); 
   strcat(message," \n");
   errorfile.print(message);                  
 }
 
 void Session_results_M(GPS_speed M){ 
-  for(int i=9;i>0;i--){
+  for(int i=9;i>4;i--){
         char tekst[20]="";char message[255]="";
         int Calibration=config.cal_speed*1000;
         dtostrf(M.avg_speed[i]*calibration_speed, 1, 3, tekst);
@@ -351,7 +370,7 @@ void Session_results_S(GPS_time S){
   errorfile.print(message);
   //errorfile.close();
   //appendFile(SD,filenameERR,message); 
-  for(int i=9;i>0;i--){
+  for(int i=9;i>4;i--){
       char tekst[20]="";char message[255]="";
       dtostrf(S.avg_speed[i]*calibration_speed, 1, 3, tekst);
       strcat(message,tekst);
@@ -380,7 +399,7 @@ void Session_results_S(GPS_time S){
       }
 }
 void Session_results_Alfa(Alfa_speed A,GPS_speed M){ 
-  for(int i=9;i>0;i--){
+  for(int i=9;i>4;i--){
       char tekst[20]="";char message[255]="";
       int Calibration=config.cal_speed*1000;
       dtostrf(A.avg_speed[i]*calibration_speed, 1, 3, tekst);

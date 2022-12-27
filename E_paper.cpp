@@ -65,8 +65,10 @@ void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
       display.drawExampleBitmap(Surfbuddie_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
       display.setCursor(offset,78);
     //Info on screen GNSS used
-      if(config.gnss==3) display.print("GPS + GLONAS");
-      if(config.gnss==11) display.print("GPS+GLONAS+GALILEO");
+      if(ubxMessage.monGNSS.enabled_Gnss==3) display.print("GPS + GLONAS");
+      if(ubxMessage.monGNSS.enabled_Gnss==9) display.print("GNSS = GPS + GALILEO");
+      if(ubxMessage.monGNSS.enabled_Gnss==11) display.print("GPS+GLONAS+GALILEO");
+      if(ubxMessage.monGNSS.enabled_Gnss==13) display.print("GPS+GLONAS+BEIDOU");
       display.setCursor(offset,94);
     //Info on screen  which screen  version 
       #if defined(_GxGDEH0213B73_H_) 

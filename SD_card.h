@@ -46,6 +46,7 @@ struct Config {
   int dynamic_model=0;//choice for dynamic model "Sea",if 0 model "portable" is used !!
   int timezone=2;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)
   int Stat_screens=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active
+  int Stat_screens_time=2;//time between switching stat_screens
   int GPIO12_screens=123;//choice for stats field when gpio12 is activated (pull-up high, low = active)
   int Stat_screens_persist=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active / for resave the config
   int GPIO12_screens_persist=123;//choice for stats field when gpio12 is activated (pull-up high, low = active) / for resave the config

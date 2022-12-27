@@ -1,5 +1,5 @@
 #include "Ublox.h"
-
+#include "Rtos5.h"
 int Time_Set_OK;
 UBXMessage ubxMessage = {000000000000};//definition here, declaration in ublox.h !!
 struct tm tmstruct ;
@@ -44,7 +44,6 @@ void Ublox_serial2(int delay_ms){
           Serial.println(ubxMessage.ubxId.ubx_id_5);
           }
      if ( msgType == MT_MON_GNSS){
-          config.gnss=ubxMessage.monGNSS.enabled_Gnss;//to save the reported setting, 3 = gps+ glonas, 11= gps + glonas + galileo
           Serial.print("GNSS= :");
           Serial.print (ubxMessage.monGNSS.supported_Gnss);
           Serial.print (ubxMessage.monGNSS.default_Gnss);
@@ -66,9 +65,10 @@ void Ask_ID(void){
         }
   Ublox_serial2(100);
 }
+#if !defined(UBLOX_M10)
 //Initialization of the ublox M8N with binary commands
 void Init_ublox(void){
-  int wait=500;
+  int wait=250;
   //send configuration data in UBX protocol 
   Serial.println("Set ublox UBX_OUT ");     
   for(int i = 0; i < sizeof(UBLOX_UBX_OUT); i++) {                        
@@ -87,21 +87,29 @@ void Init_ublox(void){
       for(int i = 0; i < sizeof(UBX_AUTOMOTIVE); i++) {                        
         Serial2.write( pgm_read_byte(UBX_AUTOMOTIVE+i) );
         }
-  Ublox_serial2(wait); 
-  }
-  if(config.gnss=3){
+      Ublox_serial2(wait); 
+      }
+  if(config.gnss==3){
       Serial.println("Set ublox UBX_GNSS3 : GPS, GLONAS & GALILEO ");
       for(int i = 0; i < sizeof(UBX_GNSS3); i++) {                        
         Serial2.write( pgm_read_byte(UBX_GNSS3+i) );
-        delay(5);
         }
-  Ublox_serial2(wait); 
+      Ublox_serial2(wait); 
+      }
+  
+  if(config.gnss==4){
+      Serial.println("Set ublox UBX_GNSS3 : GPS, GLONAS & BEIDOU ");
+      for(int i = 0; i < sizeof(UBX_GNSS3_BEIDOU); i++) {                        
+        Serial2.write( pgm_read_byte(UBX_GNSS3_BEIDOU+i) );
+        }
+      Ublox_serial2(wait); 
+      }
   Serial.println("Check MON_GNSS settings ");
   for(int i = 0; i < sizeof(UBX_MON_GNSS); i++) {                        
       Serial2.write( pgm_read_byte(UBX_MON_GNSS+i) );
       }
   Ublox_serial2(wait); 
-  }
+  
   Serial.println("Check UBX_MON_VER ");     
    for(int i = 0; i < sizeof(UBX_MON_VER); i++) {                        
         Serial2.write( pgm_read_byte(UBX_MON_VER+i) );        
@@ -118,15 +126,14 @@ void Init_ublox(void){
         Serial2.write( pgm_read_byte(UBLOX_UBX_NAVDOP_ON+i) );
         }
   Ublox_serial2(wait); 
-  Serial.println("Set ublox to 38400BD "); 
-  for(int i = 0; i < sizeof(UBLOX_UBX_BD38400); i++) {                        
-        Serial2.write( pgm_read_byte(UBLOX_UBX_BD38400+i) );
+  Serial.println("Set ublox to 19200BD "); 
+  for(int i = 0; i < sizeof(UBLOX_UBX_BD19200); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_UBX_BD19200+i) );
         //delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
         } 
   Serial2.flush();
-  Serial2.begin(38400,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 38400, necessary for 10 Hz  NAV_PVT + NAV_DOP!!!
-  Ublox_serial2(wait); 
-     
+  Serial2.begin(19200,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 19200, necessary for 10 Hz  NAV_PVT + NAV_DOP!!!
+  Ublox_serial2(wait);     
 }
 //Initialization of the ublox M8N  rate with binary commands, choice between 1..4
 void Set_rate_ublox(int rate){
@@ -146,30 +153,88 @@ void Set_rate_ublox(int rate){
         }
   Ublox_serial2(500);      
 }
+#endif
+#if defined(UBLOX_M10)
 //Initialization of the ublox M10N with binary commands
 void Init_ubloxM10(void){
-   Serial.print("Set ublox M10 NMEA OFF");     
+  int wait=250;
+  //send configuration data in UBX protocol 
+  Serial.println("Set ublox M10 NMEA OFF ");     
   for(int i = 0; i < sizeof(UBLOX_M10_NMEA_OFF); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_M10_NMEA_OFF+i) );
         }
-  Serial.print("Set ublox M10 UBX");     
+  Ublox_serial2(wait); 
+   if(config.gnss<4){
+      Serial.println("Set ublox M10 BEIDOU OFF ");     
+      for(int i = 0; i < sizeof(UBLOX_M10_BEIDOU_OFF); i++) {                        
+            Serial2.write( pgm_read_byte(UBLOX_M10_BEIDOU_OFF+i) );
+            }
+      Ublox_serial2(wait); 
+      }
+     if(config.gnss==3){          
+      Serial.println("Set ublox M10 GALILEO ON ");     
+      for(int i = 0; i < sizeof(UBLOX_M10_GAL_ON); i++) {                        
+            Serial2.write( pgm_read_byte(UBLOX_M10_GAL_ON+i) );
+            }
+      Ublox_serial2(wait);  
+      Serial.println("Set ublox M10 GLONAS ON ");     
+      for(int i = 0; i < sizeof(UBLOX_M10_GLONAS_ON); i++) {                        
+            Serial2.write( pgm_read_byte(UBLOX_M10_GLONAS_ON+i) );
+            }
+      Ublox_serial2(wait);      
+      }      
+  Serial.println("Set ublox M10 UBX On ");     
   for(int i = 0; i < sizeof(UBLOX_M10_UBX); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_M10_UBX+i) );
         }
-  //send configuration data in UBX M10 protocol 
-  Serial.print("Set ublox M10 UBX_NAV-PVT 1Hz ");     
-  for(int i = 0; i < sizeof(UBLOX_M10_INIT); i++) {                        
-        Serial2.write( pgm_read_byte(UBLOX_M10_INIT+i) );
+  Ublox_serial2(wait);    
+  Serial.println("Set ublox M10 NAV_PVT_ON ");   
+  for(int i = 0; i < sizeof(UBLOX_M10_NAV_PVT); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_M10_NAV_PVT+i) );
         }
-  //send configuration data in UBX M10 protocol, set baudrate to 19200 
-  Serial.print("Set ublox M10 baudrate to 19200 ");     
+  Ublox_serial2(wait);         
+  Serial.println("Set ublox M10 NAV_DOP_ON ");   
+  for(int i = 0; i < sizeof(UBLOX_M10_NAV_DOP); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_M10_NAV_DOP+i) );
+        }
+  Ublox_serial2(wait);     
+  Serial.println("Check UBX_MON_VER ");  //does this work for the M10 ??   
+   for(int i = 0; i < sizeof(UBX_MON_VER); i++) {                        
+        Serial2.write( pgm_read_byte(UBX_MON_VER+i) );        
+        }           
+  Ublox_serial2(wait); 
+  Serial.println("Check MON_GNSS settings ");
+  for(int i = 0; i < sizeof(UBX_MON_GNSS); i++) {                        
+      Serial2.write( pgm_read_byte(UBX_MON_GNSS+i) );
+      }
+  Ublox_serial2(wait); 
+  Serial.println("Set ublox M10 to 19200BD "); 
   for(int i = 0; i < sizeof(UBLOX_M10_UBX_BD19200); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_M10_UBX_BD19200+i) );
-        }
+        //delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
+        } 
   Serial2.flush();
-  Serial2.begin(19200,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 19200, necessary for 10 Hz !!!            
+  Serial2.begin(19200,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 38400, necessary for 10 Hz  NAV_PVT + NAV_DOP!!!
+  Ublox_serial2(wait);        
 }
-
+//Initialization of the ublox M10N  rate with binary commands, choice between 1..4
+void Set_rate_ubloxM10(int rate){
+  int sample_rate=2;
+  switch(rate){
+    case 1:sample_rate=1;break;
+    case 2:sample_rate=2;break;
+    case 5:sample_rate=3;break;
+    case 10:sample_rate=4;break;
+    default:sample_rate=1;
+    config.sample_rate=1;
+    }
+  Serial.print("Set rate Ublox M10");
+  for(int i = (sample_rate*18-18); i < sample_rate*18; i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_M10_RATE+i) );
+        }
+  Ublox_serial2(500);      
+}
+#endif
 void Set_GPS_Time(int time_offset){  
         setenv("TZ", "GMT0", 0);//timezone UTC = GMT0
         tzset();     //timezone is set, but ESP32 seems not to accept these time settings ????
@@ -301,6 +366,10 @@ int processGPS() {
         if(currentMsgType==MT_NAV_ACK) {((unsigned char*)(&ubxMessage.navAck))[fpos-2] = c;} 
         if(currentMsgType==MT_NAV_NACK) {((unsigned char*)(&ubxMessage.navNack))[fpos-2] = c;} 
       }
+       if (fpos==6){
+        if(currentMsgType==MT_NAV_PVT){ubxMessage.navPvt.len=payloadSize-6;}
+        if(currentMsgType==MT_NAV_DOP){ubxMessage.navDOP.len=payloadSize-6;}
+      }
       fpos++;
       if ( fpos == (payloadSize) ) {//was (payloadSize+2)
       // All payload bytes have now been received, so we can calculate the 
@@ -312,13 +381,11 @@ int processGPS() {
         // First byte after the payload, ie. first byte of the checksum.
         // Does it match the first byte of the checksum we calculated?
         if ( c != checksum[0] ) {
-          static int countA=0;//ignore first checksum fail !!
           // Checksum doesn't match, reset to beginning state and try again.
           // Serial.println("CkA NIO");
-          if ((sdOK==true)&(Time_Set_OK==true)&(countA>1)){
+          if ((Time_Set_OK==true)&(nav_pvt_message_nr>10)){
               logERR("ChecksumA_NIO\n");
               }
-          countA++;
           fpos = 0; 
         }
       }
@@ -326,16 +393,14 @@ int processGPS() {
         // Second byte after the payload, ie. second byte of the checksum.
         // Does it match the second byte of the checksum we calculated?
         fpos = 0; // We will reset the state regardless of whether the checksum matches.
-        static int countB=0;
         if ( c == checksum[1] ) {
           // Checksum matches, we have a valid message.
           return currentMsgType; 
         }
-        else{ if ((sdOK==true)&(Time_Set_OK==true)&(countB>1)){
+        else{ if ((Time_Set_OK==true)&(nav_pvt_message_nr>10)){
               //Serial.println("CkB NIO");
               logERR("ChecksumB_NIO\n");
               }
-              countB++;
             }
       }    
       else if ( fpos > (payloadSize+2) ) {//was (payloadSize+4)

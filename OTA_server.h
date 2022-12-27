@@ -2,6 +2,7 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <Update.h>
+#include "Rtos5.h"
 #include "OTA_html.h"
 
 const char* host = "esp32";
@@ -342,6 +343,7 @@ void handleConfigUpload() {
     doc["speed_large_font"] = server.arg("speed_large_font").toInt();
     doc["bar_length"] = server.arg("bar_length").toInt();
     doc["Stat_screens"] = server.arg("Stat_screens").toInt(); 
+    doc["Stat_screens_time"] = server.arg("Stat_screens_time").toInt(); 
     doc["stat_speed"] = server.arg("stat_speed").toInt(); 
     doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt(); 
     doc["Board_Logo"] = server.arg("Board_Logo").toInt();
@@ -379,8 +381,9 @@ void handleConfigUpload() {
       append_page_footer();
       SendHTML_Content();
       SendHTML_Stop();  
-      delay(2000);
       if(server.arg("reboot") == "yes"){
+        Ublox_off();
+        delay(1000);
         ESP.restart(); //restart as wanted
       }
     }
@@ -493,6 +496,8 @@ void OTA_setup(void) {
   server.on("/update", HTTP_POST, []() {
     server.sendHeader("Connection", "close");
     server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    Ublox_off();
+    delay(1000);//to force the ublox again to default (9600 bd)
     ESP.restart();
   }, []() {
     HTTPUpload& upload = server.upload();
