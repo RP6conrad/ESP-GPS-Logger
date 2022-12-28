@@ -531,7 +531,7 @@ void Update_screen(int screen){
         if(screen!=old_screen)count=0;//eerste keer full update
       }
      if(screen==STATS1){                        //2s,10sF,10sS, AVG
-        update_delay=1000;
+        update_delay=(config.Stat_screens_time-2)*1000;
         display.setFont(&FreeSansBold18pt7b);
         display.setCursor(offset,24);
         display.print("2s: ");display.print(S2.avg_speed[9]*calibration_speed);  //best 2s, was avg_speed[9]
@@ -550,7 +550,7 @@ void Update_screen(int screen){
         Bat_level(offset);
       }
      if(screen==STATS2){                        //alfa 500m,1852m, 1800s,total_dist
-        update_delay=1000;
+        update_delay=(config.Stat_screens_time-2)*1000;
         static int toggle=0;
         display.setFont(&FreeSansBold18pt7b);
         display.setCursor(offset,24);
@@ -578,7 +578,7 @@ void Update_screen(int screen){
         Bat_level(offset);
       }
    if(screen==STATS3){                        //100m,250m, 500m,Alfa
-          update_delay=1000;
+          update_delay=(config.Stat_screens_time-2)*1000;
           display.setFont(&FreeSansBold18pt7b);
           display.setCursor(offset,24);
           display.print("100m: ");display.print(M100.avg_speed[9]*calibration_speed);  //best 2s, was avg_speed[9]
@@ -591,7 +591,7 @@ void Update_screen(int screen){
           Bat_level(offset);
         }
      if(screen==STATS4){                        //10s,AVG,5 runs, update on the fly !!!
-        update_delay=1000;static int j=0;
+        update_delay=(config.Stat_screens_time-2)*1000;static int j=0;
         display.setCursor(offset,26);
         display.setFont(&FreeSansBold12pt7b);
         display.print("10s AVG: "); 
@@ -614,7 +614,7 @@ void Update_screen(int screen){
           }
       }
       if(screen==STATS5){                        //alfa statistics
-            update_delay=500;
+            update_delay=(config.Stat_screens_time-2)*1000;
             display.setCursor(offset,26);
             display.setFont(&FreeSansBold12pt7b);
             display.print("Last Alfa stats ! "); 
@@ -637,7 +637,7 @@ void Update_screen(int screen){
           }
       if(screen==STATS6){ //Simon stat screen
           Serial.println("STATS6_Simon_screen");
-          update_delay=2000;
+          update_delay=(config.Stat_screens_time-2)*1500;
           double S10avgNEW;
     
           if (S10.s_max_speed>S10.avg_speed[5]) S10avgNEW=(S10.avg_speed[9]+S10.avg_speed[8]+S10.avg_speed[7]+S10.avg_speed[6]+S10.s_max_speed)/5;
@@ -734,7 +734,7 @@ void Update_screen(int screen){
             }
 if(screen==STATS7){ //Simon bar graph screen
           Serial.println("STATS7_Simon_bar graph");
-          update_delay=2000;
+          update_delay=(config.Stat_screens_time-2)*1500;
           int DisplayWidth=255;
           int DisplayHeight=122;
           int posX=5;

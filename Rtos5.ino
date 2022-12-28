@@ -228,6 +228,8 @@
  * bdrate back to 19200BD, should be ok for 10*100 (nav_pvt) + 10*26 bytes(nav_dop)
  * Added support for GNSS GPS + GALILEO + BEIDOU for M8 + M10
  * Correction time on sleep-screen with timezone
+ * SW5.65
+ * Bugfix stat screen time
  */
 #include "FS.h"
 #include "SPI.h"
@@ -273,7 +275,7 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-char SW_version[16]="SW-version 5.64";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char SW_version[16]="SW-version 5.65";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 int sdTrouble=0;
 
 bool sdOK = false;

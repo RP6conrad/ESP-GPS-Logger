@@ -359,7 +359,7 @@ void html_config(String& webpage){
   webpage += "</select>\n</td><td>Stat_screens choice : every digit shows the according stat_screen after each other</td>\n</tr>\n";
   //Stat_screens_time
   webpage += "<tr>\n<td>Stat_screens_time</td><td>\n";
-  webpage += "<input size='8' type='number' required name='Stat_screens_time' min='1' max='10' value="+String(config.Stat_screens_time)+" step='1'>\n";
+  webpage += "<input size='8' type='number' required name='Stat_screens_time' min='2' max='10' value="+String(config.Stat_screens_time)+" step='1'>\n";
   webpage += "</select>\n</td><td>The time between toggle the different stat screens</td>\n</tr>\n";
   //Stat_speed
   webpage += "<tr>\n<td>stat_speed</td><td>\n";
