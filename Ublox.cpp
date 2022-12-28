@@ -182,7 +182,19 @@ void Init_ubloxM10(void){
             Serial2.write( pgm_read_byte(UBLOX_M10_GLONAS_ON+i) );
             }
       Ublox_serial2(wait);      
-      }      
+      } 
+      if(config.gnss==2){          
+      Serial.println("Set ublox M10 GALILEO OFF ");     
+      for(int i = 0; i < sizeof(UBLOX_M10_GAL_OFF); i++) {                        
+            Serial2.write( pgm_read_byte(UBLOX_M10_GAL_OFF+i) );
+            }
+      Ublox_serial2(wait);  
+      Serial.println("Set ublox M10 GLONAS ON ");     
+      for(int i = 0; i < sizeof(UBLOX_M10_GLONAS_ON); i++) {                        
+            Serial2.write( pgm_read_byte(UBLOX_M10_GLONAS_ON+i) );
+            }
+      Ublox_serial2(wait);      
+      }     
   Serial.println("Set ublox M10 UBX On ");     
   for(int i = 0; i < sizeof(UBLOX_M10_UBX); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_M10_UBX+i) );

@@ -230,7 +230,6 @@
  * Correction time on sleep-screen with timezone
  */
 #include "FS.h"
-#include "SD.h"
 #include "SPI.h"
 #include "TimeLib.h"
 #include "sys/time.h"
@@ -505,6 +504,7 @@ void setup() {
   Serial.println("setup Serial");
   Serial.println("Serial Txd is on pin: "+String(TX));
   Serial.println("Serial Rxd is on pin: "+String(RX));
+  
   SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
   print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
  //sometimes after OTA hangs here ???
