@@ -126,9 +126,9 @@ void Init_ublox(void){
         Serial2.write( pgm_read_byte(UBLOX_UBX_NAVDOP_ON+i) );
         }
   Ublox_serial2(wait); 
-  Serial.println("Set ublox to 19200BD "); 
-  for(int i = 0; i < sizeof(UBLOX_UBX_BD19200); i++) {                        
-        Serial2.write( pgm_read_byte(UBLOX_UBX_BD19200+i) );
+  Serial.println("Set ublox to 38400BD "); 
+  for(int i = 0; i < sizeof(UBLOX_UBX_BD38400); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_UBX_BD38400+i) );
         //delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
         } 
   Serial2.flush();
