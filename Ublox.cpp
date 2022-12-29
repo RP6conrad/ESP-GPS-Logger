@@ -132,7 +132,7 @@ void Init_ublox(void){
         //delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
         } 
   Serial2.flush();
-  Serial2.begin(19200,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 19200, necessary for 10 Hz  NAV_PVT + NAV_DOP!!!
+  Serial2.begin(38400,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 19200, necessary for 10 Hz  NAV_PVT + NAV_DOP!!!
   Ublox_serial2(wait);     
 }
 //Initialization of the ublox M8N  rate with binary commands, choice between 1..4
