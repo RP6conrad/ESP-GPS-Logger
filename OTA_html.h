@@ -325,7 +325,6 @@ void html_config(String& webpage){
   if(config.sample_rate == 5) webpage += "<option value='5' selected>5 Hz</option>\n"; else webpage += "<option value='5'>5 Hz</option>\n";
   if(config.sample_rate == 10) webpage += "<option value='10' selected>10 Hz</option>\n"; else webpage += "<option value='10'>10 Hz</option>\n";
   webpage += "</select>\n</td><td>sample_rate: can be 1,2,5 or 10Hz. The higher, the more accurate,<br> but also the larger the files become! One UBX NavPVT message is 100byte, <br>so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!</td>\n</tr>\n";
-
   //gnss
   webpage += "<tr><td>gnss</td><td>\n<select id='gnss' name='gnss'>\n";
   if(config.gnss == 2) webpage += "<option value='2' selected>GPS + GLONAS</option>\n"; else webpage += "<option value='2'>GPS + GLONAS</option>\n";
@@ -333,6 +332,11 @@ void html_config(String& webpage){
   if(config.gnss == 4) webpage += "<option value='4' selected>GPS + GLONAS + BEIDOU</option>\n"; else webpage += "<option value='4'>GPS + GLONAS + BEIDOU</option>\n";
   webpage += "</select>\n</td><td>gnss: gnss = 3 : GPS + GLONAS + GALILEO (only possible with ublox ROM version 3.01 !!). <br> Default is only GPS + GLONAS used. Some Beitian modules still have a old firmware, ROM 2.01. Here, Galileo can't be activated.</td>\n</tr>\n";
   Serial.println("gnss: "+String(config.gnss)+"\n");
+  //logUBX nav-sat message@rate/10
+  webpage += "<tr><td>logUBX_nav_sat</td><td>\n<select id='logUBX_nav_sat' name='logUBX_nav_sat'>\n";
+  if(config.logUBX_nav_sat == 1) webpage += "<option value='1' selected>LOG UBX NAV SAT ON</option>\n"; else webpage += "<option value='1'>LOG UBX NAV SAT ON</option>\n";
+  if(config.logUBX_nav_sat == 0) webpage += "<option value='0' selected>LOG UBX NAV SAT OFF</option>\n"; else webpage += "<option value='0'>LOG UBX NAV SAT OFF</option>\n";
+  webpage += "</select>\n</td><td>logUBX_nav_sat: To save the GPS NAV SAT data in ubx format. For every 10 nav_pvt messages, 1 nav_sat message is saved. This can be used to evaluate the signal quality of your gps (ucenter).</td>\n</tr>\n";  
   //speed_field
   webpage += "<tr><td>speed_field</td><td>\n<select id='speed_field' name='speed_field'>\n";
   if(config.field == 1) webpage += "<option value='1' selected>1</option>\n"; else webpage += "<option value='1'>1</option>\n";
@@ -343,7 +347,7 @@ void html_config(String& webpage){
   if(config.field == 6) webpage += "<option value='6' selected>6</option>\n"; else webpage += "<option value='6'>6</option>\n";
   if(config.field == 7) webpage += "<option value='7' selected>7</option>\n"; else webpage += "<option value='7'>7</option>\n";
   if(config.field == 8) webpage += "<option value='8' selected>8</option>\n"; else webpage += "<option value='8'>8</option>\n";
-  webpage += "</select>\n</td><td>speed_field: The preferred value in the first line of the speed screen : 1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= 0.5h, 8= 1h</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>speed_field: The preferred value in the first line of the speed screen : 1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= Auto switching between Alfa & 0.5h, 8= Auto switching between Alfa & 1h</td>\n</tr>\n";
    //speed_large_font
   webpage += "<tr><td>speed_large_font</td><td>\n<select id='speed_large_font' name='speed_large_font'>\n";
   if(config.speed_large_font == 1) webpage += "<option value='1' selected>Large_Font ON</option>\n"; else webpage += "<option value='1'>Large Font ON</option>\n";
@@ -371,11 +375,11 @@ void html_config(String& webpage){
   webpage += "</select>\n</td><td>GPIO12_screens choice : every digit shows the according GPIO_screen after each push</td>\n</tr>\n";
   //Board_Logo
   webpage += "<tr>\n<td>Board_Logo</td><td>\n";
-  webpage += "<input size='8' type='number' required name='Board_Logo' min='0' max='10' value="+String(config.Board_Logo)+" step='1'>\n";
+  webpage += "<input size='8' type='number' required name='Board_Logo' min='0' max='20' value="+String(config.Board_Logo)+" step='1'>\n";
   webpage += "</select>\n</td><td>Board_Logo: from 1 - 99. See the info on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19375156.jpg' target='_blank'>this Link</a> >100 are different single logos</td>\n</tr>\n";
   //Sail_Logo
   webpage += "<tr>\n<td>Sail_Logo</td><td>\n";
-  webpage += "<input size='8' type='number' required name='Sail_Logo' min='0' max='10' value="+String(config.Sail_Logo)+" step='1'>\n";
+  webpage += "<input size='8' type='number' required name='Sail_Logo' min='0' max='20' value="+String(config.Sail_Logo)+" step='1'>\n";
   webpage += "</select>\n</td><td>Sail_Logo: from 1 - 99. See the info on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19375156.jpg' target='_blank'>this Link</a> >100 are different single logos</td>\n</tr>\n";
   //sleep_off_screen
   webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
@@ -413,10 +417,15 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>timezone</td><td>\n";
   webpage += "<input size='2' type='number' required name='timezone' min='-12' max='14' value="+String(config.timezone)+" step='1'>\n";
   webpage += "</select>\n</td><td>timezone: The local time difference in hours with UTC (can be negative ! )<a href='https://en.wikipedia.org/wiki/List_of_UTC_offsets' target='_blank'>this Link</a></td>\n</tr>\n";
+  //filenaming  
+  webpage += "<tr><td>file_date_time</td><td>\n<select id='file_date_time' name='file_date_time'>\n";
+  if(config.file_date_time == 1) webpage += "<option value='1' selected>file_date_time ON</option>\n"; else webpage += "<option value='1'>file_date_time ON</option>\n";
+  if(config.file_date_time == 0) webpage += "<option value='0' selected>file_date_time OFF</option>\n"; else webpage += "<option value='0'>file_date_time OFF</option>\n";
+  webpage += "</select>\n</td><td>file_date_time: To choose the type of filenaming between filename_MAC_count or filename_date_time.</td>\n</tr>\n"; 
   //UBXfile
   webpage += "<tr>\n<td>UBXfile</td><td>\n";
   webpage += "<input size='10' type='text' required name='UBXfile' value="+String(config.UBXfile)+">\n";
-  webpage += "</select>\n</td><td>UBXfile: Here you can set the desired file name, this is completed with the (unique) MAC address of the ESP32 and a suffix from 000 to 999.</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>UBXfile: Here you can set the desired file name, this is completed with the (unique) MAC address of the ESP32 and a suffix from 000 to 999 or the timestamp when the logging started.</td>\n</tr>\n";
   //Sleep_info
   String Sleep_info="\"" + String(config.Sleep_info) + "\"";
   webpage += "<tr>\n<td>Sleep_info</td><td>\n";

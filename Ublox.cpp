@@ -154,6 +154,12 @@ void Set_rate_ublox(int rate){
   Ublox_serial2(500);      
 }
 #endif
+void Poll_NAV_SAT(void){//for M8 & M10 !!!
+  Serial.println("Poll ublox NAV_SAT");   
+  for(int i = 0; i < sizeof(UBX_NAV_SAT); i++) {                        
+        Serial2.write( pgm_read_byte(UBX_NAV_SAT+i) );
+        } 
+  }
 #if defined(UBLOX_M10)
 //Initialization of the ublox M10N with binary commands
 void Init_ubloxM10(void){
@@ -220,13 +226,13 @@ void Init_ubloxM10(void){
       Serial2.write( pgm_read_byte(UBX_MON_GNSS+i) );
       }
   Ublox_serial2(wait); 
-  Serial.println("Set ublox M10 to 19200BD "); 
-  for(int i = 0; i < sizeof(UBLOX_M10_UBX_BD19200); i++) {                        
-        Serial2.write( pgm_read_byte(UBLOX_M10_UBX_BD19200+i) );
+  Serial.println("Set ublox M10 to 38400BD "); 
+  for(int i = 0; i < sizeof(UBLOX_M10_UBX_BD38400); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_M10_UBX_BD38400+i) );
         //delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
         } 
   Serial2.flush();
-  Serial2.begin(19200,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 38400, necessary for 10 Hz  NAV_PVT + NAV_DOP!!!
+  Serial2.begin(38400,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 38400, necessary for 10 Hz  NAV_PVT + NAV_DOP!!!
   Ublox_serial2(wait);        
 }
 //Initialization of the ublox M10N  rate with binary commands, choice between 1..4
@@ -277,6 +283,7 @@ void calcChecksum(unsigned char* CK,int msgType, int msgSize) {
     else if(msgType==MT_MON_VER){CK[0] += ((unsigned char*)(&ubxMessage.monVER))[i];} 
     else if(msgType==MT_NAV_ACK){CK[0] += ((unsigned char*)(&ubxMessage.navAck))[i];} 
     else if(msgType==MT_NAV_NACK){CK[0] += ((unsigned char*)(&ubxMessage.navNack))[i];} 
+    else if(msgType==MT_NAV_SAT){CK[0] += ((unsigned char*)(&ubxMessage.navSat))[i];} 
     else {CK[0] += ((unsigned char*)(&ubxMessage))[i];}
     CK[1] += CK[0];
   }
@@ -363,6 +370,12 @@ int processGPS() {
           ubxMessage.navNack.id=ubxMessage.navDummy.id;
           //Serial.println("NAV_NACK\n");
         }
+        else if ( compareMsgHeader(NAV_SAT_HEADER) ) {
+          currentMsgType = MT_NAV_SAT;
+          ubxMessage.navSat.cls=ubxMessage.navDummy.cls;
+          ubxMessage.navSat.id=ubxMessage.navDummy.id;
+          //Serial.println("NAV_SAT\n");
+        }
         else {
           // unknown message type, bail
           currentMsgType = MT_NONE;
@@ -377,10 +390,15 @@ int processGPS() {
         if(currentMsgType==MT_MON_VER) {((unsigned char*)(&ubxMessage.monVER))[fpos-2] = c;} 
         if(currentMsgType==MT_NAV_ACK) {((unsigned char*)(&ubxMessage.navAck))[fpos-2] = c;} 
         if(currentMsgType==MT_NAV_NACK) {((unsigned char*)(&ubxMessage.navNack))[fpos-2] = c;} 
+        if(currentMsgType==MT_NAV_SAT) {((unsigned char*)(&ubxMessage.navSat))[fpos-2] = c;} 
       }
        if (fpos==6){
         if(currentMsgType==MT_NAV_PVT){ubxMessage.navPvt.len=payloadSize-6;}
         if(currentMsgType==MT_NAV_DOP){ubxMessage.navDOP.len=payloadSize-6;}
+        if(currentMsgType==MT_NAV_SAT){
+            if(ubxMessage.navSat.len+6<sizeof(ubxMessage.navSat)){payloadSize=ubxMessage.navSat.len+6;}//payload is variable with nav_sat msg
+            else{fpos=0;}//something went wrong, start over again !!!
+            }
       }
       fpos++;
       if ( fpos == (payloadSize) ) {//was (payloadSize+2)
@@ -394,7 +412,7 @@ int processGPS() {
         // Does it match the first byte of the checksum we calculated?
         if ( c != checksum[0] ) {
           // Checksum doesn't match, reset to beginning state and try again.
-          // Serial.println("CkA NIO");
+           Serial.println("CkA NIO");
           if ((Time_Set_OK==true)&(nav_pvt_message_nr>10)){
               logERR("ChecksumA_NIO\n");
               }
@@ -410,7 +428,7 @@ int processGPS() {
           return currentMsgType; 
         }
         else{ if ((Time_Set_OK==true)&(nav_pvt_message_nr>10)){
-              //Serial.println("CkB NIO");
+              Serial.println("CkB NIO");
               logERR("ChecksumB_NIO\n");
               }
             }

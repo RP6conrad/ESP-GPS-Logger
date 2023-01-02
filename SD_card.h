@@ -20,7 +20,7 @@ extern float calibration_speed;
 extern int time_out_nav_pvt;
 extern int next_gpy_full_frame;
 extern byte mac[6];
-extern char SW_version[16];
+extern const char SW_version[16];
 extern char RTC_Sleep_txt[32];
 extern GPS_speed M100;
 extern GPS_speed M250;
@@ -32,6 +32,7 @@ extern GPS_time s10;
 extern Alfa_speed A250;
 extern GPS_data Ublox; // create an object storing GPS_data, definition in RTOS
 extern int nav_pvt_message_nr; 
+extern int nav_sat_message;
 extern int RTC_Board_Logo;
 extern int RTC_Sail_Logo;
 extern int RTC_SLEEP_screen;
@@ -44,7 +45,7 @@ struct Config {
   int field=1;//choice for first field in speed screen !!!
   int speed_large_font=0;//fonts on the first line are bigger, actual speed font is smaller
   int dynamic_model=0;//choice for dynamic model "Sea",if 0 model "portable" is used !!
-  int timezone=2;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)
+  int timezone=0;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)
   int Stat_screens=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active
   int Stat_screens_time=2;//time between switching stat_screens
   int GPIO12_screens=123;//choice for stats field when gpio12 is activated (pull-up high, low = active)
@@ -61,9 +62,11 @@ struct Config {
   int bar_length=1852;//choice for bar indicator for length of run in m (nautical mile)
   bool logCSV=0;//not used anymore...
   bool logUBX=1;//log to .ubx
+  bool logUBX_nav_sat=0;// log nav sat msg to .ubx
   bool logSBP=1;//log to .sbp
   bool logGPY=1;//log to .gps
   bool logGPX=0;//log to .gpx
+  bool file_date_time=1;//type of filenaming, with MAC adress or datetime
   char UBXfile[32]="BN220A000";//your preferred filename
   char Sleep_info[32]="Your ID";//your preferred sleep text
   char ssid[32];//your SSID

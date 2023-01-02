@@ -95,6 +95,7 @@ const char UBX_GNSS3_BEIDOU[] PROGMEM = {
 };
 const char UBX_MON_GNSS[] PROGMEM = {0xB5,0x62,0x0A,0x28,0x00,0x00,0x32,0xA0};//poll GNSS setting
 const char UBX_MON_VER[] PROGMEM =  {0xB5,0x62,0x0A,0x04,0x00,0x00,0x0E,0x34};//poll SW version
+const char UBX_NAV_SAT[] PROGMEM =  {0xB5,0x62,0x01,0x35,0x00,0x00,0x36,0xA3};//poll NAV_SAT
 
 const unsigned char UBX_HEADER[] = { 0xB5, 0x62 };
 const unsigned char NAV_DUMMY_HEADER[] = { 0x01, 0x00 };
@@ -105,7 +106,7 @@ const unsigned char NAV_ID_HEADER[] = { 0x27, 0x03 };
 const unsigned char MON_GNSS_HEADER[] = { 0x0A, 0x28 };
 const unsigned char NAV_DOP_HEADER[] = { 0x01, 0x04 };
 const unsigned char MON_VER_HEADER[] = { 0x0A, 0x04 };
-
+const unsigned char NAV_SAT_HEADER[] = { 0x01, 0x35 };
 enum _ubxMsgType {
   MT_NONE,
   MT_NAV_DUMMY,
@@ -115,7 +116,8 @@ enum _ubxMsgType {
   MT_NAV_ID,
   MT_MON_GNSS,
   MT_NAV_DOP,
-  MT_MON_VER
+  MT_MON_VER,
+  MT_NAV_SAT
 };
 struct NAV_DUMMY {
   unsigned char cls;
@@ -240,7 +242,28 @@ struct MON_VER {
         unsigned char chkA;
         unsigned char chkB;
     }__attribute__((__packed__));
-
+struct sVs_NAV_SAT{
+        byte gnssId;
+        byte svId;
+        byte cno;
+        short elev;
+        short azim;
+        short prRes;
+        unsigned long X4;
+}__attribute__((__packed__));   
+struct NAV_SAT{
+        unsigned char cls;
+        unsigned char id;
+        unsigned short len;//8 + 12*numSV !
+        unsigned long iTOW;//4
+        byte version;
+        byte numSvs;
+        byte reserved1;
+        byte reserved2;
+        sVs_NAV_SAT sat[92];//for M10, how many channels ???
+        unsigned char chkA;
+        unsigned char chkB;
+}__attribute__((__packed__));
 struct UBXMessage {//was union, but messages are overwritten by next message
   NAV_DUMMY navDummy;
   NAV_PVT navPvt;
@@ -250,6 +273,7 @@ struct UBXMessage {//was union, but messages are overwritten by next message
   NAV_ID ubxId; 
   MON_GNSS monGNSS;
   MON_VER monVER;
+  NAV_SAT navSat;
 }__attribute__((__packed__));
 
 extern UBXMessage ubxMessage;  //declaration here, definition in Ublox.cpp
@@ -267,6 +291,7 @@ void Ublox_serial2(int delay_ms);
 //#if !defined(UBLOX_M10)
 void Init_ublox(void);
 void Set_rate_ublox(int);
+void Poll_NAV_SAT(void);
 //#else
 void Init_ubloxM10(void);
 void Set_rate_ubloxM10(int rate);

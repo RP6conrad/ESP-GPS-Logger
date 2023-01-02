@@ -24,24 +24,39 @@ struct Config config;
 void logERR(const char * message){
   errorfile.print(message);
 }
-//test for existing GPSLOGxxxfiles, open txt,gps + ubx file with new name !
+//test for existing GPSLOGxxxfiles, open txt,gps + ubx file with new name, or with timestamp !
 void Open_files(void){
-  strcat(filenameERR,config.UBXfile);//copy filename from config
-  char txt[16]="000.txt";
-  char macAddr[16];
-  sprintf(macAddr, "_%2X%2X%2X%2X%2X%2X_", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-  strcat(filenameERR,macAddr);
-  int filenameSize=strlen(filenameERR);//dit is dan 7 + NULL = 8
-  strcat(filenameERR,txt);//dit wordt dan /BN280A000.txt
-  for(int i=0;i<1000;i++){
-        filenameERR[filenameSize+2] = '0' + i%10;
-        filenameERR[filenameSize+1] = '0' + ((i / 10) % 10);
-        filenameERR[filenameSize] = '0' + ((i / 100) % 10);          
-        // create if does not exist, do not open existing, write, sync after write
-        if (!SD.exists(filenameERR)) {
-                          break;
-                        }
-        }
+  if(config.file_date_time==1){
+      struct tm timeinfo;
+      getLocalTime(&timeinfo);
+      time_t epoch=mktime(&timeinfo)+config.timezone*3600;
+      struct tm * time_info;
+      time_info=localtime(&epoch);
+      char timestamp[16];
+      sprintf(timestamp, "_%d%02d%02d%02d%02d", time_info->tm_year-100,time_info->tm_mon+1,time_info->tm_mday,time_info->tm_hour,time_info->tm_min);
+      strcat(filenameERR,config.UBXfile);//copy filename from config
+      char extension[16]=".txt";//
+      strcat(filenameERR,timestamp);//add timestamp
+      strcat(filenameERR,extension);//add extension.txt 
+      }
+  else{   
+      char txt[16]="000.txt";    
+      char macAddr[16];
+      sprintf(macAddr, "_%2X%2X%2X%2X%2X%2X_", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+      strcat(filenameERR,config.UBXfile);//copy filename from config
+      strcat(filenameERR,macAddr);
+      int filenameSize=strlen(filenameERR);//dit is dan 7 + NULL = 8
+      strcat(filenameERR,txt);//dit wordt dan /BN280A000.txt
+      for(int i=0;i<1000;i++){
+            filenameERR[filenameSize+2] = '0' + i%10;
+            filenameERR[filenameSize+1] = '0' + ((i / 10) % 10);
+            filenameERR[filenameSize] = '0' + ((i / 100) % 10);          
+            // create if does not exist, do not open existing, write, sync after write
+            if (!SD.exists(filenameERR)) {
+                              break;
+                            }
+            }
+     }     
   strcpy(filename_NO_EXT,filenameERR);
   filename_NO_EXT [strlen(filename_NO_EXT) - 3] = 0;  // move null-terminator three positions back
   strcpy(filenameUBX,filename_NO_EXT);
@@ -118,15 +133,22 @@ void Log_to_SD(void){
                      Serial.println(interval);
                     }
                 if(config.logUBX==true){    
-                    //write ubx string to sd, added check for nr of bytes written
-                    int total_bytes_written=0;
-                    int bytes_written=0;
-                    nav_pvt_message_nr++; 
-                    bytes_written=ubxfile.write(0xB5);total_bytes_written=bytes_written;
-                    bytes_written=ubxfile.write(0x62);total_bytes_written=total_bytes_written+bytes_written;
-                    bytes_written=ubxfile.write((const uint8_t *)&ubxMessage.navPvt, sizeof(ubxMessage.navPvt));
-                    total_bytes_written+bytes_written;
-                    if(total_bytes_written>100) {errorfile.print("Write_error SD");Serial.print("Write error SD");}
+                    ubxfile.write(0xB5);
+                    ubxfile.write(0x62);
+                    ubxfile.write((const uint8_t *)&ubxMessage.navPvt, sizeof(ubxMessage.navPvt));
+                    /*
+                    ubxfile.write(0xB5);
+                    ubxfile.write(0x62);
+                    ubxfile.write((const uint8_t *)&ubxMessage.navDOP, sizeof(ubxMessage.navDOP));
+                    */
+                    static int old_nav_sat_message=0;
+                    if(nav_sat_message!=old_nav_sat_message){
+                      ubxMessage.navSat.iTOW=ubxMessage.navSat.iTOW-18*1000+50;//to match 18s diff UTC nav pvt & GPS nav sat !!!
+                      old_nav_sat_message=nav_sat_message;
+                      ubxfile.write(0xB5);
+                      ubxfile.write(0x62);
+                      ubxfile.write((const uint8_t *)&ubxMessage.navSat,(ubxMessage.navSat.len+6)); //nav_sat has a variable length, add chkA and chkB !!!
+                      }
                     }
                 #if defined(GPY_H)    
                 if(config.logGPY==true){  
@@ -188,9 +210,11 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.sleep_off_screen = doc["sleep_off_screen"]|11;
   config.logCSV=doc["logCSV"]|0;
   config.logUBX=doc["logUBX"]|1;
+  config.logUBX_nav_sat=doc["logUBX_nav_sat"]|0;
   config.logSBP=doc["logSBP"]|1;
   config.logGPY=doc["logGPY"]|1;
   config.logGPX=doc["logGPX"]|0;
+  config.file_date_time=doc["file_date_time"]|1;
   config.dynamic_model = doc["dynamic_model"]|0;//sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
   config.timezone = doc["timezone"]|2;
   

@@ -7,9 +7,9 @@
 //  if you are not sure which version, please test each one,
 //  if it is successful then it belongs to the model of the file name
 // The 2.66 screen has other SPI pins, and more pixels. Partof the pixels are now unused.
-//#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen
+#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen
 //#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen
-#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
+//#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
 //#include <GxDEPG0266BN/GxDEPG0266BN.h>  //2.66 screen for rollz...
 //#include <GxGDEW0213M21/GxGDEW0213M21.h>  //nog een andere versie, resolutie NIET OK vanwege resolutie !!!
 //#include <GxGDEP015OC1/GxGDEP015OC1.h>    //  GDEH015OC1 1.54" screen for Jeff Turner !!!
@@ -68,6 +68,7 @@ Flip: horizontally
 
 extern GxEPD_Class display;
 extern int sdTrouble,wifi_search,gps_speed;
+extern int start_logging_millis;
 extern bool sdOK;
 extern bool Wifi_on;
 extern bool SoftAP_connection;
@@ -77,7 +78,7 @@ extern  double delta_heading,ref_heading;
 extern int bootCount,run_count,stat_count;
 extern int ftpStatus;
 extern String IP_adress;
-extern char SW_version[16];
+extern const char SW_version[16];
 //xtern int logo_choice[10];
 extern RTC_DATA_ATTR int offset;
 extern RTC_DATA_ATTR float RTC_distance;
@@ -91,6 +92,7 @@ extern RTC_DATA_ATTR short RTC_hour;
 extern RTC_DATA_ATTR short RTC_min;
 extern RTC_DATA_ATTR float RTC_alp;
 extern RTC_DATA_ATTR float RTC_500m;
+extern RTC_DATA_ATTR float RTC_1h;
 extern RTC_DATA_ATTR float RTC_mile;
 extern RTC_DATA_ATTR float RTC_R1_10s;
 extern RTC_DATA_ATTR float RTC_R2_10s;

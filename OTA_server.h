@@ -351,8 +351,10 @@ void handleConfigUpload() {
     doc["sleep_off_screen"] = server.arg("sleep_off_screen").toInt();
     doc["logSBP"] = server.arg("logSBP").toInt(); 
     doc["logUBX"] = server.arg("logUBX").toInt();
+    doc["logUBX_nav_sat"] = server.arg("logUBX_nav_sat").toInt();
     doc["logGPY"] = server.arg("logGPY").toInt();
     doc["logGPX"] = server.arg("logGPX").toInt();
+    doc["file_date_time"] = server.arg("file_date_time").toInt();
     doc["dynamic_model"] = server.arg("dynamic_model").toInt();
     doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt();
     doc["timezone"] = server.arg("timezone").toInt();

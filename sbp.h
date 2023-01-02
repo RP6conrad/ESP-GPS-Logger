@@ -9,9 +9,11 @@
 //extern UBXMessage ubxMessage; 
 /* Locosys SBP structures */
 struct SBP_Header{//length = 64 bytes
-   uint16_t Header_length = 34;//byte 0-1 : nr of meaningfull bytes in header (MID_FILE_ID)
-   char str[62] ="unknown,0,unknown,unknown";//byte 2~63:  MID_FILE_ID(0xfd) will stuff    0xff for remaining bytes
-   };
+   uint16_t Header_length = 30;//byte 0-1 : nr of meaningfull bytes in header (MID_FILE_ID)
+   uint8_t Id1 = 0xa0;//seems to be necessary so that GP3S accept .sbp
+   uint8_t Id2 = 0xa2;//seems to be necessary so that GP3S accept .sbp
+   char Identity[60] ="ESP-GPS,0,unknown,unknown";//byte 2~63:  MID_FILE_ID(0xfd) will stuff    0xff for remaining bytes
+   }__attribute__((__packed__));
 struct SBP_frame{//length = 32 bytes
    uint8_t HDOP;        /* HDOP [0..51] with resolution 0.2 */
    uint8_t SVIDCnt;        /* Number of SVs in solution [0 to 12] */
@@ -26,13 +28,13 @@ struct SBP_frame{//length = 32 bytes
    int16_t ClmbRte;        /* Climb rate in m/sec with resolution 0.01 */
    uint8_t sdop;     /* GT31 */
    uint8_t vsdop;
-};
+}__attribute__((__packed__));
 /* Definition in SD_card.cpp*/
 struct SBP_Header sbp_header;
 struct SBP_frame sbp_frame;
 
 void log_header_SBP(File file){
-  for (int i=35;i<62;i++){sbp_header.str[i]=0xFF;}//fill with 0xFF
+  for (int i=29;i<60;i++){sbp_header.Identity[i]=0xFF;}//fill with 0xFF
   file.write((const uint8_t *)&sbp_header,64);
 }
 void log_SBP(File file){
@@ -43,11 +45,11 @@ uint8_t hour=ubxMessage.navPvt.hour;
 uint16_t min=ubxMessage.navPvt.minute;
 uint16_t sec=ubxMessage.navPvt.second;
 uint32_t numSV=0xFFFFFFFF;
-uint32_t HDOP=(ubxMessage.navDOP.hDOP+1)/5;//from 0.01 resolution to 0.2 ,reformat pDOP to HDOP 8-bit !!
+uint32_t HDOP=(ubxMessage.navDOP.hDOP+1)/20;//from 0.01 resolution to 0.2 ,reformat pDOP to HDOP 8-bit !!
 if(HDOP>255)HDOP=255;//has to fit in 8 bit
 uint32_t sdop=ubxMessage.navPvt.sAcc/10;//was sAcc
 if(sdop>255)sdop=255;
-uint32_t vsdop=ubxMessage.navPvt.vAcc/10;//was headingAcc
+uint32_t vsdop=ubxMessage.navPvt.vAcc/10;//was headingAcc ???
 if (vsdop>255)vsdop=255;
 sbp_frame.UtcSec=ubxMessage.navPvt.second*1000+(ubxMessage.navPvt.nano+500000)/1000000;//om af te ronden
 sbp_frame.date_time_UTC_packed=(((year-2000)*12+month)<<22) +(day<<17)+(hour<<12)+(min<<6)+sec; 

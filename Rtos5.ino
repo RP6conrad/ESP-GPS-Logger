@@ -230,6 +230,16 @@
  * Correction time on sleep-screen with timezone
  * SW5.65
  * Bugfix stat screen time
+ * SW 5.66
+ * Added SW-version + e-paper type to Wifi-on screen + sleep screen Simon
+ * baud rate back to 38400 for nav sat msg
+ * Added (configurable) ubx nav sat message to ubx file, Rate = 1/10 of NAV PVT, timeshift 18.05 s for ascending order ubx msg
+ * This is if you  want to evaluate the signal quality of your gps (ucenter)
+ * Filename with Timestamp in it, configurable
+ * .sbp file corrections, problem with uploading to gp3s, header change (0xa0, 0xa2)
+ * .sbp file correction for sAcc, hDOP
+ * added alfa screen to 0.5h / 1h, bar_length gives time passed 30min /60 min
+ * sleep_screen Simon : 500m -> 1h best
  */
 #include "FS.h"
 #include "SPI.h"
@@ -275,7 +285,8 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-char SW_version[16]="SW-version 5.65";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="SW-vers. 5.66";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char E_paper_version[16]="e_paper";//Hier komt het type e-paper @ compile time !!!
 int sdTrouble=0;
 
 bool sdOK = false;
@@ -290,11 +301,13 @@ bool Field_choice = false;
 
 int analog_bat;
 int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay;
+int start_logging_millis;
 int wifi_search=10;//was 10
 int ftpStatus=0;
 int time_out_nav_pvt=1200;
 int nav_pvt_message=0;
 int old_message=0;
+int nav_sat_message=0;
 int next_gpy_full_frame=0;
 int nav_pvt_message_nr=0;
 int msgType;
@@ -321,6 +334,7 @@ RTC_DATA_ATTR short RTC_hour;
 RTC_DATA_ATTR short RTC_min;
 RTC_DATA_ATTR float RTC_alp;
 RTC_DATA_ATTR float RTC_500m;
+RTC_DATA_ATTR float RTC_1h;
 RTC_DATA_ATTR float RTC_mile;
 RTC_DATA_ATTR float RTC_R1_10s;
 RTC_DATA_ATTR float RTC_R2_10s;
@@ -437,6 +451,7 @@ void Shut_down(void){
             RTC_distance=Ublox.total_distance/1000000;
             RTC_alp=A500.display_max_speed*calibration_speed;
             RTC_500m=M500.avg_speed[9]*calibration_speed;
+            RTC_1h=S3600.display_max_speed*calibration_speed;            
             RTC_mile=M1852.display_max_speed*calibration_speed;
             RTC_max_2s= S2.avg_speed[9]*calibration_speed;
             RTC_avg_10s=S10.avg_5runs*calibration_speed;
@@ -691,8 +706,8 @@ void taskOne( void * parameter )
           //Serial.print(char(Serial2.read()));}  
  if ( msgType == MT_NAV_DOP ) {      //Logging after NAV_DOP, ublox sends first NAV_PVT, and then NAV_DOP.  
         #if defined (STATIC_DEBUG)
-        Serial.print(" DOPiTOW P ");Serial.print (ubxMessage.navPvt.iTOW);
-        Serial.print(" DOPiTOW N ");Serial.println (ubxMessage.navDOP.iTOW);
+        //Serial.print(" DOPiTOW P ");Serial.print (ubxMessage.navPvt.iTOW);
+        //Serial.print(" DOPiTOW N ");Serial.println (ubxMessage.navDOP.iTOW);
         #endif     
       
         if((ubxMessage.navPvt.numSV>=MIN_numSV_FIRST_FIX)&((ubxMessage.navPvt.sAcc/1000.0f)<MAX_Sacc_FIRST_FIX)&(GPS_Signal_OK==false)){
@@ -707,6 +722,7 @@ void taskOne( void * parameter )
           int avg_speed=(avg_speed+ubxMessage.navPvt.gSpeed*19)/20; //FIR filter gem. snelheid laatste 20 metingen in mm/s
           if(avg_speed>MIN_SPEED_START_LOGGING){
             Time_Set_OK=true;
+            start_logging_millis=millis();
             Open_files();//only start logging if GPS signal is OK
             }
           }      //    Alleen speed>0 indien snelheid groter is dan 1m/s + sACC<1 + sat<5 + speed>35 m/s !!!
@@ -744,13 +760,26 @@ void taskOne( void * parameter )
                   a500.Update_Alfa(M500);
                   }     
       } 
-     else if( msgType == MT_NAV_PVT )  { 
-          if(Time_Set_OK==true)nav_pvt_message++;
+     else if( msgType == MT_NAV_PVT )  { //order messages in ubx should be ascending !!!
+          if(Time_Set_OK==true){
+                nav_pvt_message++;
+                if(config.logUBX_nav_sat&((nav_pvt_message)%10==0)&(nav_pvt_message>10)){Poll_NAV_SAT();}
+                }
+          }      
+      else if( msgType == MT_NAV_SAT )  { 
+          nav_sat_message++;
           #if defined (STATIC_DEBUG)
-          Serial.print(" PVTiTOW P ");Serial.print (ubxMessage.navPvt.iTOW);
-          Serial.print(" PVTiTOW N ");Serial.println (ubxMessage.navDOP.iTOW);
+          Serial.print("iTOW ");Serial.print(ubxMessage.navSat.iTOW);
+          Serial.print(" numSV ");Serial.print(ubxMessage.navSat.numSvs);
+          Serial.print(" len ");Serial.println(ubxMessage.navSat.len);
+          
+          for(int i=0;i<ubxMessage.navSat.numSvs;i++){
+            Serial.print("gnssID "); Serial.print(ubxMessage.navSat.sat[i].gnssId);
+            Serial.print("svID "); Serial.print(ubxMessage.navSat.sat[i].svId);
+            Serial.print(" cno "); Serial.println(ubxMessage.navSat.sat[i].cno);
+           }
           #endif
-          }  
+      }       
   }   
 }
  
@@ -764,7 +793,12 @@ void taskTwo( void * parameter)
     voltage_bat=analog_mean*calibration_bat/1000;
     if(voltage_bat<3.1) low_bat_count++;
     else low_bat_count=0;
-    if((long_push==true)|(low_bat_count>10)){
+    if(long_push==true){
+        Off_screen(RTC_OFF_screen);
+        Shut_down();
+    }
+    else if(low_bat_count>10){
+        RTC_OFF_screen=1;//Simon screen with info text !!!
         Off_screen(RTC_OFF_screen);
         Shut_down();
     }
