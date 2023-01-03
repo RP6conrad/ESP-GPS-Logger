@@ -126,6 +126,13 @@ void Init_ublox(void){
         Serial2.write( pgm_read_byte(UBLOX_UBX_NAVDOP_ON+i) );
         }
   Ublox_serial2(wait); 
+  if(config.logUBX_nav_sat){
+      Serial.println("Set ublox NAV_SAT_ON ");   
+      for(int i = 0; i < sizeof(UBLOX_UBX_NAVSAT_ON); i++) {                        
+            Serial2.write( pgm_read_byte(UBLOX_UBX_NAVSAT_ON+i) );
+            }
+      Ublox_serial2(wait);   
+      }
   Serial.println("Set ublox to 38400BD "); 
   for(int i = 0; i < sizeof(UBLOX_UBX_BD38400); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_UBX_BD38400+i) );
@@ -215,7 +222,14 @@ void Init_ubloxM10(void){
   for(int i = 0; i < sizeof(UBLOX_M10_NAV_DOP); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_M10_NAV_DOP+i) );
         }
-  Ublox_serial2(wait);     
+  Ublox_serial2(wait);  
+  if(config.logUBX_nav_sat){
+      Serial.println("Set ublox M10 NAV_SAT_ON ");   
+      for(int i = 0; i < sizeof(UBLOX_M10_NAV_SAT); i++) {                        
+            Serial2.write( pgm_read_byte(UBLOX_M10_NAV_SAT+i) );
+            }
+      Ublox_serial2(wait);
+  }     
   Serial.println("Check UBX_MON_VER ");  //does this work for the M10 ??   
    for(int i = 0; i < sizeof(UBX_MON_VER); i++) {                        
         Serial2.write( pgm_read_byte(UBX_MON_VER+i) );        
@@ -396,7 +410,9 @@ int processGPS() {
         if(currentMsgType==MT_NAV_PVT){ubxMessage.navPvt.len=payloadSize-6;}
         if(currentMsgType==MT_NAV_DOP){ubxMessage.navDOP.len=payloadSize-6;}
         if(currentMsgType==MT_NAV_SAT){
-            if(ubxMessage.navSat.len+6<sizeof(ubxMessage.navSat)){payloadSize=ubxMessage.navSat.len+6;}//payload is variable with nav_sat msg
+            if(ubxMessage.navSat.len+6<sizeof(ubxMessage.navSat)){
+                payloadSize=ubxMessage.navSat.len+6;
+                }//payload is variable with nav_sat msg
             else{fpos=0;}//something went wrong, start over again !!!
             }
       }
@@ -407,9 +423,10 @@ int processGPS() {
       // checksum has to calculated out of the correct substructure !!!
         calcChecksum(checksum,currentMsgType,payloadSize-2);//was payload !!
       }
-      else if ( fpos == (payloadSize+1) ) {//was (payloadSize+3)
+      else if ( fpos == (payloadSize+1) ) {//was (payloadSize+3)   fpos-3=c, of payloadsize+1-3=c, dus payloadsize-2
         // First byte after the payload, ie. first byte of the checksum.
         // Does it match the first byte of the checksum we calculated?
+
         if ( c != checksum[0] ) {
           // Checksum doesn't match, reset to beginning state and try again.
            Serial.println("CkA NIO");
@@ -419,12 +436,20 @@ int processGPS() {
           fpos = 0; 
         }
       }
-      else if ( fpos == (payloadSize+2) ) {//was (payloadSize+4)
+      else if ( fpos == (payloadSize+2) ) {//was (payloadSize+4)  fpos-4=c, of payloadsize+1-4=c, dus payloadsize-1
         // Second byte after the payload, ie. second byte of the checksum.
         // Does it match the second byte of the checksum we calculated?
         fpos = 0; // We will reset the state regardless of whether the checksum matches.
         if ( c == checksum[1] ) {
           // Checksum matches, we have a valid message.
+          /* iTow has a 18 s diff with UTC, issue with GPS Results !!
+           if(currentMsgType==MT_NAV_SAT){
+              ubxMessage.navSat.iTOW=ubxMessage.navSat.iTOW-18*1000;//to match 18s diff UTC nav pvt & GPS nav sat !!!
+              calcChecksum(checksum,currentMsgType,payloadSize-2);//have to calculate new checksum !!
+              ((unsigned char*)(&ubxMessage.navSat))[payloadSize-2]=checksum[0];//checksum is not on a fixed pos, depends from the payload !!!
+              ((unsigned char*)(&ubxMessage.navSat))[payloadSize-1]=checksum[1];//checksum is not on a fixed pos, depends from the payload !!!
+            }
+          */ 
           return currentMsgType; 
         }
         else{ if ((Time_Set_OK==true)&(nav_pvt_message_nr>10)){

@@ -26,18 +26,26 @@ void logERR(const char * message){
 }
 //test for existing GPSLOGxxxfiles, open txt,gps + ubx file with new name, or with timestamp !
 void Open_files(void){
-  if(config.file_date_time==1){
+  if(config.file_date_time){
       struct tm timeinfo;
       getLocalTime(&timeinfo);
       time_t epoch=mktime(&timeinfo)+config.timezone*3600;
       struct tm * time_info;
       time_info=localtime(&epoch);
-      char timestamp[16];
-      sprintf(timestamp, "_%d%02d%02d%02d%02d", time_info->tm_year-100,time_info->tm_mon+1,time_info->tm_mday,time_info->tm_hour,time_info->tm_min);
-      strcat(filenameERR,config.UBXfile);//copy filename from config
       char extension[16]=".txt";//
-      strcat(filenameERR,timestamp);//add timestamp
-      strcat(filenameERR,extension);//add extension.txt 
+      char timestamp[16];
+       if(config.file_date_time==1){
+          sprintf(timestamp, "_%d%02d%02d%02d%02d", time_info->tm_year-100,time_info->tm_mon+1,time_info->tm_mday,time_info->tm_hour,time_info->tm_min);
+          strcat(filenameERR,config.UBXfile);//copy filename from config
+          strcat(filenameERR,timestamp);//add timestamp
+          strcat(filenameERR,extension);//add extension.txt 
+          }
+       if(config.file_date_time==2){
+          sprintf(timestamp, "%d%02d%02d%02d%02d_", time_info->tm_year-100,time_info->tm_mon+1,time_info->tm_mday,time_info->tm_hour,time_info->tm_min);
+          strcat(filenameERR,timestamp);//add timestamp
+          strcat(filenameERR,config.UBXfile);//copy filename from config
+          strcat(filenameERR,extension);//add extension.txt 
+          }   
       }
   else{   
       char txt[16]="000.txt";    
@@ -143,7 +151,6 @@ void Log_to_SD(void){
                     */
                     static int old_nav_sat_message=0;
                     if(nav_sat_message!=old_nav_sat_message){
-                      ubxMessage.navSat.iTOW=ubxMessage.navSat.iTOW-18*1000+50;//to match 18s diff UTC nav pvt & GPS nav sat !!!
                       old_nav_sat_message=nav_sat_message;
                       ubxfile.write(0xB5);
                       ubxfile.write(0x62);

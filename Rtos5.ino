@@ -240,6 +240,14 @@
  * .sbp file correction for sAcc, hDOP
  * added alfa screen to 0.5h / 1h, bar_length gives time passed 30min /60 min
  * sleep_screen Simon : 500m -> 1h best
+ * SW 5.67
+ * NAV SAT not with polling, but over cfg msg @ 10% rate of NAV PVT
+ * NAV SAT for M10 added @ 10% rate of NAV PVT
+ * removed timeshift iTow NAV SAT
+ * Added extra option filenaming
+ * Some changes to header SBP
+ * correction time bug in sleep screen
+ * reset 30 min / 60 min bar if speed drops<2m/s for 120s (screen best 0.5h / 1h)
  */
 #include "FS.h"
 #include "SPI.h"
@@ -285,7 +293,7 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-const char SW_version[16]="SW-vers. 5.66";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="SW-vers. 5.67";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 const char E_paper_version[16]="e_paper";//Hier komt het type e-paper @ compile time !!!
 int sdTrouble=0;
 
@@ -443,11 +451,6 @@ void Shut_down(void){
         GPS_delay=0;
         if(Time_Set_OK){    //Only safe to RTC memory if new GPS data is available !!
             Time_Set_OK=false;
-            RTC_year=(tmstruct.tm_year+1900);
-            RTC_month=(tmstruct.tm_mon+1);
-            RTC_day=(tmstruct.tm_mday);
-            RTC_hour=(tmstruct.tm_hour)+config.timezone;
-            RTC_min=(tmstruct.tm_min);
             RTC_distance=Ublox.total_distance/1000000;
             RTC_alp=A500.display_max_speed*calibration_speed;
             RTC_500m=M500.avg_speed[9]*calibration_speed;
@@ -471,7 +474,12 @@ void Shut_down(void){
             Session_results_Alfa(A250,M250);
             Session_results_Alfa(A500,M500);
             delay(100);
-            Close_files();  
+            Close_files(); 
+            RTC_year=(tmstruct.tm_year+1900);//local time is corrected with timezone in close_files() !!
+            RTC_month=(tmstruct.tm_mon+1);
+            RTC_day=(tmstruct.tm_mday);
+            RTC_hour=(tmstruct.tm_hour);
+            RTC_min=(tmstruct.tm_min);
             }
         go_to_sleep(10);//got to sleep na 10s     
 }
@@ -763,7 +771,7 @@ void taskOne( void * parameter )
      else if( msgType == MT_NAV_PVT )  { //order messages in ubx should be ascending !!!
           if(Time_Set_OK==true){
                 nav_pvt_message++;
-                if(config.logUBX_nav_sat&((nav_pvt_message)%10==0)&(nav_pvt_message>10)){Poll_NAV_SAT();}
+                //if(config.logUBX_nav_sat&((nav_pvt_message)%10==0)&(nav_pvt_message>10)){Poll_NAV_SAT();}
                 }
           }      
       else if( msgType == MT_NAV_SAT )  { 

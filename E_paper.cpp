@@ -506,6 +506,10 @@ void Update_screen(int screen){
             display.print(S3600.display_max_speed*calibration_speed,1);   //best 3600s
             }
         int log_seconds=(millis()-start_logging_millis)/1000; //aantal seconden sinds loggen is gestart
+        static int low_speed_seconds;
+        if(S10.avg_s>2000){low_speed_seconds=0;}//if the speed is higher then 2000 mm/s, reset the counter
+        low_speed_seconds++;
+        if(low_speed_seconds>120){start_logging_millis=millis();}//bar will be reset if the 10s speed drops under 2m/s for more then 120 s !!!!
         run_rectangle_length=(Ublox.alfa_distance/bar_length);//240 pixels is volledige bar, ublox.alfa_distance zijn mm
         if(field==7){
                 run_rectangle_length=log_seconds*240/1800;

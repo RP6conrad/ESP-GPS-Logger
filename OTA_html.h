@@ -399,7 +399,7 @@ void html_config(String& webpage){
   webpage += "<tr><td>logGPY</td><td>\n<select id='logGPY' name='logGPY'>\n";
   if(config.logGPY == 1) webpage += "<option value='1' selected>LOG GPY ON</option>\n"; else webpage += "<option value='1'>LOG GPY ON</option>\n";
   if(config.logGPY == 0) webpage += "<option value='0' selected>LOG GPY OFF</option>\n"; else webpage += "<option value='0'>LOG GPY OFF</option>\n";
-  webpage += "</select>\n</td><td>logGPY: To save the GPS data in a new open source format .gpy, not yet defined. </td>\n</tr>\n";  
+  webpage += "</select>\n</td><td>logGPY: To save the GPS data in the new open source format .gpy. </td>\n</tr>\n";  
   //logGPX  
   webpage += "<tr><td>logGPX</td><td>\n<select id='logGPX' name='logGPX'>\n";
   if(config.logGPX == 1) webpage += "<option value='1' selected>LOG GPX ON</option>\n"; else webpage += "<option value='1'>LOG GPX ON</option>\n";
@@ -419,9 +419,10 @@ void html_config(String& webpage){
   webpage += "</select>\n</td><td>timezone: The local time difference in hours with UTC (can be negative ! )<a href='https://en.wikipedia.org/wiki/List_of_UTC_offsets' target='_blank'>this Link</a></td>\n</tr>\n";
   //filenaming  
   webpage += "<tr><td>file_date_time</td><td>\n<select id='file_date_time' name='file_date_time'>\n";
-  if(config.file_date_time == 1) webpage += "<option value='1' selected>file_date_time ON</option>\n"; else webpage += "<option value='1'>file_date_time ON</option>\n";
-  if(config.file_date_time == 0) webpage += "<option value='0' selected>file_date_time OFF</option>\n"; else webpage += "<option value='0'>file_date_time OFF</option>\n";
-  webpage += "</select>\n</td><td>file_date_time: To choose the type of filenaming between filename_MAC_count or filename_date_time.</td>\n</tr>\n"; 
+  if(config.file_date_time == 1) webpage += "<option value='1' selected>name_date_time</option>\n"; else webpage += "<option value='1'>name_date_time</option>\n";
+  if(config.file_date_time == 0) webpage += "<option value='0' selected>name_MAC_index</option>\n"; else webpage += "<option value='0'>name_MAC_index</option>\n";
+  if(config.file_date_time == 2) webpage += "<option value='2' selected>date_time_name</option>\n"; else webpage += "<option value='2'>date_time_name</option>\n";
+  webpage += "</select>\n</td><td>file_date_time: To choose the type of filenaming between filename_MAC_count or filename_date_time or date_time_filename.</td>\n</tr>\n"; 
   //UBXfile
   webpage += "<tr>\n<td>UBXfile</td><td>\n";
   webpage += "<input size='10' type='text' required name='UBXfile' value="+String(config.UBXfile)+">\n";

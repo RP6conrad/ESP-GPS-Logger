@@ -9,10 +9,12 @@
 //extern UBXMessage ubxMessage; 
 /* Locosys SBP structures */
 struct SBP_Header{//length = 64 bytes
-   uint16_t Header_length = 30;//byte 0-1 : nr of meaningfull bytes in header (MID_FILE_ID)
+   uint16_t Text_length = 30;//byte 0-1 : nr of meaningfull bytes in header (MID_FILE_ID)
    uint8_t Id1 = 0xa0;//seems to be necessary so that GP3S accept .sbp
    uint8_t Id2 = 0xa2;//seems to be necessary so that GP3S accept .sbp
-   char Identity[60] ="ESP-GPS,0,unknown,unknown";//byte 2~63:  MID_FILE_ID(0xfd) will stuff    0xff for remaining bytes
+   uint16_t Again_length = 30;
+   uint8_t Start = 0xfd;
+   char Identity[57] ="ESP-GPS,0,unknown,unknown";//byte 7~63:  MID_FILE_ID(0xfd) will stuff    0xff for remaining bytes
    }__attribute__((__packed__));
 struct SBP_frame{//length = 32 bytes
    uint8_t HDOP;        /* HDOP [0..51] with resolution 0.2 */
@@ -34,7 +36,7 @@ struct SBP_Header sbp_header;
 struct SBP_frame sbp_frame;
 
 void log_header_SBP(File file){
-  for (int i=29;i<60;i++){sbp_header.Identity[i]=0xFF;}//fill with 0xFF
+  for (int i=32;i<64;i++){((unsigned char*)(&sbp_header))[i]=0xFF;}//fill with 0xFF
   file.write((const uint8_t *)&sbp_header,64);
 }
 void log_SBP(File file){

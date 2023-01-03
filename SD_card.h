@@ -66,7 +66,7 @@ struct Config {
   bool logSBP=1;//log to .sbp
   bool logGPY=1;//log to .gps
   bool logGPX=0;//log to .gpx
-  bool file_date_time=1;//type of filenaming, with MAC adress or datetime
+  int file_date_time=1;//type of filenaming, with MAC adress or datetime
   char UBXfile[32]="BN220A000";//your preferred filename
   char Sleep_info[32]="Your ID";//your preferred sleep text
   char ssid[32];//your SSID
