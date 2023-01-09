@@ -27,21 +27,18 @@ void logERR(const char * message){
 //test for existing GPSLOGxxxfiles, open txt,gps + ubx file with new name, or with timestamp !
 void Open_files(void){
   if(config.file_date_time){
-      struct tm timeinfo;
-      getLocalTime(&timeinfo);
-      time_t epoch=mktime(&timeinfo)+config.timezone*3600;
-      struct tm * time_info;
-      time_info=localtime(&epoch);
+      struct tm now;
+      getLocalTime(&now);
       char extension[16]=".txt";//
       char timestamp[16];
        if(config.file_date_time==1){
-          sprintf(timestamp, "_%d%02d%02d%02d%02d", time_info->tm_year-100,time_info->tm_mon+1,time_info->tm_mday,time_info->tm_hour,time_info->tm_min);
+          sprintf(timestamp, "_%d%02d%02d%02d%02d", now.tm_year-100,now.tm_mon+1,now.tm_mday,now.tm_hour,now.tm_min);
           strcat(filenameERR,config.UBXfile);//copy filename from config
           strcat(filenameERR,timestamp);//add timestamp
           strcat(filenameERR,extension);//add extension.txt 
           }
        if(config.file_date_time==2){
-          sprintf(timestamp, "%d%02d%02d%02d%02d_", time_info->tm_year-100,time_info->tm_mon+1,time_info->tm_mday,time_info->tm_hour,time_info->tm_min);
+          sprintf(timestamp, "%d%02d%02d%02d%02d_", now.tm_year-100,now.tm_mon+1,now.tm_mday,now.tm_hour,now.tm_min);
           strcat(filenameERR,timestamp);//add timestamp
           strcat(filenameERR,config.UBXfile);//copy filename from config
           strcat(filenameERR,extension);//add extension.txt 
@@ -98,14 +95,12 @@ void Open_files(void){
             errorfile=SD.open(filenameERR, FILE_APPEND);     
 }
 void Close_files(void){
-  Set_GPS_Time(config.timezone);
   log_GPX(GPX_END,gpxfile);
   gpxfile.close();
   ubxfile.close();
   errorfile.close();
   gpyfile.close();
   sbpfile.close();
- 
 }
 void Flush_files(void){
   if(config.sample_rate<=10){//@18Hz still lost points !!!
@@ -157,6 +152,11 @@ void Log_to_SD(void){
                       ubxfile.write((const uint8_t *)&ubxMessage.navSat,(ubxMessage.navSat.len+6)); //nav_sat has a variable length, add chkA and chkB !!!
                       }
                     }
+                    if(config.logUBX_nav_sat){//only add navDOP msg to ubx file if nav_sat active
+                        ubxfile.write(0xB5);
+                        ubxfile.write(0x62);
+                        ubxfile.write((const uint8_t *)&ubxMessage.navDOP, sizeof(ubxMessage.navDOP));
+                        }
                 #if defined(GPY_H)    
                 if(config.logGPY==true){  
                   log_GPY(gpyfile);   
@@ -186,10 +186,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
     Serial.println(F("no configuration file found"));
     wifi_search=120;//elongation SoftAP mode to 120s !!!
   }
-  //Serial.print((char)file.read());
-  // Allocate a temporary JsonDocument
-  // Don't forget to change the capacity to match your requirements.
-  // Use arduinojson.org/v6/assistant to compute the capacity.
+ 
   StaticJsonDocument<1024> doc;
   // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
@@ -310,32 +307,25 @@ void Session_info(GPS_data G){
   for(int i=0;i<6;i++) errorfile.print(mac[i],HEX);
   errorfile.println(" ");
   errorfile.println(SW_version);
-  strcat(message, "RTOS5, First_fix: "); 
-  dtostrf(first_fix_GPS, 1, 0, tekst);
+  sprintf(tekst, "First fix : %d s\n",first_fix_GPS);
   strcat(message,tekst); 
-  strcat(message," s\nTotal time: "); 
-  dtostrf(millis()/1000, 1, 0, tekst);
+  sprintf(tekst, "Total time : %d s\n",millis()/1000);
   strcat(message,tekst); 
-  strcat(message," s\nTotal Distance: "); 
-  dtostrf(G.total_distance/1000, 1, 0, tekst);
+  sprintf(tekst, "Total distance : %d m\n",(int)G.total_distance/1000);
   strcat(message,tekst); 
-  strcat(message," m\nSample rate: ");
-  dtostrf(config.sample_rate, 1, 0, tekst);
+  sprintf(tekst, "Sample rate : %d Hz\n",config.sample_rate);
+  strcat(message,tekst);
+  sprintf(tekst, "Speed calibration: %f \n",config.cal_speed); 
   strcat(message,tekst); 
-  strcat(message," Hz\n");
-  strcat(message,"Speed calibration: ");
-  dtostrf(config.cal_speed, 1, 5, tekst);
+  sprintf(tekst, "Timezone : %d h\n",config.timezone);
   strcat(message,tekst); 
-  strcat(message," \n");
   strcat(message,"Dynamic model: ");
   if(config.dynamic_model==1) strcat(message,"Sea");
   else if (config.dynamic_model==2) strcat(message,"Automotive");
   else strcat(message,"Portable");
   strcat(message," \n");
-  strcat(message,"Ublox MON GNSS : ");
-  dtostrf(ubxMessage.monGNSS.enabled_Gnss,1,0,tekst);
-  strcat(message,tekst); 
-  strcat(message," \n");
+  sprintf(tekst, "Ublox GNSS-enabled : %d\n",ubxMessage.monGNSS.enabled_Gnss);
+  strcat(message,tekst);
   if(ubxMessage.monGNSS.enabled_Gnss==3) strcat(message,"GNSS = GPS + GLONAS");
   if(ubxMessage.monGNSS.enabled_Gnss==9) strcat(message,"GNSS = GPS + GALILEO");  
   if(ubxMessage.monGNSS.enabled_Gnss==11) strcat(message,"GNSS = GPS + GLONAS + GALILEO");
@@ -347,10 +337,13 @@ void Session_info(GPS_data G){
   strcat(message,"Ublox HW-version : ");
   strcat(message,ubxMessage.monVER.hwVersion);
   strcat(message," \n");
-  strcat(message,"Ublox GNSS-enabled : ");
-  dtostrf(ubxMessage.monGNSS.enabled_Gnss, 1, 0, tekst);
-  strcat(message,tekst); 
-  strcat(message," \n");
+  #if defined(UBLOX_M10)
+  sprintf(tekst,"Ublox M10 ID = %02x%02x%02x%02x%02x%02x\n",ubxMessage.ubxId.ubx_id_1,ubxMessage.ubxId.ubx_id_2,ubxMessage.ubxId.ubx_id_3,ubxMessage.ubxId.ubx_id_4,ubxMessage.ubxId.ubx_id_5,ubxMessage.ubxId.ubx_id_6);
+  #else
+  sprintf(tekst,"Ublox M8 ID = %02x%02x%02x%02x%02x\n",ubxMessage.ubxId.ubx_id_1,ubxMessage.ubxId.ubx_id_2,ubxMessage.ubxId.ubx_id_3,ubxMessage.ubxId.ubx_id_4,ubxMessage.ubxId.ubx_id_5);
+  #endif
+  strcat(message,tekst);
+
   errorfile.print(message);                  
 }
 
@@ -421,12 +414,12 @@ void Session_results_S(GPS_time S){
       strcat(message, " S");
       dtostrf(S.time_window, 1, 0, tekst);
       strcat(message,tekst); 
-      strcat(message, "\n"); 
-      //errorfile.open();
+      if(config.logUBX_nav_sat){
+        sprintf(tekst," CNO Max: %d Avg: %d Min: %d nr Sat: %d\n",S.Max_cno[i],S.Mean_cno[i],S.Min_cno[i],S.Mean_numSat[i]);
+        strcat(message,tekst);
+        } 
+      else strcat(message, "\n"); 
       errorfile.print(message);    
-      //errorfile.write((const uint8_t *)&message, sizeof(message));
-      //errorfile.close(); 
-      //appendFile(SD,filenameERR,message);
       }
 }
 void Session_results_Alfa(Alfa_speed A,GPS_speed M){ 

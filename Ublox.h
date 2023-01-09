@@ -2,7 +2,7 @@
 #define UBLOX_H
 //https://github.com/iforce2d/inavFollowme/blob/master/FollowMeTag/GPS.h
 #include "Arduino.h"
-#include "TimeLib.h"
+//#include "TimeLib.h"
 #include "sys/time.h"
 #include "SD_card.h"
 
@@ -70,9 +70,6 @@ const char UBLOX_RATE[] PROGMEM = {//14 bytes !!
   0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xF4, 0x01, 0x01, 0x00, 0x01, 0x00, 0x0B, 0x77,  //(2Hz)56 tot 69 config.sample_rate=5
   0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0x37, 0x00, 0x01, 0x00, 0x01, 0x00, 0x4D, 0x04,  //(18Hz)70 tot 83 config.sample_rate=6
 };
-const char UBX_ID[] PROGMEM = {
-  0xB5, 0x62, 0x27, 0x03, 0x00, 0x00, 0x2A, 0xA5,  //ask unique ID
-};
 const char UBX_SEA[] PROGMEM = {
   0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x05, 0x03, 0x00, 0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00, 0xFA,  //switch to dynamic sea model
   0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4C, 0xB9,              ////switch to dynamic sea model
@@ -100,6 +97,7 @@ const char UBX_GNSS3_BEIDOU[] PROGMEM = {
 const char UBX_MON_GNSS[] PROGMEM = {0xB5,0x62,0x0A,0x28,0x00,0x00,0x32,0xA0};//poll GNSS setting
 const char UBX_MON_VER[] PROGMEM =  {0xB5,0x62,0x0A,0x04,0x00,0x00,0x0E,0x34};//poll SW version
 const char UBX_NAV_SAT[] PROGMEM =  {0xB5,0x62,0x01,0x35,0x00,0x00,0x36,0xA3};//poll NAV_SAT
+const char UBX_ID[] PROGMEM = {0xB5, 0x62, 0x27, 0x03, 0x00, 0x00, 0x2A, 0xA5}; //poll unique ID B5 62 27 03 00 00 2A A5 
 
 const unsigned char UBX_HEADER[] = { 0xB5, 0x62 };
 const unsigned char NAV_DUMMY_HEADER[] = { 0x01, 0x00 };
@@ -202,10 +200,12 @@ struct NAV_ID {
   byte ubx_id_2;
   byte ubx_id_3;
   byte ubx_id_4;
-  byte ubx_id_5;
+  byte ubx_id_5;//M8 has only 5 byte ID !
+  byte ubx_id_6;//M10 appeared to have 6 byte ID !!!
   unsigned char chkA;
   unsigned char chkB;
 }__attribute__((__packed__));
+
 struct MON_GNSS {
   unsigned char cls;
   unsigned char id;
@@ -236,13 +236,16 @@ struct NAV_DOP {  //payload 18 bytes, total 22 bytes, without (__packed__) 24 by
   unsigned char chkA;
   unsigned char chkB;
 }__attribute__((__packed__));
-
+struct VER_EXT{
+  char extension[30];
+}__attribute__((__packed__));
 struct MON_VER {
         unsigned char cls;
         unsigned char id;
         unsigned short len;
         char swVersion[30];
         char hwVersion[10];
+        VER_EXT ext[6];         
         unsigned char chkA;
         unsigned char chkB;
     }__attribute__((__packed__));
@@ -250,10 +253,10 @@ struct sVs_NAV_SAT{
         byte gnssId;
         byte svId;
         byte cno;
-        short elev;
+        int8_t elev;
         short azim;
         short prRes;
-        unsigned long X4;
+        unsigned long X4;//bit3 = 1  : sV is used in navigation solution
 }__attribute__((__packed__));   
 struct NAV_SAT{
         unsigned char cls;
@@ -281,7 +284,6 @@ struct UBXMessage {//was union, but messages are overwritten by next message
 }__attribute__((__packed__));
 
 extern UBXMessage ubxMessage;  //declaration here, definition in Ublox.cpp
-//extern GPS_data Ublox(1000);
 extern bool sdOK;
 
 extern char dataStr[255];  //string for logging NMEA in txt, test for write 2000 chars !!
@@ -300,6 +302,6 @@ void Poll_NAV_SAT(void);
 void Init_ubloxM10(void);
 void Set_rate_ubloxM10(int rate);
 //#endif
-void Set_GPS_Time(int time_offset);
+int Set_GPS_Time(int time_offset);
 int processGPS();
 #endif

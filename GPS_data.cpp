@@ -53,10 +53,56 @@ void GPS_data::push_data(float latitude,float longitude,uint32_t gSpeed) {//gspe
     avg_gSpeed=0;
   }
  }
-//constructor van GPS_data
+//constructor for GPS_data
 GPS_data::GPS_data() {
   index_GPS=0; 
 }
+//constructor for SAT_info
+GPS_SAT_info::GPS_SAT_info() {
+  index_SAT_info=0; 
+}
+//function to extract info out of NAV_SAT, and push it to array
+//For every NAV_SAT frame, the Mean CNO, the Max cno, the Min cno and the nr of sats in the nav solution are stored
+//Then, the means are calculated out of the last NAV_SAT_BUFFER frames (now 16 frames, @5Hz, this 0.5Hz NAV_SAT ca 32 s)
+void GPS_SAT_info::push_SAT_info(struct NAV_SAT nav_sat){
+  //#define NAV_SAT_BUFFER 10
+  mean_cno=0;min_cno=0xFF;max_cno=0;nr_sats=0;
+  for(int i=0;i<nav_sat.numSvs;i++){      //only evaluate nr of Sats that is in NAV_SAT
+    if(nav_sat.sat[i].X4&0x8){       //only evaluate nr of Sats who are in nav solution, bit3 from X4
+      mean_cno=mean_cno+nav_sat.sat[i].cno;
+      if(nav_sat.sat[i].cno<min_cno) min_cno=nav_sat.sat[i].cno;
+      if(nav_sat.sat[i].cno>max_cno) max_cno=nav_sat.sat[i].cno;
+      nr_sats++;
+      }
+    }
+  if(nr_sats){ //protection divide int/0 !!
+    mean_cno=mean_cno/nr_sats;
+    sat_info.Mean_cno[index_SAT_info%NAV_SAT_BUFFER]=mean_cno;
+    sat_info.Max_cno[index_SAT_info%NAV_SAT_BUFFER]=max_cno;
+    sat_info.Min_cno[index_SAT_info%NAV_SAT_BUFFER]=min_cno;
+    sat_info.numSV[index_SAT_info%NAV_SAT_BUFFER]=nr_sats;
+    mean_cno=0;min_cno=0;max_cno=0;nr_sats=0;
+    if(index_SAT_info>NAV_SAT_BUFFER){
+      for(int i=0;i<NAV_SAT_BUFFER;i++){
+        mean_cno=mean_cno+sat_info.Mean_cno[(index_SAT_info-NAV_SAT_BUFFER+i)%NAV_SAT_BUFFER];
+        max_cno=max_cno+sat_info.Max_cno[(index_SAT_info-NAV_SAT_BUFFER+i)%NAV_SAT_BUFFER];
+        min_cno=min_cno+sat_info.Min_cno[(index_SAT_info-NAV_SAT_BUFFER+i)%NAV_SAT_BUFFER];
+        nr_sats=nr_sats+sat_info.numSV[(index_SAT_info-NAV_SAT_BUFFER+i)%NAV_SAT_BUFFER]; 
+      }
+    mean_cno=mean_cno/NAV_SAT_BUFFER;  
+    max_cno=max_cno/NAV_SAT_BUFFER;  
+    min_cno=min_cno/NAV_SAT_BUFFER;  
+    nr_sats=nr_sats/NAV_SAT_BUFFER;
+    sat_info.Mean_mean_cno=mean_cno;
+    sat_info.Mean_max_cno=max_cno;
+    sat_info.Mean_min_cno=min_cno;
+    sat_info.Mean_numSV=nr_sats;
+    } 
+    index_SAT_info++; 
+}
+
+
+};
 void sort_display(double a[],int size){
   for(int i=0; i<(size-1); i++) {
         for(int o=0; o<(size-(i+1)); o++) {
@@ -68,13 +114,13 @@ void sort_display(double a[],int size){
         }
   }     
 }
-void sort_run(double a[], uint8_t hour[], uint8_t minute[],uint8_t seconde[],int runs[], int size) {
+void sort_run(double a[], uint8_t hour[], uint8_t minute[],uint8_t seconde[],uint8_t mean_cno[],uint8_t max_cno[],uint8_t min_cno[],uint8_t nrSats[],int runs[], int size) {
     for(int i=0; i<(size-1); i++) {
         for(int o=0; o<(size-(i+1)); o++) {
                 if(a[o] > a[o+1]) {
-                    double t = a[o];int b=hour[o];int c=minute[o];int d=seconde[o];int e=runs[o];
-                    a[o] = a[o+1];hour[o] = hour[o+1];minute[o] = minute[o+1];seconde[o]=seconde[o+1];runs[o]=runs[o+1];
-                    a[o+1] = t; hour[o+1] = b; minute[o+1] = c;seconde[o+1]=d;runs[o+1]=e;
+                    double t = a[o];int b=hour[o];int c=minute[o];int d=seconde[o];int e=runs[o];int f=mean_cno[o];int g=max_cno[o];int h=min_cno[o];int j=nrSats[o];
+                    a[o] = a[o+1];hour[o] = hour[o+1];minute[o] = minute[o+1];seconde[o]=seconde[o+1];runs[o]=runs[o+1];mean_cno[o]=mean_cno[o+1];max_cno[o]=max_cno[o+1];min_cno[o]=min_cno[o+1];nrSats[o]=nrSats[o+1];
+                    a[o+1] = t; hour[o+1] = b; minute[o+1] = c;seconde[o+1]=d;runs[o+1]=e;mean_cno[o+1]=f;max_cno[o+1]=g;min_cno[o+1]=h;nrSats[o+1]=j;
                 }
         }
     }
@@ -171,7 +217,10 @@ float GPS_time::Update_speed(int actual_run){
               time_sec[0]=tmstruct.tm_sec;
               this_run[0]=actual_run;
               avg_speed[0]=s_max_speed; 
-             
+              Mean_cno[0]=Ublox_Sat.sat_info.Mean_mean_cno;
+              Max_cno[0]=Ublox_Sat.sat_info.Mean_max_cno;
+              Min_cno[0]=Ublox_Sat.sat_info.Mean_min_cno;
+              Mean_numSat[0]=Ublox_Sat.sat_info.Mean_numSV;
               //Om de avg te actualiseren tijdens de run, gemiddelde berekenen van niet gesorteerde array  !
               if(s_max_speed>avg_speed[5]){
                   avg_5runs=0;
@@ -190,7 +239,7 @@ float GPS_time::Update_speed(int actual_run){
                else display_max_speed=avg_speed[9];
               }
             if((actual_run!=old_run)&(this_run[0]==old_run)){          //sorting only if new max during this run !!!
-              sort_run(avg_speed,time_hour,time_min,time_sec,this_run,10);
+              sort_run(avg_speed,time_hour,time_min,time_sec,Mean_cno,Max_cno,Min_cno,Mean_numSat,this_run,10);
               if(s_max_speed>5000)speed_run_counter ++;//changes SW5.51 min speed bar graph = 5 m/s
               for(int i=0;i<10;i++){
                   display_speed[i]=avg_speed[i];//om een directe update op het scherm mogelijk te maken
@@ -228,7 +277,8 @@ float GPS_time::Update_speed(int actual_run){
             if(s_max_speed>avg_speed[9])display_max_speed=s_max_speed;//update on the fly voor S1800 / S3600 
             else display_max_speed=avg_speed[9];
             if((actual_run!=old_run)&(this_run[0]==old_run)){   //sorting only if new max during this run !!!
-                  sort_run(avg_speed,time_hour,time_min,time_sec,this_run,10);
+                  //sort_run(avg_speed,time_hour,time_min,time_sec,this_run,10);
+                  sort_run(avg_speed,time_hour,time_min,time_sec,Mean_cno,Max_cno,Min_cno,Mean_numSat,this_run,10);
                   avg_speed[0]=0;
                   s_max_speed=0;
                   avg_5runs=0;

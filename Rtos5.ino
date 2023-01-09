@@ -248,6 +248,17 @@
  * Some changes to header SBP
  * correction time bug in sleep screen
  * reset 30 min / 60 min bar if speed drops<2m/s for 120s (screen best 0.5h / 1h)
+ * SW 5.68
+ * Analog bat measurement to function()
+ * ESP32 time is now local time, min 5 sats visible !!
+ * Add check for nav pvt valid flags time&date before setting the time (thanks Peter!)
+ * Check for plausible year when GPS time is set (>=2023)
+ * Removed timelib.h, only sys.time.h needed
+ * Fix time_bug in different screens
+ * Add Ubx ID M8(ROM3 necessary,5 byte ID), saved in error.txt 
+ * Add Ubx ID M10(6 byte ID), saved in error.txt 
+ * Add Class GPS_NAV_INFO + Evaluation last 16 NAV_SAT msg in log file error.txt
+ * Add navDOP msg to ubx file, if nav_Sat is active (for analysing data) 
  */
 #include "FS.h"
 #include "SPI.h"
@@ -286,14 +297,14 @@
 #define TIME_TO_SLEEP  4000        /* Time ESP32 will go to sleep (in seconds, max is ?) */
 #define WDT_TIMEOUT 60             //60 seconds WDT, opgelet zoeken naar ssid time-out<dan 10s !!!
 
-#define MIN_numSV_FIRST_FIX 4     //alvorens start loggen
+#define MIN_numSV_FIRST_FIX 5     //alvorens start loggen, changed from 4 to 5 7.1/2023
 #define MAX_Sacc_FIRST_FIX 2     //alvorens start loggen
 #define MIN_numSV_GPS_SPEED_OK 4  //min aantal satellieten voor berekenen snelheid, anders 
 #define MAX_Sacc_GPS_SPEED_OK 1   //max waarde Sacc voor berekenen snelheid, anders 0
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-const char SW_version[16]="SW-vers. 5.67";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="SW-ver. 5.68";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 const char E_paper_version[16]="e_paper";//Hier komt het type e-paper @ compile time !!!
 int sdTrouble=0;
 
@@ -324,7 +335,7 @@ int GPIO12_screen=0;//keuze welk scherm
 int low_bat_count;
 int gps_speed;
 float alfa_window;
-float analog_mean;
+float analog_mean=2000;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
@@ -356,9 +367,10 @@ RTC_DATA_ATTR int RTC_SLEEP_screen=0;
 RTC_DATA_ATTR int RTC_OFF_screen=0;
 //Simon
 RTC_DATA_ATTR float calibration_bat=1.75;//bij ontwaken uit deepsleep niet noodzakelijk config file lezen
-RTC_DATA_ATTR float voltage_bat;
+RTC_DATA_ATTR float RTC_voltage_bat=3.6;
 FtpServer ftpSrv;  
 GPS_data Ublox; // create an object storing GPS_data !
+GPS_SAT_info Ublox_Sat;//create an object storing GPS_SAT info !
 GPS_speed M100(100);
 GPS_speed M250(250);
 GPS_speed M500(500);
@@ -399,7 +411,7 @@ void print_wakeup_reason(){
 
   switch(wakeup_reason)
   {
-    voltage_bat=analog_mean*calibration_bat/1000;
+    RTC_voltage_bat=analog_mean*calibration_bat/1000;
     case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO"); reed=1;
                                  rtc_gpio_deinit(GPIO_NUM_39);//was 39
                                  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
@@ -410,10 +422,11 @@ void print_wakeup_reason(){
     case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer");
                                   analog_mean = analogRead(PIN_BAT);
                                   for(int i=0;i<10;i++){
-                                        analog_bat = analogRead(PIN_BAT);
-                                        analog_mean=analog_bat*0.1+analog_mean*0.9;
+                                        Update_bat();
+                                        //analog_bat = analogRead(PIN_BAT);
+                                        //analog_mean=analog_bat*0.1+analog_mean*0.9;
                                         }
-                                  voltage_bat=analog_mean*calibration_bat/1000;
+                                  //RTC_voltage_bat=analog_mean*calibration_bat/1000;
                                   esp_sleep_enable_ext0_wakeup(GPIO_NUM_39,0); //was 39  1 = High, 0 = Low
                                   Sleep_screen(RTC_SLEEP_screen);
                                   go_to_sleep(3000);//was 4000
@@ -483,7 +496,11 @@ void Shut_down(void){
             }
         go_to_sleep(10);//got to sleep na 10s     
 }
-
+void Update_bat(void){
+    analog_bat = analogRead(PIN_BAT);
+    analog_mean=analog_bat*0.1+analog_mean*0.9;
+    RTC_voltage_bat=analog_mean*calibration_bat/1000;
+}
 //For RTOS, the watchdog has to be triggered
 void feedTheDog_Task0(){
   TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable
@@ -578,7 +595,12 @@ void setup() {
   Serial.println(ubxMessage.monVER.swVersion);
   Serial.print ("HW Ublox=");
   Serial.println (ubxMessage.monVER.hwVersion);
-  Serial.print ("GNSS setting Ublox=");
+  Serial.print ("Extensions Ublox= ");
+  for(int i=0;i<6;i++){
+    Serial.print (ubxMessage.monVER.ext[i].extension);
+    Serial.print (", ");
+    }
+  Serial.println();  
   Serial.println (ubxMessage.monGNSS.default_Gnss);
   Serial.println (ubxMessage.monGNSS.enabled_Gnss);
   #if !defined(UBLOX_M10)
@@ -603,11 +625,9 @@ void setup() {
   bool ota_notrunning=true;
   while ((WiFi.status() != WL_CONNECTED)&(SoftAP_connection==false)) {
     esp_task_wdt_reset();
-    server.handleClient(); // wait for client handle, and update BAT Status, this section should be moved to the loop... //client coutner wait until download is finished to prevent stoping the server during download
-    analog_bat = analogRead(PIN_BAT);
-    analog_mean=analog_bat*0.1+analog_mean*0.9;
-    voltage_bat=analog_mean*calibration_bat/1000;
-    if(digitalRead(39)==false){//was 39
+    server.handleClient(); // wait for client handle, and update BAT Status, this section should be moved to the loop... 
+    Update_bat();         //client coutner wait until download is finished to prevent stoping the server during download
+    if(digitalRead(39)==false){//switch over to AP-mode, search time 100 s
        if(ota_notrunning){
             WiFi.disconnect();
             WiFi.mode(WIFI_AP);
@@ -650,7 +670,7 @@ void setup() {
       WiFi.mode(WIFI_OFF);
       Wifi_on=false;
   }
-  analog_mean=voltage_bat/calibration_bat*1000;//voltage_bat staat in RTC mem !!!
+  //analog_mean=RTC_voltage_bat/calibration_bat*1000;//RTC_voltage_bat staat in RTC mem !!!
   delay(100);
  
    //Create RTOS task, so logging and e-paper update are separated (update e-paper is blocking, 800 ms !!)
@@ -675,9 +695,10 @@ void loop() {
   feedTheDog_Task0();
   feedTheDog_Task1();
   esp_task_wdt_reset();
-  analog_bat = analogRead(PIN_BAT);
-  analog_mean=analog_bat*0.1+analog_mean*0.9;
-  voltage_bat=analog_mean*calibration_bat/1000;
+  Update_bat();
+  //analog_bat = analogRead(PIN_BAT);
+  //analog_mean=analog_bat*0.1+analog_mean*0.9;
+  //RTC_voltage_bat=analog_mean*calibration_bat/1000;
   delay(100);  
 }
 
@@ -718,11 +739,12 @@ void taskOne( void * parameter )
         //Serial.print(" DOPiTOW N ");Serial.println (ubxMessage.navDOP.iTOW);
         #endif     
       
-        if((ubxMessage.navPvt.numSV>=MIN_numSV_FIRST_FIX)&((ubxMessage.navPvt.sAcc/1000.0f)<MAX_Sacc_FIRST_FIX)&(GPS_Signal_OK==false)){
+        if((ubxMessage.navPvt.numSV>=MIN_numSV_FIRST_FIX)&((ubxMessage.navPvt.sAcc/1000.0f)<MAX_Sacc_FIRST_FIX)&(ubxMessage.navPvt.valid>=7)&(GPS_Signal_OK==false)){
+            if(Set_GPS_Time(config.timezone)){
               GPS_Signal_OK=true;
-              Set_GPS_Time(0);
               first_fix_GPS=millis()/1000;
               }
+            }
         if(GPS_Signal_OK==true){
               GPS_delay++;
               }
@@ -776,16 +798,23 @@ void taskOne( void * parameter )
           }      
       else if( msgType == MT_NAV_SAT )  { 
           nav_sat_message++;
-          #if defined (STATIC_DEBUG)
-          Serial.print("iTOW ");Serial.print(ubxMessage.navSat.iTOW);
-          Serial.print(" numSV ");Serial.print(ubxMessage.navSat.numSvs);
-          Serial.print(" len ");Serial.println(ubxMessage.navSat.len);
-          
-          for(int i=0;i<ubxMessage.navSat.numSvs;i++){
-            Serial.print("gnssID "); Serial.print(ubxMessage.navSat.sat[i].gnssId);
-            Serial.print("svID "); Serial.print(ubxMessage.navSat.sat[i].svId);
-            Serial.print(" cno "); Serial.println(ubxMessage.navSat.sat[i].cno);
-           }
+          Ublox_Sat.push_SAT_info(ubxMessage.navSat);
+          #if defined(STATIC_DEBUG)
+              Serial.print ("Mean cno= ");Serial.println (Ublox_Sat.sat_info.Mean_mean_cno);
+              Serial.print ("Max cno= ");Serial.println (Ublox_Sat.sat_info.Mean_max_cno);
+              Serial.print ("Min cno= ");Serial.println (Ublox_Sat.sat_info.Mean_min_cno);
+              Serial.print ("Sats= ");Serial.println (Ublox_Sat.sat_info.Mean_numSV);
+              //Serial.print("iTOW ");Serial.print(ubxMessage.navSat.iTOW);
+              Serial.print("numSV ");Serial.println(ubxMessage.navSat.numSvs);
+              //Serial.print(" len ");Serial.println(ubxMessage.navSat.len);
+              
+              for(int i=0;i<ubxMessage.navSat.numSvs;i++){
+                Serial.print("gnssID "); Serial.print(ubxMessage.navSat.sat[i].gnssId);
+                Serial.print("svID "); Serial.print(ubxMessage.navSat.sat[i].svId);
+                Serial.print(" cno "); Serial.print(ubxMessage.navSat.sat[i].cno);
+                Serial.print(" X4 "); Serial.println(ubxMessage.navSat.sat[i].X4,BIN);
+              }
+              
           #endif
       }       
   }   
@@ -796,10 +825,13 @@ void taskTwo( void * parameter)
   while(true){  
     stat_count++;//ca 1s per screen update
     if (stat_count>config.screen_count)stat_count=0;//screen_count = 2
+    Update_bat();
+    /*
     analog_bat = analogRead(PIN_BAT);
     analog_mean=analog_bat*0.05+analog_mean*0.95;
-    voltage_bat=analog_mean*calibration_bat/1000;
-    if(voltage_bat<3.1) low_bat_count++;
+    RTC_voltage_bat=analog_mean*calibration_bat/1000;
+    */
+    if(RTC_voltage_bat<3.1) low_bat_count++;
     else low_bat_count=0;
     if(long_push==true){
         Off_screen(RTC_OFF_screen);

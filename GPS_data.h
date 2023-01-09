@@ -10,12 +10,13 @@
 #define FILTER_MIN_SATS 5   //aan 10 Hz is dit 200 s, dus laagste snelheid is dan 500m/200s, dit is 2.5m/s of <10 km/h
 #define FILTER_MAX_sACC 2   
 #define NR_OF_BAR 42 //aantal bar in de bar_graph
-
+#define NAV_SAT_BUFFER 16 // GPS_SAT_info buffersize for Mean CNO  values, here 10 NAV_SAT messages
 extern  int index_GPS,run_count;
 extern  int index_sec;//index van laatste sample 
 extern uint16_t _secSpeed[BUFFER_SIZE];
 extern int nav_pvt_message_nr;
 extern float alfa_exit;
+//extern GPS_SAT_info Ublox_Sat;//create an object storing GPS_SAT info !
 // Description of the GPS data processing class
 class GPS_data {
   public:
@@ -28,8 +29,26 @@ class GPS_data {
    
   private:
 };
+class GPS_SAT_info{
+  public:
+    GPS_SAT_info();
+    struct SAT_info{
+      uint8_t Mean_cno[NAV_SAT_BUFFER];   //Mean cno value from all sats used in nav
+      uint8_t Max_cno[NAV_SAT_BUFFER];    //Max cno value from all sats used in nav      
+      uint8_t Min_cno[NAV_SAT_BUFFER];    //Min cno value from all sats used in nav
+      uint8_t numSV[NAV_SAT_BUFFER];      //Nr of sats used in nav 
+      uint8_t Mean_mean_cno ;  //Mean over last x NAV_SAT messages
+      uint8_t Mean_max_cno ;  //Mean over last x NAV_SAT messages
+      uint8_t Mean_min_cno ;  //Mean over last x NAV_SAT messages
+      uint8_t Mean_numSV ;  //Mean over last x NAV_SAT messages
+    } sat_info;
+int index_SAT_info;
+uint32_t mean_cno,max_cno,min_cno,nr_sats;    
+    void push_SAT_info(struct NAV_SAT nav_sat);
+};
 
-void sort_run(double a[], uint8_t hour[], uint8_t minute[],uint8_t seconde[],int runs[],int size);
+//void sort_run(double a[], uint8_t hour[], uint8_t minute[],uint8_t seconde[],int runs[],int size);
+void sort_run(double a[], uint8_t hour[], uint8_t minute[],uint8_t seconde[],uint8_t mean_cno[],uint8_t max_cno[],uint8_t min_cno[],uint8_t nrSats[],int runs[], int size);
 void sort_run_alfa(double a[], int dis[],int message[],uint8_t hour[], uint8_t minute[],uint8_t seconde[],int runs[], int samples[],int size);
 
 int New_run_detection(float actual_heading, float S2_speed);
@@ -79,7 +98,11 @@ class GPS_time{
     int this_run[10];
     int time_window; 
     int speed_run_counter;
-    uint16_t speed_run[50];   
+    uint16_t speed_run[50]; //for bar_graph
+    uint8_t Mean_cno[10];
+    uint8_t Max_cno[10];
+    uint8_t Min_cno[10];
+    uint8_t Mean_numSat[10];       
   private:
     int old_run;
     //int last_second;

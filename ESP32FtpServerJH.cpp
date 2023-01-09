@@ -499,7 +499,8 @@ boolean FtpServer::processCommand()
           fn = file.name();
     	  fn.remove(0, 1);
 		  time_t file_date = file.getLastWrite();//changes JH 20/02/2021
-		  fd = print_time(file_date-config.timezone*3600);
+      fd = print_time(file_date);
+		  //fd = print_time(file_date-config.timezone*3600);
       		#ifdef FTP_DEBUG
   			  Serial.println("File Name = "+ fn);
       		#endif
@@ -559,7 +560,8 @@ boolean FtpServer::processCommand()
     	  String fn,fs,fd;
           fn = file.name();
 		  time_t file_date = file.getLastWrite();//changes JH 20/02/2021
-		  fd = print_time(file_date-config.timezone*3600);
+      fd = print_time(file_date);
+		  //fd = print_time(file_date-config.timezone*3600);
           //Serial.println(fn);//**********************************************************************************************************
     	  fn.remove(0, strlen(cwdName));
           if(fn[0] == '/') fn.remove(0, 1);

@@ -4,7 +4,7 @@ int Time_Set_OK;
 UBXMessage ubxMessage = {000000000000};//definition here, declaration in ublox.h !!
 struct tm tmstruct ;
 
-tmElements_t my_time;  // time elements structure
+struct tm my_time;  // time elements structure
 
 time_t unix_timestamp; // a timestamp
 
@@ -58,13 +58,7 @@ void Ublox_serial2(int delay_ms){
      delay(2);   
      } 
 }
-void Ask_ID(void){
-  Serial.print("Ask ublox Unique ID ");     
-  for(int i = 0; i < sizeof(UBX_ID); i++) {                        
-        Serial2.write( pgm_read_byte(UBX_ID+i) );
-        }
-  Ublox_serial2(100);
-}
+
 #if !defined(UBLOX_M10)
 //Initialization of the ublox M8N with binary commands
 void Init_ublox(void){
@@ -109,13 +103,16 @@ void Init_ublox(void){
       Serial2.write( pgm_read_byte(UBX_MON_GNSS+i) );
       }
   Ublox_serial2(wait); 
-  
+  Serial.print("Ask ublox Unique ID ");     
+  for(int i = 0; i < sizeof(UBX_ID); i++) {                        
+        Serial2.write( pgm_read_byte(UBX_ID+i) );
+        }
+  Ublox_serial2(wait);
   Serial.println("Check UBX_MON_VER ");     
    for(int i = 0; i < sizeof(UBX_MON_VER); i++) {                        
         Serial2.write( pgm_read_byte(UBX_MON_VER+i) );        
         }                 
   Ublox_serial2(wait); 
-  //Ask_ID();  //Works only if M8N has sw-version 3, beitian BN180 has 2.01 !!!
   Serial.println("Set ublox NAV_PVT_ON ");   
   for(int i = 0; i < sizeof(UBLOX_UBX_NAVPVT_ON); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_UBX_NAVPVT_ON+i) );
@@ -239,6 +236,11 @@ void Init_ubloxM10(void){
   for(int i = 0; i < sizeof(UBX_MON_GNSS); i++) {                        
       Serial2.write( pgm_read_byte(UBX_MON_GNSS+i) );
       }
+  Ublox_serial2(wait);      
+  Serial.print("Ask ublox Unique ID ");     
+  for(int i = 0; i < sizeof(UBX_ID); i++) {                        
+        Serial2.write( pgm_read_byte(UBX_ID+i) );
+        }  
   Ublox_serial2(wait); 
   Serial.println("Set ublox M10 to 38400BD "); 
   for(int i = 0; i < sizeof(UBLOX_M10_UBX_BD38400); i++) {                        
@@ -267,23 +269,36 @@ void Set_rate_ubloxM10(int rate){
   Ublox_serial2(500);      
 }
 #endif
-void Set_GPS_Time(int time_offset){  
-        setenv("TZ", "GMT0", 0);//timezone UTC = GMT0
-        tzset();     //timezone is set, but ESP32 seems not to accept these time settings ????
-        // convert a date and time into unix time, offset 1970
-        my_time.Second = ubxMessage.navPvt.second;
-        my_time.Hour = ubxMessage.navPvt.hour;
-        my_time.Minute = ubxMessage.navPvt.minute;
-        my_time.Day = ubxMessage.navPvt.day;
-        my_time.Month = ubxMessage.navPvt.month;      
-        my_time.Year = ubxMessage.navPvt.year - 1970; // years since 1970, so deduct 1970
-        unix_timestamp =  makeTime(my_time);
-        //struct timeval tv = { .tv_sec = (unix_timestamp+config.timezone*3600), .tv_usec = 0 };//timezone aanpassen voor Belgie, UTC + 3600 s, zomertijd = UTC + 7200 !!
+int Set_GPS_Time(int time_offset){    
+  // convert a date and time into unix time
+        if(ubxMessage.navPvt.year<2023) {
+          Serial.println("GPS Reported year not plausible (<2023) !");
+          return false; 
+          }//check if year is plausible 
+        my_time.tm_sec = ubxMessage.navPvt.second;
+        my_time.tm_hour = ubxMessage.navPvt.hour;
+        my_time.tm_min = ubxMessage.navPvt.minute;
+        my_time.tm_mday = ubxMessage.navPvt.day;
+        my_time.tm_mon = ubxMessage.navPvt.month-1;  //mktime needs months 0 - 11  
+        my_time.tm_year = ubxMessage.navPvt.year - 1900; // mktime needs years since 1900, so deduct 1900
+        #if defined(DLS)
+        //summertime is on march 26 2023 2 AM, see https://www.di-mgt.com.au/wclock/help/wclo_tzexplain.html     
+        my_time.tm_hour = 1;
+        my_time.tm_min = 55;
+        my_time.tm_mday =26;
+        my_time.tm_mon = 2;  //mktime needs months 0 - 11  
+        my_time.tm_year = 2023 - 1900; 
+        setenv("TZ","CET0CEST,M3.5.0/2,M10.5.0/3", 1);//timezone UTC = CET, Daylightsaving ON : TZ=CET-1CEST,M3.5.0/2,M10.5.0/3
+        tzset();     //this works for CET, but TZ string is different for every Land / continent....
+        #endif
+        unix_timestamp =  mktime(&my_time);
         struct timeval tv = { .tv_sec = (unix_timestamp+time_offset*3600), .tv_usec = 0 };  //clean utc time !!     
         settimeofday(&tv, NULL);
         getLocalTime(&tmstruct);
+        //localtime(&tmstruct);
         Serial.printf("\nNow is : %d-%02d-%02d %02d:%02d:%02d\n",(tmstruct.tm_year)+1900,( tmstruct.tm_mon)+1, tmstruct.tm_mday,tmstruct.tm_hour , tmstruct.tm_min, tmstruct.tm_sec);
-        Serial.println("GPS Time is set");
+        Serial.println("GPS Local Time is set");
+        return true;
 }
 
 // The last two bytes of the message is a checksum value, used to confirm that the received payload is valid.
@@ -298,6 +313,7 @@ void calcChecksum(unsigned char* CK,int msgType, int msgSize) {
     else if(msgType==MT_NAV_ACK){CK[0] += ((unsigned char*)(&ubxMessage.navAck))[i];} 
     else if(msgType==MT_NAV_NACK){CK[0] += ((unsigned char*)(&ubxMessage.navNack))[i];} 
     else if(msgType==MT_NAV_SAT){CK[0] += ((unsigned char*)(&ubxMessage.navSat))[i];} 
+    else if(msgType==MT_NAV_ID){CK[0] += ((unsigned char*)(&ubxMessage.ubxId))[i];} 
     else {CK[0] += ((unsigned char*)(&ubxMessage))[i];}
     CK[1] += CK[0];
   }
@@ -390,6 +406,12 @@ int processGPS() {
           ubxMessage.navSat.id=ubxMessage.navDummy.id;
           //Serial.println("NAV_SAT\n");
         }
+        else if ( compareMsgHeader(NAV_ID_HEADER) ) {
+          currentMsgType = MT_NAV_ID;
+          ubxMessage.ubxId.cls=ubxMessage.navDummy.cls;
+          ubxMessage.ubxId.id=ubxMessage.navDummy.id;
+          //Serial.println("NAV_ID\n");
+        }
         else {
           // unknown message type, bail
           currentMsgType = MT_NONE;
@@ -404,13 +426,21 @@ int processGPS() {
         if(currentMsgType==MT_MON_VER) {((unsigned char*)(&ubxMessage.monVER))[fpos-2] = c;} 
         if(currentMsgType==MT_NAV_ACK) {((unsigned char*)(&ubxMessage.navAck))[fpos-2] = c;} 
         if(currentMsgType==MT_NAV_NACK) {((unsigned char*)(&ubxMessage.navNack))[fpos-2] = c;} 
-        if(currentMsgType==MT_NAV_SAT) {((unsigned char*)(&ubxMessage.navSat))[fpos-2] = c;} 
+        if(currentMsgType==MT_NAV_SAT) {((unsigned char*)(&ubxMessage.navSat))[fpos-2] = c;}
+        if(currentMsgType==MT_NAV_ID) {((unsigned char*)(&ubxMessage.ubxId))[fpos-2] = c;}  
       }
        if (fpos==6){
-        if(currentMsgType==MT_NAV_PVT){ubxMessage.navPvt.len=payloadSize-6;}
-        if(currentMsgType==MT_NAV_DOP){ubxMessage.navDOP.len=payloadSize-6;}
+        if(currentMsgType==MT_NAV_PVT){ubxMessage.navPvt.len=payloadSize-6;}//safety if .len is wrong
+        if(currentMsgType==MT_NAV_DOP){ubxMessage.navDOP.len=payloadSize-6;}//safety if .len is wrong
+        if(currentMsgType==MT_NAV_ID){ payloadSize=ubxMessage.ubxId.len+6;}// .len = 9 bytes for M8, but 10 bytes for M10
+        if(currentMsgType==MT_MON_VER){
+            if(ubxMessage.monVER.len+6<sizeof(ubxMessage.monVER)){
+                payloadSize=ubxMessage.monVER.len+6;
+                }//M10 has extensions ??
+            else{fpos=0;}//something went wrong, start over again !!!
+            }          
         if(currentMsgType==MT_NAV_SAT){
-            if(ubxMessage.navSat.len+6<sizeof(ubxMessage.navSat)){
+            if(ubxMessage.navSat.len+6<sizeof(ubxMessage.navSat)){//safety if .len is wrong
                 payloadSize=ubxMessage.navSat.len+6;
                 }//payload is variable with nav_sat msg
             else{fpos=0;}//something went wrong, start over again !!!

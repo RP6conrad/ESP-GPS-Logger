@@ -107,7 +107,7 @@ void Sleep_screen(int choice){
       display.setCursor(offset,88);
       display.print("2s: ");display.print(RTC_max_2s);//display.println("Hz"); 
       display.setCursor(offset,120);
-      display.print("Bat: ");display.print(voltage_bat,2);
+      display.print("Bat: ");display.print(RTC_voltage_bat,2);
       Bat_level(offset);
       display.update();
       }
@@ -246,21 +246,21 @@ void Sleep_screen(int choice){
       display.setCursor(col4,row5);
       display.println(RTC_mile,2); 
       display.setCursor(col4,row6);
-      display.println(voltage_bat,2);  
+      display.println(RTC_voltage_bat,2);  
       display.update(); 
       }
 }
 void Bat_level(int offset){
     float bat_symbol=0;
     display.fillRect(offset+225,87,6,3,GxEPD_BLACK);
-    display.fillRect(offset+222,90,12,30,GxEPD_BLACK);//monitor=(4.2-voltage_bat)*26
-    if(voltage_bat<4.2) {
-        bat_symbol=(4.2-voltage_bat)*28;
+    display.fillRect(offset+222,90,12,30,GxEPD_BLACK);//monitor=(4.2-RTC_voltage_bat)*26
+    if(RTC_voltage_bat<4.2) {
+        bat_symbol=(4.2-RTC_voltage_bat)*28;
         display.fillRect(offset+224,94,8,(int)bat_symbol,GxEPD_WHITE);
         }
     }
 void Bat_level_Simon(int offset){
-    float bat_perc=100*(1-(4.2-voltage_bat)/(4.2-3.4));
+    float bat_perc=100*(1-(4.2-RTC_voltage_bat)/(4.2-3.4));
     if (bat_perc<0) bat_perc=0;
     if (bat_perc>100) bat_perc=100;
 
@@ -301,9 +301,13 @@ void Update_screen(int screen){
     static int count,offset,old_screen,update_delay;
     char time_now[16];
     char time_now_sec[16];
-    getLocalTime(&tmstruct, 0);
-    sprintf(time_now,"%02d:%02d",(tmstruct.tm_hour+config.timezone)%24,tmstruct.tm_min);
-    sprintf(time_now_sec,"%02d:%02d:%02d",(tmstruct.tm_hour+config.timezone)%24,tmstruct.tm_min,tmstruct.tm_sec);
+    struct tm now;
+    getLocalTime(&now);
+    #if defined(STATIC_DEBUG)
+    Serial.println(&now, " %B %d %Y %H:%M:%S (%A)");
+    #endif
+    sprintf(time_now,"%02d:%02d",now.tm_hour,now.tm_min);
+    sprintf(time_now_sec,"%02d:%02d:%02d",now.tm_hour,now.tm_min,now.tm_sec);
     //if(screen!=old_screen)update_epaper=2;//klopt niet, altijd wit scherm tussendoor 
     update_epaper=1; //was zonder else
     if(count%20<10) offset++;
@@ -513,11 +517,11 @@ void Update_screen(int screen){
         run_rectangle_length=(Ublox.alfa_distance/bar_length);//240 pixels is volledige bar, ublox.alfa_distance zijn mm
         if(field==7){
                 run_rectangle_length=log_seconds*240/1800;
-                if (log_seconds==1800){start_logging_millis=millis();}
+                if (log_seconds>1800){start_logging_millis=millis();}
                 }//30 minutes = full bar
         if(field==8){
                 run_rectangle_length=log_seconds*240/3600;
-                if (log_seconds==3600){start_logging_millis=millis();}
+                if (log_seconds>3600){start_logging_millis=millis();}
                 }//60 minutes = full bar
         if(bar_length){
             display.fillRect(offset,bar_position,run_rectangle_length,8,GxEPD_BLACK);//balk voor run_distance weer te geven...          
@@ -634,8 +638,6 @@ void Update_screen(int screen){
               }
           else{
               display.print(time_now);
-              //display.print((tmstruct.tm_hour+config.timezone)%24);//correction for local time !!
-              //display.print(":");display.print(tmstruct.tm_min);
               }
           }
       }
@@ -656,8 +658,6 @@ void Update_screen(int screen){
                   }
               else{
                   display.print(time_now);
-                  //display.print((tmstruct.tm_hour+config.timezone)%24);//correction for local time !!
-                  //display.print(":");display.print(tmstruct.tm_min);
                   }
               }
           }
@@ -687,10 +687,7 @@ void Update_screen(int screen){
           
           display.setCursor(offset,122);
           display.setFont(&FreeSansBold9pt7b);
-          display.print(time_now);
-          //display.print((tmstruct.tm_hour+config.timezone)%24);//correction for local time !!
-          //display.print(":");display.print(tmstruct.tm_min);
-          
+          display.print(time_now); 
           display.setFont(&FreeMonoBold12pt7b);
           display.setCursor(col1,row1);
           display.print("AV:");
@@ -813,8 +810,10 @@ if(screen==STATS7){ //Simon bar graph screen
               display.fillRect(offset+posX+(i*barPitch),posY-barHeight,barWidth,barHeight,GxEPD_BLACK);
             }    
           }
+          #if defined(STATIC_DEBUG)
           Serial.print("Run: ");Serial.println(r);
           Serial.print("barWidth: ");Serial.println(barWidth);
+          #endif
     }
             
     if(screen==WIFI_ON){  
@@ -849,16 +848,14 @@ if(screen==STATS7){ //Simon bar graph screen
         #if defined(_GxGDEM0213B74_H_) 
         display.print(" B74");
         #endif
-        //display.print("SATS: ");display.print(ubxMessage.navPvt.numSV);//geen GPS meer in Wifi ON !!
-       
         display.setCursor(offset,120);
-        display.print("Bat:");display.print(voltage_bat,2); 
+        display.print("Bat:");display.print(RTC_voltage_bat,2); 
         display.setCursor(offset+110,120);
         display.print("FTP: ");display.println(ftpStatus);  
         if(screen!=old_screen)count=0;//eerste keer full update 
       }
     if(screen==WIFI_STATION){  
-        update_delay=500;   
+        update_delay=100;   
         display.setFont(&FreeSansBold12pt7b);
         display.setCursor(offset,26);
         display.println("Connecting to ");
@@ -869,7 +866,7 @@ if(screen==STATS7){ //Simon bar graph screen
         display.print("AP on use magnet!");
         display.setCursor(offset,120);
         display.print("Bat: ");
-        display.print(voltage_bat,2); 
+        display.print(RTC_voltage_bat,2); 
         display.setCursor(offset+190,120); 
         display.print(wifi_search); 
         if(screen!=old_screen)count=0;//eerste keer full update 
@@ -886,7 +883,7 @@ if(screen==STATS7){ //Simon bar graph screen
         display.print("password ");
         display.setCursor(offset,120);
         display.print("Bat: ");
-        display.print(voltage_bat,2); 
+        display.print(RTC_voltage_bat,2); 
         display.setCursor(offset+190,120); 
         display.print(wifi_search);   
         if(screen!=old_screen)count=0;//eerste keer full update 
