@@ -307,6 +307,7 @@ void Session_info(GPS_data G){
   for(int i=0;i<6;i++) errorfile.print(mac[i],HEX);
   errorfile.println(" ");
   errorfile.println(SW_version);
+  errorfile.println(E_paper_version);
   sprintf(tekst, "First fix : %d s\n",first_fix_GPS);
   strcat(message,tekst); 
   sprintf(tekst, "Total time : %d s\n",millis()/1000);

@@ -2,10 +2,11 @@
 
 extern UBXMessage ubxMessage;
 static int update_epaper=2;
+//static int offset;
 int gyro_right=1;
 
 void Boot_screen(void){
-  int offset =0;
+  //int offset =0;
   display.init(); 
   display.setRotation(1);
   display.fillScreen(GxEPD_WHITE);
@@ -22,7 +23,7 @@ void Boot_screen(void){
   display.update();
 }
 void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
-  int offset=0;
+  //int offset=0;
   float session_time=millis()/1000 ;
   if(choice==0){
       display.setRotation(1);
@@ -38,7 +39,7 @@ void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
       display.setCursor(offset,88);
       display.print("AVG: ");display.print(RTC_avg_10s,2);
       display.setCursor(offset,120);
-      display.print("Dis: ");display.print(Ublox.total_distance/1000,0);
+      display.print("Dist: ");display.print(Ublox.total_distance/1000,0);
       display.updateWindow(0,0,250,122,true);
       }
   else{
@@ -100,7 +101,7 @@ void Sleep_screen(int choice){
   if(choice==0){
       display.setFont(&FreeSansBold18pt7b);
       display.setCursor(offset,24);
-      display.print("Dis: ");
+      display.print("Dist: ");
       display.println(RTC_distance,0);
       display.setCursor(offset,56);
       display.print("AVG: ");display.println(RTC_avg_10s,2);
@@ -226,11 +227,11 @@ void Sleep_screen(int choice){
       display.setCursor(col3,row2);
       display.print("Dist:");
       display.setCursor(col3,row3);
-      display.print("Alp :");
+      display.print("Alph :");
       display.setCursor(col3,row4);
       display.print("1h:");//
       display.setCursor(col3,row5);
-      display.print("Mile:");
+      display.print("NM:");
       display.setCursor(col3,row6);
       display.print("Bat :");
   
@@ -298,7 +299,7 @@ void Sats_level(int offset){
     }     
    
 void Update_screen(int screen){
-    static int count,offset,old_screen,update_delay;
+    static int count,old_screen,update_delay;
     char time_now[16];
     char time_now_sec[16];
     struct tm now;
@@ -464,7 +465,7 @@ void Update_screen(int screen){
             }  
          if(field==5){
             display.setFont(&FreeSansBold12pt7b);
-            display.print("Dis ");
+            display.print("Dist ");
             display.setFont(&FreeSansBold18pt7b);
             if(Ublox.total_distance/1000,0<9999)
             display.print(Ublox.total_distance/1000,0);//Total distance in meter, als test run_distance
@@ -584,7 +585,7 @@ void Update_screen(int screen){
         static int toggle=0;
         display.setFont(&FreeSansBold18pt7b);
         display.setCursor(offset,24);
-        display.print("Dis: ");display.print(Ublox.total_distance/1000,0);
+        display.print("Dist: ");display.print(Ublox.total_distance/1000,0);
         display.setFont(&FreeSansBold12pt7b);
         display.setCursor(202+offset%2,22);//zodat SXX niet groter wordt dan 244 pix
         display.print("S");

@@ -259,6 +259,12 @@
  * Add Ubx ID M10(6 byte ID), saved in error.txt 
  * Add Class GPS_NAV_INFO + Evaluation last 16 NAV_SAT msg in log file error.txt
  * Add navDOP msg to ubx file, if nav_Sat is active (for analysing data) 
+ * SW 5.69
+ * Change baudrate for M10 to 38400 bd, #define ALI_M10 in rtos5.h
+ * Bugfix for gpy file : MakeTime -> mktime, offset from 1970 -> 1900, month -1 !!!
+ * Option for other wake-up GPIO with #define in rtos5.h
+ * Add type e-paper to .txt file
+ * Some text in e-paper adapted : Mile ->NM, Alf->Alph, Dis->Dist
  */
 #include "FS.h"
 #include "SPI.h"
@@ -304,10 +310,17 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-const char SW_version[16]="SW-ver. 5.68";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-const char E_paper_version[16]="e_paper";//Hier komt het type e-paper @ compile time !!!
+const char SW_version[16]="SW-ver. 5.69";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#if defined(_GxGDEH0213B73_H_) 
+const char E_paper_version[16]="E-paper 213B73";
+#endif
+#if defined(_GxDEPG0213BN_H_) 
+const char E_paper_version[16]="E-paper 213BN";
+#endif
+#if defined(_GxGDEM0213B74_H_) 
+const char E_paper_version[16]="E-paper 213B74";
+#endif
 int sdTrouble=0;
-
 bool sdOK = false;
 bool button = false;
 bool reed = false;
@@ -386,8 +399,8 @@ Alfa_speed A500(50);
 Alfa_speed a500(50);//for  Alfa stats GPIO_12 screens, reset possible !!
 Button_push Short_push12 (12,100,15,1);//GPIO pin 12 is nog vrij, button_count 0 en 1 !!!
 Button_push Long_push12 (12,2000,10,4);
-Button_push Short_push39 (39,100,10,8);//was 39
-Button_push Long_push39 (39,1500,10,8);//was 39
+Button_push Short_push39 (WAKE_UP_GPIO,100,10,8);//was 39
+Button_push Long_push39 (WAKE_UP_GPIO,1500,10,8);//was 39
 
 #if defined(_GxDEPG0266BN_H_) //only for screen BN266, Rolzz... !!!
 GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ 19, /*RST=*/4);
@@ -413,7 +426,7 @@ void print_wakeup_reason(){
   {
     RTC_voltage_bat=analog_mean*calibration_bat/1000;
     case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO"); reed=1;
-                                 rtc_gpio_deinit(GPIO_NUM_39);//was 39
+                                 rtc_gpio_deinit(GPIO_NUM_xx);//was 39
                                  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
                                  Boot_screen();
                                  break;
@@ -427,7 +440,7 @@ void print_wakeup_reason(){
                                         //analog_mean=analog_bat*0.1+analog_mean*0.9;
                                         }
                                   //RTC_voltage_bat=analog_mean*calibration_bat/1000;
-                                  esp_sleep_enable_ext0_wakeup(GPIO_NUM_39,0); //was 39  1 = High, 0 = Low
+                                  esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0); //was 39  1 = High, 0 = Low
                                   Sleep_screen(RTC_SLEEP_screen);
                                   go_to_sleep(3000);//was 4000
                                   break;                               
@@ -559,10 +572,15 @@ void setup() {
   
   Ublox_on();//beitian bn220 power supply over output 25,26,27
   Serial2.setRxBufferSize(1024); // increasing buffer size ?
+  #if defined(ALI_M10)
+  Serial2.begin(38400, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2
+  Serial.println("Serial2 38400bd Txd is on pin: "+String(TXD2));
+  Serial.println("Serial2 38400bd Rxd is on pin: "+String(RXD2));
+  #else
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2
   Serial.println("Serial2 9600bd Txd is on pin: "+String(TXD2));
   Serial.println("Serial2 9600bd Rxd is on pin: "+String(RXD2));
-  
+  #endif
   for(int i=0;i<425;i++){//Startup string van ublox to serial, ca 424 char !!
      while (Serial2.available()) {
               Serial.print(char(Serial2.read()));
@@ -627,7 +645,7 @@ void setup() {
     esp_task_wdt_reset();
     server.handleClient(); // wait for client handle, and update BAT Status, this section should be moved to the loop... 
     Update_bat();         //client coutner wait until download is finished to prevent stoping the server during download
-    if(digitalRead(39)==false){//switch over to AP-mode, search time 100 s
+    if(digitalRead(WAKE_UP_GPIO)==false){//switch over to AP-mode, search time 100 s
        if(ota_notrunning){
             WiFi.disconnect();
             WiFi.mode(WIFI_AP);
@@ -826,11 +844,7 @@ void taskTwo( void * parameter)
     stat_count++;//ca 1s per screen update
     if (stat_count>config.screen_count)stat_count=0;//screen_count = 2
     Update_bat();
-    /*
-    analog_bat = analogRead(PIN_BAT);
-    analog_mean=analog_bat*0.05+analog_mean*0.95;
-    RTC_voltage_bat=analog_mean*calibration_bat/1000;
-    */
+   
     if(RTC_voltage_bat<3.1) low_bat_count++;
     else low_bat_count=0;
     if(long_push==true){

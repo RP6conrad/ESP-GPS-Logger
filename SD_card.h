@@ -21,6 +21,7 @@ extern int time_out_nav_pvt;
 extern int next_gpy_full_frame;
 extern byte mac[6];
 extern const char SW_version[16];
+extern const char E_paper_version[16];
 extern char RTC_Sleep_txt[32];
 extern GPS_speed M100;
 extern GPS_speed M250;
