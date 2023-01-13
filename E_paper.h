@@ -8,8 +8,8 @@
 //  if it is successful then it belongs to the model of the file name
 // The 2.66 screen has other SPI pins, and more pixels. Partof the pixels are now unused.
 //#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen
-#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen
-//#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
+//#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen
+#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
 //#include <GxDEPG0266BN/GxDEPG0266BN.h>  //2.66 screen for rollz...
 //#include <GxGDEW0213M21/GxGDEW0213M21.h>  //nog een andere versie, resolutie NIET OK vanwege resolutie !!!
 //#include <GxGDEP015OC1/GxGDEP015OC1.h>    //  GDEH015OC1 1.54" screen for Jeff Turner !!!
@@ -49,6 +49,8 @@ Flip: horizontally
 #define ELINK_BUSY 4
 #define ELINK_RESET 16
 #define ELINK_DC 17
+
+#define BUTTON_PIN 39
 #define BOOT_SCREEN 0
 #define STATS1 1
 #define STATS2 2

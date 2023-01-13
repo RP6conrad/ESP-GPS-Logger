@@ -282,8 +282,7 @@ int Set_GPS_Time(int time_offset){
         my_time.tm_mon = ubxMessage.navPvt.month-1;  //mktime needs months 0 - 11  
         my_time.tm_year = ubxMessage.navPvt.year - 1900; // mktime needs years since 1900, so deduct 1900
         #if defined(DLS)
-        //summertime is on march 26 2023 2 AM, see https://www.di-mgt.com.au/wclock/help/wclo_tzexplain.html    
-        // list of posix tz strings : https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv 
+        //summertime is on march 26 2023 2 AM, see https://www.di-mgt.com.au/wclock/help/wclo_tzexplain.html     
         my_time.tm_hour = 1;
         my_time.tm_min = 55;
         my_time.tm_mday =26;

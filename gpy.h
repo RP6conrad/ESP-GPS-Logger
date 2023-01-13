@@ -126,8 +126,8 @@ void log_GPY(File file){
  frame_time.tm_hour = ubxMessage.navPvt.hour;
  frame_time.tm_min = ubxMessage.navPvt.minute;
  frame_time.tm_mday = ubxMessage.navPvt.day;
- frame_time.tm_mon = ubxMessage.navPvt.month-1;//mktime uses month nr 0-11 !!     
- frame_time.tm_year = ubxMessage.navPvt.year - 1900; // years since 1970, so deduct 1970, mktime uses 1900 !!!!
+ frame_time.tm_mon = ubxMessage.navPvt.month;     
+ frame_time.tm_year = ubxMessage.navPvt.year - 1970; // years since 1970, so deduct 1970
  utc_Sec =  mktime(&frame_time);//-3600;//1 hour difference with ubx ???
  int64_t utc_ms= utc_Sec*1000LL+(ubxMessage.navPvt.nano+500000)/1000000LL;
 
