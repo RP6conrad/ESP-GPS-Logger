@@ -12,6 +12,7 @@ extern int Time_Set_OK;
 extern int first_fix_GPS;
 extern int wifi_search;
 extern int sdTrouble;
+extern int start_logging_millis;
 extern bool sdOK,button;
 extern bool GPS_logging;
 extern float Mean_heading,heading_SD;

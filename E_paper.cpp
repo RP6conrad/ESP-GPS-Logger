@@ -24,7 +24,7 @@ void Boot_screen(void){
 }
 void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
   //int offset=0;
-  float session_time=millis()/1000 ;
+  float session_time=(millis()-start_logging_millis)/1000 ;
   if(choice==0){
       display.setRotation(1);
       display.fillScreen(GxEPD_WHITE);
@@ -302,13 +302,12 @@ void Update_screen(int screen){
     static int count,old_screen,update_delay;
     char time_now[16];
     char time_now_sec[16];
-    struct tm now;
-    getLocalTime(&now);
+    getLocalTime(&tmstruct, 0);
     #if defined(STATIC_DEBUG)
-    Serial.println(&now, " %B %d %Y %H:%M:%S (%A)");
+    
     #endif
-    sprintf(time_now,"%02d:%02d",now.tm_hour,now.tm_min);
-    sprintf(time_now_sec,"%02d:%02d:%02d",now.tm_hour,now.tm_min,now.tm_sec);
+    sprintf(time_now,"%02d:%02d",tmstruct.tm_hour,tmstruct.tm_min);
+    sprintf(time_now_sec,"%02d:%02d:%02d",tmstruct.tm_hour,tmstruct.tm_min,tmstruct.tm_sec);
     //if(screen!=old_screen)update_epaper=2;//klopt niet, altijd wit scherm tussendoor 
     update_epaper=1; //was zonder else
     if(count%20<10) offset++;
@@ -827,16 +826,25 @@ if(screen==STATS7){ //Simon bar graph screen
               display.print("Wifi on  ");
               if(SoftAP_connection==true) display.print("AP !");//ap mode
               else display.print ("ST !");//station mode
+              display.setCursor(offset,56);
+              display.setFont(&FreeSansBold12pt7b);
+              display.println(IP_adress);
               }
         else {
             display.println("Wifi off");
             display.setCursor(180+offset%2,26);//zodat SXX niet groter wordt dan 244 pix
             display.print("S");
             display.println(ubxMessage.navPvt.numSV);
-            }
-        display.setCursor(offset,56);
-        display.setFont(&FreeSansBold12pt7b);
-        display.println(IP_adress);
+            display.setCursor(offset,56);
+            display.setFont(&FreeSansBold12pt7b);
+            if(ubxMessage.navPvt.numSV<5){
+                  display.println("Waiting for Sats");
+                  }
+            else{
+                  display.println("Waiting for speed");
+                  }
+           }
+        display.setFont(&FreeSansBold12pt7b);   
         display.setCursor(offset,88);
         display.print(SW_version);//change to string / array
         //Info on screen  which screen  version 

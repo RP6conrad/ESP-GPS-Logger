@@ -10,7 +10,7 @@
 #define FILTER_MIN_SATS 5   //aan 10 Hz is dit 200 s, dus laagste snelheid is dan 500m/200s, dit is 2.5m/s of <10 km/h
 #define FILTER_MAX_sACC 2   
 #define NR_OF_BAR 42 //aantal bar in de bar_graph
-#define NAV_SAT_BUFFER 16 // GPS_SAT_info buffersize for Mean CNO  values, here 10 NAV_SAT messages
+#define NAV_SAT_BUFFER 10 // GPS_SAT_info buffersize for Mean CNO  values, here 10 NAV_SAT messages
 extern  int index_GPS,run_count;
 extern  int index_sec;//index van laatste sample 
 extern uint16_t _secSpeed[BUFFER_SIZE];

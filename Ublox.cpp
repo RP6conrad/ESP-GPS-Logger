@@ -292,12 +292,22 @@ int Set_GPS_Time(int time_offset){
         setenv("TZ","CET0CEST,M3.5.0/2,M10.5.0/3", 1);//timezone UTC = CET, Daylightsaving ON : TZ=CET-1CEST,M3.5.0/2,M10.5.0/3
         tzset();     //this works for CET, but TZ string is different for every Land / continent....
         #endif
+        setenv("TZ","CET",0);
+        tzset();   
         unix_timestamp =  mktime(&my_time);
         struct timeval tv = { .tv_sec = (unix_timestamp+time_offset*3600), .tv_usec = 0 };  //clean utc time !!     
         settimeofday(&tv, NULL);
-        getLocalTime(&tmstruct);
-        //localtime(&tmstruct);
-        Serial.printf("\nNow is : %d-%02d-%02d %02d:%02d:%02d\n",(tmstruct.tm_year)+1900,( tmstruct.tm_mon)+1, tmstruct.tm_mday,tmstruct.tm_hour , tmstruct.tm_min, tmstruct.tm_sec);
+        delay(10);//
+        if(!getLocalTime(&tmstruct)){
+            Serial.println("Can't get time1...");
+            return false;
+            }
+        //localtime_r(&unix_timestamp, &tmstruct);
+        if((tmstruct.tm_year+1900)<2023){
+          Serial.printf("\nNow is : %d-%02d-%02d %02d:%02d:%02d\n",(tmstruct.tm_year)+1900,( tmstruct.tm_mon)+1, tmstruct.tm_mday,tmstruct.tm_hour , tmstruct.tm_min, tmstruct.tm_sec);
+          Serial.println("GPS Reported year not plausible (<2023) !");
+          return false; 
+          }
         Serial.println("GPS Local Time is set");
         return true;
 }

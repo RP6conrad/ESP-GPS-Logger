@@ -265,6 +265,14 @@
  * Option for other wake-up GPIO with #define in rtos5.h
  * Add type e-paper to .txt file
  * Some text in e-paper adapted : Mile ->NM, Alf->Alph, Dis->Dist
+ * SW 5.70
+ * Again timebug -> e-paper keyword "now" may not be used for getLocalTime() !!
+ * Same issue in SD_card.cpp -> open files !!
+ * GPS_SAT_INFO buffer 16 -> 10
+ * Set GPS_time @ start logging
+ * check for year>2023
+ * While waiting for Sats / Min speed : Wifi Off with waiting Sats/Speed on screen
+ * Total time in .Txt from start logging
  */
 #include "FS.h"
 #include "SPI.h"
@@ -310,7 +318,7 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-const char SW_version[16]="SW-ver. 5.69";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="SW-ver. 5.70";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
 #endif
@@ -714,9 +722,6 @@ void loop() {
   feedTheDog_Task1();
   esp_task_wdt_reset();
   Update_bat();
-  //analog_bat = analogRead(PIN_BAT);
-  //analog_mean=analog_bat*0.1+analog_mean*0.9;
-  //RTC_voltage_bat=analog_mean*calibration_bat/1000;
   delay(100);  
 }
 
@@ -746,6 +751,12 @@ void taskOne( void * parameter )
         ftpStatus=ftpSrv.cmdStatus;//for e-paper
         #if defined (STATIC_DEBUG)
         msgType = processGPS(); //debug purposes
+        static int testtime;;
+        if((millis()-testtime)>1000){
+              testtime=millis();
+              Set_GPS_Time(config.timezone);
+              config.timezone++;
+              }
         #endif
         }
    else msgType = processGPS(); //only decoding if no Wifi connection
@@ -758,23 +769,22 @@ void taskOne( void * parameter )
         #endif     
       
         if((ubxMessage.navPvt.numSV>=MIN_numSV_FIRST_FIX)&((ubxMessage.navPvt.sAcc/1000.0f)<MAX_Sacc_FIRST_FIX)&(ubxMessage.navPvt.valid>=7)&(GPS_Signal_OK==false)){
-            if(Set_GPS_Time(config.timezone)){
               GPS_Signal_OK=true;
               first_fix_GPS=millis()/1000;
               }
-            }
         if(GPS_Signal_OK==true){
               GPS_delay++;
               }
         if ((Time_Set_OK==false)&(GPS_Signal_OK==true)&(GPS_delay>(TIME_DELAY_FIRST_FIX*config.sample_rate))){//vertraging Time_Set_OK is nu 10 s!!
           int avg_speed=(avg_speed+ubxMessage.navPvt.gSpeed*19)/20; //FIR filter gem. snelheid laatste 20 metingen in mm/s
           if(avg_speed>MIN_SPEED_START_LOGGING){
-            Time_Set_OK=true;
-            start_logging_millis=millis();
-            Open_files();//only start logging if GPS signal is OK
-            }
+            if(Set_GPS_Time(config.timezone)){            
+                Time_Set_OK=true;
+                start_logging_millis=millis();
+                Open_files();//only start logging if GPS signal is OK
+                }
           }      //    Alleen speed>0 indien snelheid groter is dan 1m/s + sACC<1 + sat<5 + speed>35 m/s !!!
-        
+        }
         if ((sdOK==true)&(Time_Set_OK==true)&(nav_pvt_message>10)&(nav_pvt_message!=old_message)){
                   old_message=nav_pvt_message;
                   float sAcc=ubxMessage.navPvt.sAcc/1000;
@@ -817,7 +827,7 @@ void taskOne( void * parameter )
       else if( msgType == MT_NAV_SAT )  { 
           nav_sat_message++;
           Ublox_Sat.push_SAT_info(ubxMessage.navSat);
-          #if defined(STATIC_DEBUG)
+          #if defined(STATIC_DEBUG_SAT)
               Serial.print ("Mean cno= ");Serial.println (Ublox_Sat.sat_info.Mean_mean_cno);
               Serial.print ("Max cno= ");Serial.println (Ublox_Sat.sat_info.Mean_max_cno);
               Serial.print ("Min cno= ");Serial.println (Ublox_Sat.sat_info.Mean_min_cno);
@@ -858,6 +868,7 @@ void taskTwo( void * parameter)
     }
     else if(millis()<2000)Update_screen(BOOT_SCREEN);
     else if(GPS_Signal_OK==false) Update_screen(WIFI_ON);
+    else if(Time_Set_OK==false) Update_screen(WIFI_ON);
     else if((gps_speed/1000.0f<config.stat_speed)&(Field_choice==false)){
           Update_screen(config.stat_screen[stat_count]);
           }
