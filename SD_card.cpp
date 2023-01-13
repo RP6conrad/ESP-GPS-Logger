@@ -27,18 +27,18 @@ void logERR(const char * message){
 //test for existing GPSLOGxxxfiles, open txt,gps + ubx file with new name, or with timestamp !
 void Open_files(void){
   if(config.file_date_time){
-      struct tm now;
-      getLocalTime(&now);
+      //struct tm tmstruct;
+      getLocalTime(&tmstruct);
       char extension[16]=".txt";//
       char timestamp[16];
        if(config.file_date_time==1){
-          sprintf(timestamp, "_%d%02d%02d%02d%02d", now.tm_year-100,now.tm_mon+1,now.tm_mday,now.tm_hour,now.tm_min);
+          sprintf(timestamp, "_%d%02d%02d%02d%02d", tmstruct.tm_year-100,tmstruct.tm_mon+1,tmstruct.tm_mday,tmstruct.tm_hour,tmstruct.tm_min);
           strcat(filenameERR,config.UBXfile);//copy filename from config
           strcat(filenameERR,timestamp);//add timestamp
           strcat(filenameERR,extension);//add extension.txt 
           }
        if(config.file_date_time==2){
-          sprintf(timestamp, "%d%02d%02d%02d%02d_", now.tm_year-100,now.tm_mon+1,now.tm_mday,now.tm_hour,now.tm_min);
+          sprintf(timestamp, "%d%02d%02d%02d%02d_", tmstruct.tm_year-100,tmstruct.tm_mon+1,tmstruct.tm_mday,tmstruct.tm_hour,tmstruct.tm_min);
           strcat(filenameERR,timestamp);//add timestamp
           strcat(filenameERR,config.UBXfile);//copy filename from config
           strcat(filenameERR,extension);//add extension.txt 
@@ -309,7 +309,7 @@ void Session_info(GPS_data G){
   errorfile.println(SW_version);
   sprintf(tekst, "First fix : %d s\n",first_fix_GPS);
   strcat(message,tekst); 
-  sprintf(tekst, "Total time : %d s\n",millis()/1000);
+  sprintf(tekst, "Total time : %d s\n",(millis()-start_logging_millis)/1000);
   strcat(message,tekst); 
   sprintf(tekst, "Total distance : %d m\n",(int)G.total_distance/1000);
   strcat(message,tekst); 
