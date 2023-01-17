@@ -81,6 +81,8 @@ void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
       #if defined(_GxGDEM0213B74_H_) 
       display.print("E-paper 213B74");
       #endif
+      display.setCursor(offset,120);
+      display.print(Ublox_type);
       display.updateWindow(0,0,250,122,true);
   }
   delay(10000);//om te voorkomen dat update opnieuw start !!!

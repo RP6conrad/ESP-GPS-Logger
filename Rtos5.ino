@@ -11,6 +11,7 @@
 #include <WiFiSTA.h>
 #include <WiFiType.h>
 #include <WiFiUdp.h>
+//#include <HTTPClient.h>//takes 120 kb flash !!!
 
 /*
  * Changes 2/5/2021
@@ -273,10 +274,16 @@
  * check for year>2023
  * While waiting for Sats / Min speed : Wifi Off with waiting Sats/Speed on screen
  * Total time in .Txt from start logging
+ * SW 5.71
+ * Again bugfix for time in gpy file (offset year 1970->1900, month->-1)
+ * Removed #include timelib.h
+ * Removed listing of directorys in webserver
+ * Add sortTable() after DOM is loaded : now the files are ordered by date after loading all filenames !
+ * Timestamp files with FTP command MLSD is now UTC
+ * Add type of ublox to .txt file + e-paper shut down
  */
 #include "FS.h"
 #include "SPI.h"
-#include "TimeLib.h"
 #include "sys/time.h"
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
@@ -318,7 +325,7 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-const char SW_version[16]="SW-ver. 5.70";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="SW-ver. 5.71";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
 #endif
@@ -327,6 +334,13 @@ const char E_paper_version[16]="E-paper 213BN";
 #endif
 #if defined(_GxGDEM0213B74_H_) 
 const char E_paper_version[16]="E-paper 213B74";
+#endif
+#if defined(UBLOX_M10) 
+const char Ublox_type[20]="Ublox M10 9600bd";
+#elif defined(ALI_M10) 
+const char Ublox_type[20]="Ublox M10 38400bd";
+#else 
+const char Ublox_type[20]="Ublox M8 9600bd";
 #endif
 int sdTrouble=0;
 bool sdOK = false;
@@ -360,6 +374,9 @@ float analog_mean=2000;
 float Mean_heading,heading_SD;
 
 byte mac[6];  //unique mac adress of esp32
+IPAddress local_IP(192,168,4,1);
+IPAddress gateway(192,168,1,1);
+IPAddress subnet(255,255,255,0);
 
 RTC_DATA_ATTR float calibration_speed=3.6;
 RTC_DATA_ATTR int offset = 0;
@@ -533,7 +550,26 @@ void feedTheDog_Task1(){
   TIMERG1.wdt_feed=1;                       // feed dog
   TIMERG1.wdt_wprotect=0;                   // write protect
 } 
-
+/*   //This takes 120 kb of flash !!!
+void Internet_time(void){
+  HTTPClient http;
+  const char *ntpServer = "pool.ntp.org";
+  const char *timeApiUrl = "http://worldtimeapi.org/api/ip";
+  http.begin(timeApiUrl);
+  int httpCode = http.GET();
+  if (httpCode != 200)
+  {
+    Serial.println("Unable to fetch the time info\r\n");
+    configTime(0, 0, ntpServer);
+    return;
+  }
+  String response = http.getString();
+  long offset = response.substring(response.indexOf("\"raw_offset\":") + 13, response.indexOf(",\"timezone\":")).toFloat();
+  http.end();
+  configTime(offset, 0, ntpServer);
+  Serial.println("Local time is set");
+}
+*/
 void OnWiFiEvent(WiFiEvent_t event){
   switch (event) {
     case SYSTEM_EVENT_STA_CONNECTED:
@@ -545,6 +581,7 @@ void OnWiFiEvent(WiFiEvent_t event){
       IP_adress =  WiFi.localIP().toString();
       break;
     case SYSTEM_EVENT_AP_START:
+      WiFi.softAPConfig(local_IP, gateway, subnet);  
       Serial.println("ESP32 soft AP started");
       break;
     case SYSTEM_EVENT_AP_STACONNECTED:
@@ -640,6 +677,7 @@ void setup() {
   const char* password = config.password; //WiFi Password
   const char *soft_ap_ssid = "ESP32AP"; //accespoint ssid
   const char *soft_ap_password = "password"; //accespoint password
+    
   WiFi.onEvent(OnWiFiEvent);
   WiFi.mode(WIFI_STA);
   WiFi.softAP(soft_ap_ssid, soft_ap_password);
@@ -657,7 +695,7 @@ void setup() {
        if(ota_notrunning){
             WiFi.disconnect();
             WiFi.mode(WIFI_AP);
-            WiFi.softAP(soft_ap_ssid, soft_ap_password);
+            WiFi.softAP(soft_ap_ssid, soft_ap_password); 
             wifi_search=100;
             IP_adress =  WiFi.softAPIP().toString();
             Serial.println(IP_adress);
@@ -749,6 +787,13 @@ void taskOne( void * parameter )
         ftpSrv.handleFTP();        //make sure in loop you call handleFTP()!! 
         server.handleClient();
         ftpStatus=ftpSrv.cmdStatus;//for e-paper
+        /* //takes 120 kb flash !!!
+        static int localtime_set;
+        if(localtime_set==0) {//try once !!
+          Internet_time();
+          localtime_set=1;
+        }
+        */
         #if defined (STATIC_DEBUG)
         msgType = processGPS(); //debug purposes
         static int testtime;;

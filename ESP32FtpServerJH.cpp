@@ -499,26 +499,20 @@ boolean FtpServer::processCommand()
           fn = file.name();
     	  fn.remove(0, 1);
 		  time_t file_date = file.getLastWrite();//changes JH 20/02/2021
-      fd = print_time(file_date);
+      fd = print_time(file_date);//with LIST, local timestamp is used
 		  //fd = print_time(file_date-config.timezone*3600);
       		#ifdef FTP_DEBUG
   			  Serial.println("File Name = "+ fn);
       		#endif
           fs = String(file.size());
           if(file.isDirectory()){
-            //data.println( "01-01-2000  00:00AM <DIR> " + fn);
-			data.println( fd + "<DIR> " + fn);
-          } else {
-		  	//time_t file_date = file.getLastWrite();//changes JH 20/02/2021
-			//fd = print_time(file_date);
-			//FtpOutData << F("+r,s") << long( dir.fileSize()) << F(",\t");
-			//FtpOutData << dir.fileName() << endl;"01-01-2000  00:00AM "
-			
+			      data.println( fd + "<DIR> " + fn);
+            } 
+          else {
             data.print("+r,s" + fs + ",\t"+ fn +"\n");//was println without \n
-			#ifdef FTP_DEBUG
-			Serial.print("+r,s" + fs + ",\t" + fn +"\n");//was println without \n
-            //Serial.print( fd + " " + fs + " " + fn +"\n");//was println without \n
-			#endif
+            #ifdef FTP_DEBUG
+            Serial.print("+r,s" + fs + ",\t" + fn +"\n");//was println without \n   
+            #endif
           }
           nm ++;
           file = dir.openNextFile();
@@ -552,27 +546,23 @@ boolean FtpServer::processCommand()
 //        client.println( "550 Can't open directory " +String(parameters) );
       else
       {
-//        while( dir.next())
-        File file = dir.openNextFile();
-//        while( dir.openNextFile())
-        while( file)
+      File file = dir.openNextFile();
+      while( file)
     		{
     	  String fn,fs,fd;
-          fn = file.name();
-		  time_t file_date = file.getLastWrite();//changes JH 20/02/2021
-      fd = print_time(file_date);
-		  //fd = print_time(file_date-config.timezone*3600);
-          //Serial.println(fn);//**********************************************************************************************************
+        fn = file.name();
+        time_t file_date = file.getLastWrite();//changes JH 20/02/2021
+        //fd = print_time(file_date);
+		    fd = print_time(file_date-config.timezone*3600);  //MLSD expect UTC timestamp !!   
     	  fn.remove(0, strlen(cwdName));
-          if(fn[0] == '/') fn.remove(0, 1);
-          fs = String(file.size());
-          if(file.isDirectory()){
-            //data.println( "Type=dir;Size=" + fs + ";"+"modify=20000101000000;" +" " + fn);
-			data.println( "Type=dir;Size=" + fs + ";"+"modify="+ fd +"; " + fn);
-//            data.println( "Type=dir;modify=20000101000000; " + fn);
-          } else {
+        if(fn[0] == '/') fn.remove(0, 1);
+        fs = String(file.size());
+        if(file.isDirectory()){
+			      data.println( "Type=dir;Size=" + fs + ";"+"modify="+ fd +"; " + fn);
+            } 
+        else {
             data.println( "Type=file;Size=" + fs + ";"+"modify="+ fd +"; " + fn);
-          }
+            }
           nm ++;
           file = dir.openNextFile();
         }

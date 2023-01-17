@@ -139,11 +139,7 @@ void Log_to_SD(void){
                     ubxfile.write(0xB5);
                     ubxfile.write(0x62);
                     ubxfile.write((const uint8_t *)&ubxMessage.navPvt, sizeof(ubxMessage.navPvt));
-                    /*
-                    ubxfile.write(0xB5);
-                    ubxfile.write(0x62);
-                    ubxfile.write((const uint8_t *)&ubxMessage.navDOP, sizeof(ubxMessage.navDOP));
-                    */
+                   
                     static int old_nav_sat_message=0;
                     if(nav_sat_message!=old_nav_sat_message){
                       old_nav_sat_message=nav_sat_message;
@@ -343,7 +339,8 @@ void Session_info(GPS_data G){
   sprintf(tekst,"Ublox M8 ID = %02x%02x%02x%02x%02x\n",ubxMessage.ubxId.ubx_id_1,ubxMessage.ubxId.ubx_id_2,ubxMessage.ubxId.ubx_id_3,ubxMessage.ubxId.ubx_id_4,ubxMessage.ubxId.ubx_id_5);
   #endif
   strcat(message,tekst);
-
+  strcat(message,Ublox_type);
+  strcat(message," \n");
   errorfile.print(message);                  
 }
 

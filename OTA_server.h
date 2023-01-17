@@ -94,7 +94,6 @@ void SD_file_download(String filename)
 {
   if (sdOK) 
   { 
-    //File download = SD.open(filename);//bugfix
     File download = SD.open("/"+filename);
     if (download) 
     {
@@ -102,8 +101,8 @@ void SD_file_download(String filename)
       server.sendHeader("Connection", "close");
       server.streamFile(download, "application/octet-stream");
       download.close();
-    } else ReportFileNotPresent("download"); 
-  } else ReportSDNotPresent();
+    } else {ReportFileNotPresent("download");}
+  } else{ ReportSDNotPresent();}
 }
 
 //Prints the directory, it is called in void SD_dir() 
@@ -125,8 +124,8 @@ void printDirectory(const char * dirname, uint8_t levels)
       SendHTML_Content();
     }
     if(file.isDirectory()){
-      webpage += "<tr>\n<td>"+String(file.isDirectory()?"Dir":"File")+"</td><td></td><td></td><td></td><td></td></tr>";
-      printDirectory(file.name(), levels-1);
+      //webpage += "<tr>\n<td>"+String(file.isDirectory()?"Dir":"File")+"</td><td></td><td></td><td></td><td></td></tr>";
+      //printDirectory(file.name(), levels-1);
     }
     else
     {
@@ -142,15 +141,17 @@ void printDirectory(const char * dirname, uint8_t levels)
       webpage += "<td>"+fsize+"</td>";
       webpage += "<td>"+fd+"</td>"; //
       webpage += "<td>";
-      webpage += F("<FORM action='/' method='post'>"); 
+      webpage += F("<form action='/' method='post'>");
       webpage += F("<button type='submit' class='button' name='download'"); 
       webpage += F("' value='"); webpage +="download_"+String(file.name()); webpage +=F("'>Download</button>");
+      webpage += F("</form>");
       webpage += "</td>";
       webpage += "<td>";
       if((String(file.name()) != "config.txt") & (String(file.name()) != "/config.txt") & (String(file.name()) != "/config_backup.txt") & (String(file.name()) != "config_backup.txt")){
-        webpage += F("<FORM action='/' method='post'>"); 
+        webpage += F("<form action='/' method='post'>"); 
         webpage += F("<button type='submit' name='delete' class='button_del' onclick='return confirmdelete();'"); 
-        webpage += F("' value='"); webpage +="delete_"+String(file.name()); webpage +=F("'>Delete</button>");
+        webpage += F("' value='"); webpage +="delete_"+String(file.name()); webpage += F("'>Delete</button>");
+        webpage += F("</form>");
       }
       webpage += "</td>\n";
       webpage += "</tr>";

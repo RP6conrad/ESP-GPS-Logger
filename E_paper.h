@@ -79,6 +79,7 @@ extern int bootCount,run_count,stat_count;
 extern int ftpStatus;
 extern String IP_adress;
 extern const char SW_version[16];
+extern const char Ublox_type[20];
 //xtern int logo_choice[10];
 extern RTC_DATA_ATTR int offset;
 extern RTC_DATA_ATTR float RTC_distance;
