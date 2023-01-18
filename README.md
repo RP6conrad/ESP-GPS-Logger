@@ -6,7 +6,9 @@ SW 5.68 : Ublox M10 is supported, see for the correct bin file.
 Manuals can be found here : 
 Building manual : 
 https://docs.google.com/document/d/1XJD6BV1Xay4nXo0cDuo_IOtxC_f1LyG7DE7X6KGlAB0/edit?usp=sharing
+
 User manual : 
 https://docs.google.com/document/d/1j86kj3bNMID3sHCRT7QTYyrL7IHeQnGPec1LajsDfB4/edit?usp=sharing
+
 A help for installing the first SW on the T5 board (written by Tobias) :
 https://docs.google.com/document/d/1jIxAyi6wQ-Z860W548Xg--x6Ld8MBHJh7SCCWhSgnAs/edit?usp=sharing
