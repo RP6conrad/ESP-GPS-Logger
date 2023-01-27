@@ -128,7 +128,8 @@ void log_GPY(File file){
  frame_time.tm_mday = ubxMessage.navPvt.day;
  frame_time.tm_mon = ubxMessage.navPvt.month-1;     //month 0 - 11 with mktime 
  frame_time.tm_year = ubxMessage.navPvt.year - 1900; // years since 1900, so deduct 1900
- utc_Sec =  mktime(&frame_time);//-3600;//1 hour difference with ubx ???
+ frame_time.tm_isdst = 0; // No daylight saving
+ utc_Sec =  mktime(&frame_time);//mktime returns local time, so TZ is important !!!
  int64_t utc_ms= utc_Sec*1000LL+(ubxMessage.navPvt.nano+500000)/1000000LL;
 
 //calcultation of delta values

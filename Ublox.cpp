@@ -291,9 +291,9 @@ int Set_GPS_Time(int time_offset){
         setenv("TZ","CET0CEST,M3.5.0/2,M10.5.0/3", 1);//timezone UTC = CET, Daylightsaving ON : TZ=CET-1CEST,M3.5.0/2,M10.5.0/3
         tzset();     //this works for CET, but TZ string is different for every Land / continent....
         #endif
-        setenv("TZ","CET",0);
+        setenv("TZ","UTC",0);
         tzset();   
-        unix_timestamp =  mktime(&my_time);
+        unix_timestamp =  mktime(&my_time);//mktime returns local time, so TZ is important !!!
         struct timeval tv = { .tv_sec = (unix_timestamp+time_offset*3600), .tv_usec = 0 };  //clean utc time !!     
         settimeofday(&tv, NULL);
         delay(10);//

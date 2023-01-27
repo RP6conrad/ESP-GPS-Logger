@@ -108,7 +108,6 @@ void SD_file_download(String filename)
 //Prints the directory, it is called in void SD_dir() 
 void printDirectory(const char * dirname, uint8_t levels)
 {
-  
   File root = SD.open(dirname);
 
   if(!root){
@@ -120,12 +119,25 @@ void printDirectory(const char * dirname, uint8_t levels)
   File file = root.openNextFile();
   int i = 0;
   while(file){
+    time_t now;
+    time(&now);
     if (webpage.length() > 1000) {
       SendHTML_Content();
     }
     if(file.isDirectory()){
-      //webpage += "<tr>\n<td>"+String(file.isDirectory()?"Dir":"File")+"</td><td></td><td></td><td></td><td></td></tr>";
-      //printDirectory(file.name(), levels-1);
+      if(levels==1){
+        if(String(file.name())== "/Archive"){
+        webpage += "<tr>\n<td>"+String(file.isDirectory()?"Dir":"File")+"</td><td></td><td></td><td></td><td></td></tr>";
+        printDirectory(file.name(), levels);//was levels-1
+        }
+      }
+    }
+    else if((config.archive_days>0)&(levels==2)&(file.getLastWrite()<(now-config.archive_days*24*3600))&(file.getLastWrite()>EPOCH_2022)){//older then xx days but younger then 2021, copy to archive, but not config.txt !!
+        char buffer[40]="/Archive";//&(file.getLastWrite()>EPOCH_2022)
+        strcat(buffer,file.name());//only rename if not Archive listing !!!
+        if((String(file.name())!="config.txt")&(String(file.name())!= "/config.txt")&(String(file.name())!="/config_backup.txt")&(String(file.name())!="config_backup.txt")){
+          SD.rename(file.name(),buffer); 
+          } 
     }
     else
     {
@@ -133,7 +145,7 @@ void printDirectory(const char * dirname, uint8_t levels)
       int bytes = file.size();
       String fsize = "";
       time_t file_date = file.getLastWrite();//changes JH 19/11/2022
-      String fd = Print_time(file_date);//Winscp does always a timezone correction !!!
+      String fd = Print_time(file_date);//Winscp MLSD expect UTC time !!!
       if (bytes < 1024)                     fsize = String(bytes)+" B";
       else if(bytes < (1024 * 1024))        fsize = String(bytes/1024.0,3)+" KB";
       else if(bytes < (1024 * 1024 * 1024)) fsize = String(bytes/1024.0/1024.0,3)+" MB";
@@ -149,6 +161,7 @@ void printDirectory(const char * dirname, uint8_t levels)
       webpage += "<td>";
       if((String(file.name()) != "config.txt") & (String(file.name()) != "/config.txt") & (String(file.name()) != "/config_backup.txt") & (String(file.name()) != "config_backup.txt")){
         webpage += F("<form action='/' method='post'>"); 
+        //webpage += F("<button type='submit' class='button_del' name='delete'"); 
         webpage += F("<button type='submit' name='delete' class='button_del' onclick='return confirmdelete();'"); 
         webpage += F("' value='"); webpage +="delete_"+String(file.name()); webpage += F("'>Delete</button>");
         webpage += F("</form>");
@@ -167,12 +180,16 @@ void printDirectory(const char * dirname, uint8_t levels)
 void SD_file_delete(String filename) 
 { 
   if (sdOK) { 
-    SendHTML_Header();
+    //SendHTML_Header();
     File dataFile = SD.open("/"+filename, FILE_READ); //Now read data from SD Card 
     if (dataFile)
     {
       if (SD.remove("/"+filename)) {
         Serial.println(F("File deleted successfully"));
+      }//toegevoegd
+    }//toegevoegd
+     }//toegevoegd
+        /*
         webpage += F("<div style='overflow-x:auto;'><table id='esplogger'>");
         webpage += "<tr><th>File '"+filename+"' has been erased</th></tr></table></div>"; 
         webpage += F("<a href='/'>[Back]</a><br><br>");
@@ -188,11 +205,22 @@ void SD_file_delete(String filename)
     SendHTML_Content();
     SendHTML_Stop();
   } else ReportSDNotPresent();
+*/  
 } 
 
 /*********  FUNCTIONS  **********/
+void SD_dir(int archive);
+void SD_directory(void){
+  SD_dir(0);
+}
+void SD_archive_list(void){
+  SD_dir(1);
+}
+void SD_archive_file(void){
+  SD_dir(2);
+}
 //Initial page of the server web, list directory and give you the chance of deleting and uploading
-void SD_dir()
+void SD_dir(int archive)
 {
   if (sdOK) 
   {
@@ -225,7 +253,7 @@ void SD_dir()
       SendHTML_Header();   
       webpage += F("<table id='esplogger'>");
       webpage += F("<tr><th>Name</th><th>Size</th><th>Timestamp</th><th>Download</th><th>Delete</th></tr>");
-      printDirectory("/",0);
+      printDirectory("/",archive);
       webpage += F("\n</table>");
       SendHTML_Content();
       root.close();
@@ -346,10 +374,12 @@ void handleConfigUpload() {
     doc["Stat_screens"] = server.arg("Stat_screens").toInt(); 
     doc["Stat_screens_time"] = server.arg("Stat_screens_time").toInt(); 
     doc["stat_speed"] = server.arg("stat_speed").toInt(); 
+    doc["archive_days"] = server.arg("archive_days").toInt(); 
     doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt(); 
     doc["Board_Logo"] = server.arg("Board_Logo").toInt();
     doc["Sail_Logo"] = server.arg("Sail_Logo").toInt();
     doc["sleep_off_screen"] = server.arg("sleep_off_screen").toInt();
+    doc["logTXT"] = server.arg("logTXT").toInt(); 
     doc["logSBP"] = server.arg("logSBP").toInt(); 
     doc["logUBX"] = server.arg("logUBX").toInt();
     doc["logUBX_nav_sat"] = server.arg("logUBX_nav_sat").toInt();
@@ -490,7 +520,9 @@ void OTA_setup(void) {
     server.send(200, "text/html", serverIndex);
   });
   //add webserver and fileupload part
-  server.on("/", SD_dir);
+  server.on("/", SD_directory);
+  server.on("/archive_list", SD_archive_list);
+  server.on("/archive_file", SD_archive_file);
   server.on("/upload",   File_Upload);
   server.on("/fupload",  HTTP_POST,[](){ server.send(200);}, handleFileUpload);
   server.on("/config",   Config_TXT);

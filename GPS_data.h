@@ -89,6 +89,7 @@ class GPS_time{
     int avg_s_sum;
     double s_max_speed;
     float display_max_speed;//Om update on the fly op display
+    float display_last_run;
     double avg_speed[10];
     double display_speed[10];
     double avg_5runs;
@@ -105,6 +106,7 @@ class GPS_time{
     uint8_t Mean_numSat[10];       
   private:
     int old_run;
+    int reset_display_last_run;
     //int last_second;
 }; 
 /*;h Berekenen van de alfa speed, instantie van GPS_speed 250 /500 kan gebruikt worden + diameter cirkel (normaal 50 m)***********/

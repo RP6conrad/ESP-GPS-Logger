@@ -245,7 +245,6 @@ float GPS_time::Update_speed(int actual_run){
                   display_speed[i]=avg_speed[i];//om een directe update op het scherm mogelijk te maken
                   }
               speed_run[actual_run%NR_OF_BAR]=avg_speed[0];    //SW 5.5
-              //speed_run[speed_run_counter%NR_OF_BAR]=avg_speed[0];   //changes SW 5.51 
               avg_speed[0]=0;
               s_max_speed=0;
               avg_5runs=0;
@@ -253,10 +252,16 @@ float GPS_time::Update_speed(int actual_run){
                     avg_5runs=avg_5runs+avg_speed[i];
                     }
                 avg_5runs=avg_5runs/5;
-              }  
+              }
+            if((actual_run!=reset_display_last_run)&(avg_s>3000)){
+              reset_display_last_run=actual_run;
+              display_last_run=0;
+              }
+            else if(display_last_run<s_max_speed){
+                display_last_run=s_max_speed;
+                }    
             old_run=actual_run;
             return s_max_speed;
-           // }
   }
   else if(index_GPS%config.sample_rate==0){        //overschakelen naar seconden buffer, maar één update/seconde !!
             avg_s_sum=avg_s_sum+(int)_secSpeed[index_sec%BUFFER_SIZE]; //_secSpeed[BUFFER_SIZE] en index_sec 

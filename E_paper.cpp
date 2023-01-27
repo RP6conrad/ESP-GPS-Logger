@@ -131,7 +131,7 @@ void Sleep_screen(int choice){
     
     // Board Logo's:
     // add special logos - funlogos
-    if(RTC_Board_Logo==11) // Schwechater - Autrian Beer - by tritondm
+    if(RTC_Board_Logo==11) // Schwechater - Austrian Beer - by tritondm
       display.drawExampleBitmap(epd_bitmap_Schwechater, 195, -10, 79, 132, GxEPD_BLACK);
     //Board logos
     if(RTC_Board_Logo==1)//Logo's Simon Dijkstra
@@ -249,7 +249,11 @@ void Sleep_screen(int choice){
       display.setCursor(col4,row5);
       display.println(RTC_mile,2); 
       display.setCursor(col4,row6);
-      display.println(RTC_voltage_bat,2);  
+      float bat_perc=100*(1-(4.2-RTC_voltage_bat)/(4.2-3.4));
+      if (bat_perc<0) bat_perc=0;
+      if (bat_perc>100) bat_perc=100;
+      display.print(bat_perc,0); 
+      display.println("%"); 
       display.update(); 
       }
 }
@@ -564,13 +568,16 @@ void Update_screen(int screen){
       }
      if(screen==STATS1){                        //2s,10sF,10sS, AVG
         update_delay=(config.Stat_screens_time-2)*1000;
-        display.setFont(&FreeSansBold18pt7b);
-        display.setCursor(offset,24);
-        display.print("2s: ");display.print(S2.avg_speed[9]*calibration_speed);  //best 2s, was avg_speed[9]
         display.setFont(&FreeSansBold12pt7b);
-        display.setCursor(202+offset%2,22);//zodat SXX niet groter wordt dan 244 pix
-        display.print("S");
-        display.println(ubxMessage.navPvt.numSV);
+        display.setCursor(offset,25);
+        display.print("2l: ");
+        display.setFont(&FreeSansBold18pt7b);
+        display.print(S2.display_last_run*calibration_speed,1);//last 2s max from rundisplay.print(S2.avg_speed[9]*calibration_speed);   
+        display.setFont(&FreeSansBold12pt7b);
+        display.setCursor(120+offset%2,25);//zodat SXX niet groter wordt dan 244 pix
+        display.print("2s: "); 
+        display.setFont(&FreeSansBold18pt7b);
+        display.print(S2.display_max_speed*calibration_speed);  //best 2s, was avg_speed[9]
         display.setFont(&FreeSansBold18pt7b);
         display.setCursor(offset,56);
         display.print("10sF: ");display.println(S10.display_max_speed*calibration_speed); //best 10s(Fast), was avg_speed[9]
@@ -578,7 +585,6 @@ void Update_screen(int screen){
         display.print("10sS: ");display.println(S10.display_speed[5]*calibration_speed);  //langzaamste 10s(Slow) run van de sessie
         display.setCursor(offset,120);
         display.print("AVG: ");display.println(S10.avg_5runs*calibration_speed); //average 5*10s
-        //display.print("M100: ");display.println(M100.m_max_speed*calibration_speed,2); //average 5*10s
         Bat_level(offset);
       }
      if(screen==STATS2){                        //alfa 500m,1852m, 1800s,total_dist
@@ -731,7 +737,7 @@ void Update_screen(int screen){
           display.setCursor(col3,row5);
           display.print("500m:");
           display.setCursor(col3,row6);
-          display.print("Mile:");
+          display.print("NM:");
     
           display.setFont(&FreeSansBold12pt7b);
           display.setCursor(col4,row1);

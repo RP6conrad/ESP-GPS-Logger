@@ -63,14 +63,15 @@ struct Config {
   int sleep_off_screen=11;
   int stat_speed=1;//max speed in m/s for showing Stat screens
   int bar_length=1852;//choice for bar indicator for length of run in m (nautical mile)
-  bool logCSV=0;//not used anymore...
+  int archive_days=0; //how many days files will be moved to the "Archive" dir
+  bool logTXT=0;// switchinf off .txt files
   bool logUBX=1;//log to .ubx
   bool logUBX_nav_sat=0;// log nav sat msg to .ubx
   bool logSBP=1;//log to .sbp
   bool logGPY=1;//log to .gps
   bool logGPX=0;//log to .gpx
   int file_date_time=1;//type of filenaming, with MAC adress or datetime
-  char UBXfile[32]="BN220A000";//your preferred filename
+  char UBXfile[32]="My_ESP_GPS";//your preferred filename
   char Sleep_info[32]="Your ID";//your preferred sleep text
   char ssid[32];//your SSID
   char password[32];//your password

@@ -22,7 +22,9 @@ uint64_t GPS_UTC_ms; //Absolute UTC timewith ms resolution @start logging
 struct Config config;
 
 void logERR(const char * message){
-  errorfile.print(message);
+  if(config.logTXT){
+    errorfile.print(message);
+    }
 }
 //test for existing GPSLOGxxxfiles, open txt,gps + ubx file with new name, or with timestamp !
 void Open_files(void){
@@ -73,7 +75,6 @@ void Open_files(void){
   strcpy(filenameGPX,filename_NO_EXT);
   strcat(filenameGPX,"gpx");   
             if(config.logUBX==true){
-                  
                   ubxfile=SD.open(filenameUBX, FILE_APPEND);
                   //ubxfile.setBufferSize(4096);
                   //if(setvbuf(file, NULL, _IOFBF, 4096) != 0) {}//enlarge buffer SD handle error
@@ -91,8 +92,10 @@ void Open_files(void){
              if(config.logGPX==true){
                 gpxfile=SD.open(filenameGPX,FILE_APPEND); 
                 log_GPX(GPX_HEADER,gpxfile);    
+                } 
+             if(config.logTXT==true){       
+                errorfile=SD.open(filenameERR, FILE_APPEND); 
                 }    
-            errorfile=SD.open(filenameERR, FILE_APPEND);     
 }
 void Close_files(void){
   log_GPX(GPX_END,gpxfile);
@@ -131,7 +134,7 @@ void Log_to_SD(void){
                      dtostrf(ubxMessage.navPvt.second, 2, 0, Buffer);AddString(); 
                      ltoa(nav_pvt_message_nr,Buffer,10);AddString();
                      strcat(dataStr, "Lost ubx frame!\n");
-                     errorfile.print(dataStr);
+                     if(config.logTXT) {errorfile.print(dataStr);}
                      Serial.print("Lost ubx frame");
                      Serial.println(interval);
                     }
@@ -202,13 +205,14 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.Stat_screens = doc["Stat_screens"]|12;
   config.Stat_screens_time = doc["Stat_screens_time"]|2;
   config.stat_speed= doc["stat_speed"]|1;
+  config.archive_days= doc["archive_days"]|0;
   config.Stat_screens_persist = config.Stat_screens;
   config.GPIO12_screens = doc["GPIO12_screens"]|12;
   config.GPIO12_screens_persist = config.GPIO12_screens; 
   config.Board_Logo = doc["Board_Logo"]|1;
   config.Sail_Logo = doc["Sail_Logo"]|1;
   config.sleep_off_screen = doc["sleep_off_screen"]|11;
-  config.logCSV=doc["logCSV"]|0;
+  config.logTXT=doc["logTXT"]|1;
   config.logUBX=doc["logUBX"]|1;
   config.logUBX_nav_sat=doc["logUBX_nav_sat"]|0;
   config.logSBP=doc["logSBP"]|1;
@@ -252,7 +256,8 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   RTC_OFF_screen=config.sleep_off_screen/10%10;
   //int Logo_choice=config.Logo_choice;//preserve value config.Logo_choice for config.txt update !!
   int stat_screen=config.Stat_screens;//preserve value config
-  int GPIO_12_screens=config.GPIO12_screens;//preserve value config  
+  int GPIO_12_screens=config.GPIO12_screens;//preserve value config 
+  if(config.file_date_time==0) config.logTXT=1;//because txt file is needed for generating new file count !!
   for (int i=0;i<9;i++){
         config.stat_screen[i]=stat_screen%10;//STATSx heeft geen offset !!! 641
         stat_screen=stat_screen/10;
@@ -288,6 +293,7 @@ void AddString(void){
         }
 
 void Model_info(int model){
+  if(config.logTXT){
   char tekst[20]="";char message[255]="";
   errorfile.print("Dynamic model: "); 
   if(model==1)errorfile.print("Sea"); 
@@ -296,6 +302,7 @@ void Model_info(int model){
   dtostrf(nav_pvt_message_nr, 1, 0, tekst);
   strcat(message,tekst); 
   errorfile.println(message); 
+  }
 }
 void Session_info(GPS_data G){
   char tekst[32]="";char message[512]="";

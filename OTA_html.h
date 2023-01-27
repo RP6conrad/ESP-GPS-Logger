@@ -261,6 +261,8 @@ const char html_header[] PROGMEM = R"=====(
       <ul class="navbar-links">
         <li class="navbar-item"><a class="navbar-link" href='https://github.com/RP6conrad/ESP-GPS-Logger' target='_blank'>Github</a></li>
         <li class="navbar-item"><a class="navbar-link" href="/">Files</a></li>
+        <li class="navbar-item"><a class="navbar-link" href="/archive_file">Archive Files</a></li>
+        <li class="navbar-item"><a class="navbar-link" href="/archive_list">Archive List</a></li>
         <li class="navbar-item"><a class="navbar-link" href="/upload">Upload</a></li>
         <li class="navbar-item"><a class="navbar-link" href="/config">Configuration</a></li>
         <li class="navbar-item"><a class="navbar-link" href="/firmware">Firmware</a></li>
@@ -282,7 +284,7 @@ const char html_header[] PROGMEM = R"=====(
         return !0 == confirm("Want to delete?");
     }
     window.addEventListener('DOMContentLoaded', (event) => {
-    if (location.pathname == "/") sortTable();
+    if ((location.pathname == "/")|(location.pathname == "/archive")) sortTable();
     });
     function sortTable() {
       var table, rows, switching, i, x, y, shouldSwitch;
@@ -394,6 +396,10 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>stat_speed</td><td>\n";
   webpage += "<input size='8' type='number' required name='stat_speed' min='0' max='1000' value="+String(config.stat_speed)+" step='1'>\n";
   webpage += "</select>\n</td><td>If the actual speed(in m/s) is less then this stat_speed, stat_screens are active</td>\n</tr>\n";
+  //Archive_days
+  webpage += "<tr>\n<td>archive_days</td><td>\n";
+  webpage += "<input size='8' type='number' required name='archive_days' min='0' max='1000' value="+String(config.archive_days)+" step='1'>\n";
+  webpage += "</select>\n</td><td>If the files on the sd are older then archive_days, they will be moved to the Archive directory</td>\n</tr>\n";
   //GPIO12_screens
   webpage += "<tr>\n<td>GPIO12_screens</td><td>\n";
   webpage += "<input size='8' type='number' required name='GPIO12_screens' min='0' max='1000' value="+String(config.GPIO12_screens_persist)+" step='1'>\n";
@@ -401,15 +407,20 @@ void html_config(String& webpage){
   //Board_Logo
   webpage += "<tr>\n<td>Board_Logo</td><td>\n";
   webpage += "<input size='8' type='number' required name='Board_Logo' min='0' max='20' value="+String(config.Board_Logo)+" step='1'>\n";
-  webpage += "</select>\n</td><td>Board_Logo: from 1 - 99. See the info on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19375156.jpg' target='_blank'>this Link</a> >100 are different single logos</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>Board_Logo: from 1 - 20. See the info on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a> >10 are different single logos</td>\n</tr>\n";
   //Sail_Logo
   webpage += "<tr>\n<td>Sail_Logo</td><td>\n";
   webpage += "<input size='8' type='number' required name='Sail_Logo' min='0' max='20' value="+String(config.Sail_Logo)+" step='1'>\n";
-  webpage += "</select>\n</td><td>Sail_Logo: from 1 - 99. See the info on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19375156.jpg' target='_blank'>this Link</a> >100 are different single logos</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>Sail_Logo: from 1 - 20. See the info on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a> >10 are different single logos</td>\n</tr>\n";
   //sleep_off_screen
   webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
   webpage += "<input size='8' type='number' required name='sleep_off_screen' min='0' max='1000' value="+String(config.sleep_off_screen)+" step='1'>\n";
   webpage += "</select>\n</td><td>Choice for switch_off (first digit 0 or 1) and sleep_screen (second digit 0 or 1): </td>\n</tr>\n";
+  //logTXT
+  webpage += "<tr><td>logTXT</td><td>\n<select id='logTXT' name='logTXT'>\n";
+  if(config.logTXT == 1) webpage += "<option value='1' selected>LOG TXT ON</option>\n"; else webpage += "<option value='1'>LOG TXT ON</option>\n";
+  if(config.logTXT == 0) webpage += "<option value='0' selected>LOG TXT OFF</option>\n"; else webpage += "<option value='0'>LOG TXT OFF</option>\n";
+  webpage += "</select>\n</td><td>logTXT: Text file with errorlogs and status information. At shutdown, session results are written to this file.</td>\n</tr>\n"; 
   //logSBP
   webpage += "<tr><td>logSBP</td><td>\n<select id='logSBP' name='logSBP'>\n";
   if(config.logSBP == 1) webpage += "<option value='1' selected>LOG SBP ON</option>\n"; else webpage += "<option value='1'>LOG SBP ON</option>\n";

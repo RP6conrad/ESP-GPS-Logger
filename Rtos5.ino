@@ -281,6 +281,17 @@
  * Add sortTable() after DOM is loaded : now the files are ordered by date after loading all filenames !
  * Timestamp files with FTP command MLSD is now UTC
  * Add type of ublox to .txt file + e-paper shut down
+ * https://www.mischianti.org/2021/03/28/how-to-use-sd-card-with-esp32-2/
+ * SW5.72
+ * .txt files configurable over webserver, if name_MAC_counter, .txt file is necessary for keeping track counter !!!
+ * When Wifi, NTP time is set, if needed, directory "Archive" is created
+ * When webserver start, Files older then xx days are copied to directory "Archive", are not visble in the listing anymore.
+ * Added link "Archive files" in header : to move files to the Archive dir when older then archive_days
+ * Added link "Archive list" in header : to list all the files on the SD, dir "Archive" included
+ * Link to overview Board / Sail logo updated
+ * STAT1 screen Sat -> last 2s, 3m/s for new value needed
+ * STAT6 screen Mile -> NM
+ * Sleep screen bat voltage -> bat percent, 4.2=100%, 3.4=0% 
  */
 #include "FS.h"
 #include "SPI.h"
@@ -295,10 +306,13 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include "ESP32FtpServerJH.h"
-#include "OTA_server.h"
+#include "OTA_server.h" 
 #include <esp_task_wdt.h>
 #include <driver/rtc_io.h>
 #include <driver/gpio.h>
+#include <lwip/apps/sntp.h>
+#include <esp32-hal.h>
+#include <time.h>
 #include "Rtos5.h"
 
 #define SPI_MOSI 23
@@ -325,7 +339,7 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-const char SW_version[16]="SW-ver. 5.71";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="SW-ver. 5.72";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
 #endif
@@ -352,6 +366,7 @@ bool SoftAP_connection = false;
 bool GPS_Signal_OK = false;
 bool long_push = false;
 bool Field_choice = false;
+bool NTP_time_set = false;
 
 int analog_bat;
 int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay;
@@ -514,16 +529,18 @@ void Shut_down(void){
             RTC_R3_10s=S10.avg_speed[7]*calibration_speed;
             RTC_R4_10s=S10.avg_speed[6]*calibration_speed;
             RTC_R5_10s=S10.avg_speed[5]*calibration_speed;
-            Session_info(Ublox);
-            Session_results_S(S2);
-            Session_results_S(S10);
-            Session_results_S(S1800);
-            Session_results_S(S3600);
-            Session_results_M(M100);
-            Session_results_M(M500);
-            Session_results_M(M1852);
-            Session_results_Alfa(A250,M250);
-            Session_results_Alfa(A500,M500);
+            if(config.logTXT){
+              Session_info(Ublox);
+              Session_results_S(S2);
+              Session_results_S(S10);
+              Session_results_S(S1800);
+              Session_results_S(S3600);
+              Session_results_M(M100);
+              Session_results_M(M500);
+              Session_results_M(M1852);
+              Session_results_Alfa(A250,M250);
+              Session_results_Alfa(A500,M500);
+              }
             delay(100);
             Close_files(); 
             RTC_year=(tmstruct.tm_year+1900);//local time is corrected with timezone in close_files() !!
@@ -539,6 +556,15 @@ void Update_bat(void){
     analog_mean=analog_bat*0.1+analog_mean*0.9;
     RTC_voltage_bat=analog_mean*calibration_bat/1000;
 }
+void printLocalTime(){
+  struct tm timeinfo;
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("Failed to obtain time");
+    return;
+  }
+  Serial.print("NTP Time = ");
+  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+}  
 //For RTOS, the watchdog has to be triggered
 void feedTheDog_Task0(){
   TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable
@@ -550,26 +576,7 @@ void feedTheDog_Task1(){
   TIMERG1.wdt_feed=1;                       // feed dog
   TIMERG1.wdt_wprotect=0;                   // write protect
 } 
-/*   //This takes 120 kb of flash !!!
-void Internet_time(void){
-  HTTPClient http;
-  const char *ntpServer = "pool.ntp.org";
-  const char *timeApiUrl = "http://worldtimeapi.org/api/ip";
-  http.begin(timeApiUrl);
-  int httpCode = http.GET();
-  if (httpCode != 200)
-  {
-    Serial.println("Unable to fetch the time info\r\n");
-    configTime(0, 0, ntpServer);
-    return;
-  }
-  String response = http.getString();
-  long offset = response.substring(response.indexOf("\"raw_offset\":") + 13, response.indexOf(",\"timezone\":")).toFloat();
-  http.end();
-  configTime(offset, 0, ntpServer);
-  Serial.println("Local time is set");
-}
-*/
+
 void OnWiFiEvent(WiFiEvent_t event){
   switch (event) {
     case SYSTEM_EVENT_STA_CONNECTED:
@@ -595,6 +602,29 @@ void OnWiFiEvent(WiFiEvent_t event){
       break;
     default: break;
   }
+}
+static void setTimeZone(long offset, int daylight)
+{
+    char cst[17] = {0};
+    char cdt[17] = "DST";
+    char tz[33] = {0};
+    if(offset % 3600){
+        sprintf(cst, "UTC%ld:%02u:%02u", offset / 3600, abs((offset % 3600) / 60), abs(offset % 60));
+    } else {
+        sprintf(cst, "UTC%ld", offset / 3600);
+    }
+    if(daylight != 3600){
+        long tz_dst = offset - daylight;
+        if(tz_dst % 3600){
+            sprintf(cdt, "DST%ld:%02u:%02u", tz_dst / 3600, abs((tz_dst % 3600) / 60), abs(tz_dst % 60));
+        } else {
+            sprintf(cdt, "DST%ld", tz_dst / 3600);
+        }
+    }
+    sprintf(tz, "%s%s", cst, cdt);
+    Serial.println(tz);
+    setenv("TZ", tz, 1);
+    tzset();
 }
 void setup() {
   Serial.println("Configuring WDT...");
@@ -690,7 +720,7 @@ void setup() {
   while ((WiFi.status() != WL_CONNECTED)&(SoftAP_connection==false)) {
     esp_task_wdt_reset();
     server.handleClient(); // wait for client handle, and update BAT Status, this section should be moved to the loop... 
-    Update_bat();         //client coutner wait until download is finished to prevent stoping the server during download
+    Update_bat();         //client counter wait until download is finished to prevent stoping the server during download
     if(digitalRead(WAKE_UP_GPIO)==false){//switch over to AP-mode, search time 100 s
        if(ota_notrunning){
             WiFi.disconnect();
@@ -732,7 +762,7 @@ void setup() {
       Serial.println("No Wifi connection !");
       WiFi.disconnect(true);
       WiFi.mode(WIFI_OFF);
-      Wifi_on=false;
+      Wifi_on=false;      
   }
   //analog_mean=RTC_voltage_bat/calibration_bat*1000;//RTC_voltage_bat staat in RTC mem !!!
   delay(100);
@@ -782,18 +812,32 @@ void taskOne( void * parameter )
         WiFi.disconnect(true);
         WiFi.mode(WIFI_OFF);
         Wifi_on=false; 
+        sntp_stop();//no messing around with time synchronization anymore, EPOCH time is set to 0 !!! 
+        setTimeZone(0,0);//set TZ to UTC, as mktime returns localtime !!!!
+        printLocalTime();
+        NTP_time_set=false;
        }   
    if((WiFi.status() == WL_CONNECTED)|SoftAP_connection){
         ftpSrv.handleFTP();        //make sure in loop you call handleFTP()!! 
         server.handleClient();
         ftpStatus=ftpSrv.cmdStatus;//for e-paper
-        /* //takes 120 kb flash !!!
-        static int localtime_set;
-        if(localtime_set==0) {//try once !!
-          Internet_time();
-          localtime_set=1;
-        }
-        */
+        // Init and get the time if WLAN, create "Archive" dir if not present
+        if(WiFi.status() == WL_CONNECTED){
+          const char* ntpServer = "pool.ntp.org";
+          long  gmtOffset_sec = 3600*config.timezone;//configTime sets Timezone !! mktime use TZ...
+          const int daylightOffset_sec = 0;
+          if(NTP_time_set==0){
+            configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+            setTimeZone(-gmtOffset_sec, daylightOffset_sec);
+            printLocalTime();
+            //setTimeZone(0,0);
+           // printLocalTime();
+            NTP_time_set=true;
+            }
+          if(!SD.exists("/Archive")){
+              SD.mkdir("/Archive");
+              }
+          }
         #if defined (STATIC_DEBUG)
         msgType = processGPS(); //debug purposes
         static int testtime;;
