@@ -1,4 +1,5 @@
 #Exclude files from commit !!!
+README.md
  $ git status
     [...]
     # Untracked files:
