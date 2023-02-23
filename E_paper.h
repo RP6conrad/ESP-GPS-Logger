@@ -8,8 +8,8 @@
 //  if it is successful then it belongs to the model of the file name
 // The 2.66 screen has other SPI pins, and more pixels. Partof the pixels are now unused.
 //#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen
-//#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen
-#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
+#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen
+//#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
 //#include <GxDEPG0266BN/GxDEPG0266BN.h>  //2.66 screen for rollz...
 //#include <GxGDEW0213M21/GxGDEW0213M21.h>  //nog een andere versie, resolutie NIET OK vanwege resolutie !!!
 //#include <GxGDEP015OC1/GxGDEP015OC1.h>    //  GDEH015OC1 1.54" screen for Jeff Turner !!!
@@ -79,8 +79,6 @@ extern int bootCount,run_count,stat_count;
 extern int ftpStatus;
 extern String IP_adress;
 extern const char SW_version[16];
-extern const char Ublox_type[20];
-//xtern int logo_choice[10];
 extern RTC_DATA_ATTR int offset;
 extern RTC_DATA_ATTR float RTC_distance;
 extern RTC_DATA_ATTR float RTC_avg_10s;
@@ -114,7 +112,7 @@ void Off_screen(int choice);
 void sleep_screen(void);
 void Sleep_screen(int choice);
 void Update_screen(int screen);
-void Bat_level(int offset);
+void Bat_level(int X_offset,int Y_offset);
 void Bat_level_Simon(int offset);
 void Sat_level(int offset);
 class Button_push{

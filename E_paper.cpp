@@ -111,7 +111,7 @@ void Sleep_screen(int choice){
       display.print("2s: ");display.print(RTC_max_2s);//display.println("Hz"); 
       display.setCursor(offset,120);
       display.print("Bat: ");display.print(RTC_voltage_bat,2);
-      Bat_level(offset);
+      Bat_level(offset+222,87);
       display.update();
       }
    else{
@@ -257,13 +257,13 @@ void Sleep_screen(int choice){
       display.update(); 
       }
 }
-void Bat_level(int offset){
+void Bat_level(int X_offset,int Y_offset){
     float bat_symbol=0;
-    display.fillRect(offset+225,87,6,3,GxEPD_BLACK);
-    display.fillRect(offset+222,90,12,30,GxEPD_BLACK);//monitor=(4.2-RTC_voltage_bat)*26
+    display.fillRect(X_offset+3,Y_offset,6,3,GxEPD_BLACK);
+    display.fillRect(X_offset,Y_offset+3,12,30,GxEPD_BLACK);//monitor=(4.2-RTC_voltage_bat)*26
     if(RTC_voltage_bat<4.2) {
         bat_symbol=(4.2-RTC_voltage_bat)*28;
-        display.fillRect(offset+224,94,8,(int)bat_symbol,GxEPD_WHITE);
+        display.fillRect(X_offset+2,Y_offset+7,8,(int)bat_symbol,GxEPD_WHITE);
         }
     }
 void Bat_level_Simon(int offset){
@@ -327,9 +327,10 @@ void Update_screen(int screen){
         int field=config.field;//default is in config.txt
         int bar_position=32;
         int bar_length=config.bar_length*1000/240;//default 100% length = 1852 m
-        if(config.field==1){                      //only switch if config.field==1 !!!
+        if(config.field==1){         //only switch if config.field==1 !!!
+             if(((int)(Ublox.total_distance/1000000)%10==0)&(Ublox.alfa_distance/1000>1000))field=5;//indien x*10km, totale afstand laten zien                    
              if((Ublox.alfa_distance/1000<350)&(alfa_window<100))field=3;//first 350 m after gibe  alfa screen !!
-             if(Ublox.alfa_distance/1000>config.bar_length)field=4;//run longer dan 1852 m, NM scherm !!
+             if(Ublox.alfa_distance/1000>config.bar_length)field=4;//run longer dan 1852 m, NM scherm !! 
             }
         if(config.field==2){     
             if(Ublox.run_distance/1000>config.bar_length)field=4;//if run longer dan 1852 m, NM scherm !!
@@ -469,18 +470,36 @@ void Update_screen(int screen){
                   }
             }  
          if(field==5){
-            display.setFont(&FreeSansBold12pt7b);
-            display.print("Dist ");
-            display.setFont(&FreeSansBold18pt7b);
-            if(Ublox.total_distance/1000,0<9999)
-            display.print(Ublox.total_distance/1000,0);//Total distance in meter, als test run_distance
-            else
-            display.print(Ublox.total_distance/1000000,1);//Total distance in km, als test run_distance
+            if(config.speed_large_font==1){
+              bar_position=40;//test voor bigger font 
+              display.setCursor(offset,36);
+              display.setFont(&FreeSansBold12pt7b);
+              display.print("Dist ");
+              display.setFont(&SansSerif_bold_46_nr); 
+              display.print(Ublox.total_distance/1000000,1);//Total distance in km, als test run_distance
+              if(Ublox.total_distance/1000000>99.9){
+                display.setFont(&FreeSansBold12pt7b);
+                display.print(" km");
+                }
+            } 
+            else{
+              display.setCursor(offset,36);
+              display.setFont(&FreeSansBold12pt7b);
+              display.print("Dist ");
+              display.setFont(&FreeSansBold18pt7b);
+              display.print(Ublox.total_distance/1000000,1);//Total distance in km, als test run_distance
+              display.setFont(&FreeSansBold12pt7b);
+              display.print(" km");
+             }
+             
+            Bat_level(offset+222,0);
+            /*
             display.setCursor(offset+135,24);
             display.setFont(&FreeSansBold12pt7b);
             display.print("R ");
             display.setFont(&FreeSansBold18pt7b);
             display.print(Ublox.run_distance/1000,0);
+            */
             }
          if(field==6){
             display.setFont(&FreeSansBold12pt7b);
@@ -551,8 +570,11 @@ void Update_screen(int screen){
         if(sdOK==true)
         display.print("SD OK!");
         else display.print("No SD!");
-        if(config.dynamic_model==1)display.print(" SEA");
-        else display.print(" Port");
+        if(ublox_type==0)display.print(" ublox??");
+        if(ublox_type==1)display.print(" M8 9600bd");
+        if(ublox_type==2)display.print(" M8 38400bd");
+        if(ublox_type==3)display.print(" M10 9600bd");
+        if(ublox_type==4)display.print(" M10 38400bd");
         display.setCursor(offset,44);
         display.print(config.UBXfile);
         display.setCursor(offset,68);
@@ -585,7 +607,7 @@ void Update_screen(int screen){
         display.print("10sS: ");display.println(S10.display_speed[5]*calibration_speed);  //langzaamste 10s(Slow) run van de sessie
         display.setCursor(offset,120);
         display.print("AVG: ");display.println(S10.avg_5runs*calibration_speed); //average 5*10s
-        Bat_level(offset);
+        Bat_level(offset+222,87);
       }
      if(screen==STATS2){                        //alfa 500m,1852m, 1800s,total_dist
         update_delay=(config.Stat_screens_time-2)*1000;
@@ -613,7 +635,7 @@ void Update_screen(int screen){
           display.print(time_now_sec);
           toggle=0;
           }
-        Bat_level(offset);
+        Bat_level(offset+222,87);
       }
    if(screen==STATS3){                        //100m,250m, 500m,Alfa
           update_delay=(config.Stat_screens_time-2)*1000;
@@ -626,7 +648,7 @@ void Update_screen(int screen){
           display.print("500m: ");display.println(M500.avg_speed[9]*calibration_speed);  //langzaamste 10s(Slow) run van de sessie
           display.setCursor(offset,120);
           display.print("Alfa: ");display.println(A500.avg_speed[9]*calibration_speed,2); //average 5*10s
-          Bat_level(offset);
+          Bat_level(offset+222,87);
         }
      if(screen==STATS4){                        //10s,AVG,5 runs, update on the fly !!!
         update_delay=(config.Stat_screens_time-2)*1000;static int j=0;

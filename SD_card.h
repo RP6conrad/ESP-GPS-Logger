@@ -22,7 +22,7 @@ extern int time_out_nav_pvt;
 extern int next_gpy_full_frame;
 extern byte mac[6];
 extern const char SW_version[16];
-extern const char Ublox_type[20];
+extern char Ublox_type[20];
 extern char RTC_Sleep_txt[32];
 extern GPS_speed M100;
 extern GPS_speed M250;
@@ -48,7 +48,7 @@ struct Config {
   int field=1;//choice for first field in speed screen !!!
   int speed_large_font=0;//fonts on the first line are bigger, actual speed font is smaller
   int dynamic_model=0;//choice for dynamic model "Sea",if 0 model "portable" is used !!
-  int timezone=0;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)
+  float timezone=0;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)
   int Stat_screens=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active
   int Stat_screens_time=2;//time between switching stat_screens
   int GPIO12_screens=123;//choice for stats field when gpio12 is activated (pull-up high, low = active)

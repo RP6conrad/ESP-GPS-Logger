@@ -1,16 +1,4 @@
-#include <SD.h>
-#include <sd_defines.h>
-#include <sd_diskio.h>
 
-#include <ETH.h>
-#include <WiFi.h>
-#include <WiFiAP.h>
-#include <WiFiClient.h>
-#include <WiFiGeneric.h>
-#include <WiFiServer.h>
-#include <WiFiSTA.h>
-#include <WiFiType.h>
-#include <WiFiUdp.h>
 //#include <HTTPClient.h>//takes 120 kb flash !!!
 
 /*
@@ -292,7 +280,25 @@
  * STAT1 screen Sat -> last 2s, 3m/s for new value needed
  * STAT6 screen Mile -> NM
  * Sleep screen bat voltage -> bat percent, 4.2=100%, 3.4=0% 
+ * SW5.73
+ * Bugfix name ublox M10 38400bd in off screen
+ * Downloading _filename bugfix, no underscore
+ * timezone changed from int -> float for partial timezones, drop down menu choice  !!
+ * Speed screen 5 -> distance always km/h, run -> bat symbol 
+ * Added auto detection ublox type M8 / M10 and 9600bd/38400 bd
  */
+#include <SD.h>
+#include <sd_defines.h>
+#include <sd_diskio.h>
+#include <ETH.h>
+#include <WiFi.h>
+#include <WiFiAP.h>
+#include <WiFiClient.h>
+#include <WiFiGeneric.h>
+#include <WiFiServer.h>
+#include <WiFiSTA.h>
+#include <WiFiType.h>
+#include <WiFiUdp.h> 
 #include "FS.h"
 #include "SPI.h"
 #include "sys/time.h"
@@ -303,8 +309,6 @@
 #include "SD_card.h"
 #include "GPS_data.h"
 #include "Arduino.h"
-#include <WiFi.h>
-#include <WiFiClient.h>
 #include "ESP32FtpServerJH.h"
 #include "OTA_server.h" 
 #include <esp_task_wdt.h>
@@ -339,7 +343,7 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-const char SW_version[16]="SW-ver. 5.72";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="SW-ver 5.73";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
 #endif
@@ -349,13 +353,8 @@ const char E_paper_version[16]="E-paper 213BN";
 #if defined(_GxGDEM0213B74_H_) 
 const char E_paper_version[16]="E-paper 213B74";
 #endif
-#if defined(UBLOX_M10) 
-const char Ublox_type[20]="Ublox M10 9600bd";
-#elif defined(ALI_M10) 
-const char Ublox_type[20]="Ublox M10 38400bd";
-#else 
-const char Ublox_type[20]="Ublox M8 9600bd";
-#endif
+char Ublox_type[20]="Ublox unknown...";
+
 int sdTrouble=0;
 bool sdOK = false;
 bool button = false;
@@ -384,6 +383,7 @@ int stat_screen=5;//keuze stat scherm indien stilstand
 int GPIO12_screen=0;//keuze welk scherm
 int low_bat_count;
 int gps_speed;
+int ublox_type=0;
 float alfa_window;
 float analog_mean=2000;
 float Mean_heading,heading_SD;
@@ -647,22 +647,16 @@ void setup() {
   
   Ublox_on();//beitian bn220 power supply over output 25,26,27
   Serial2.setRxBufferSize(1024); // increasing buffer size ?
-  #if defined(ALI_M10)
-  Serial2.begin(38400, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2
-  Serial.println("Serial2 38400bd Txd is on pin: "+String(TXD2));
-  Serial.println("Serial2 38400bd Rxd is on pin: "+String(RXD2));
-  #else
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2
   Serial.println("Serial2 9600bd Txd is on pin: "+String(TXD2));
   Serial.println("Serial2 9600bd Rxd is on pin: "+String(RXD2));
-  #endif
   for(int i=0;i<425;i++){//Startup string van ublox to serial, ca 424 char !!
      while (Serial2.available()) {
               Serial.print(char(Serial2.read()));
               }
      delay(2);   //was delay (1)
      }
-  //SPIClass sdSPI = SPIClass(HSPI);  //test JH 25/12/2022
+  ublox_type=Auto_detect_ublox();//test for ublox type and baudrate   
   sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
 
   struct timeval tv = { .tv_sec =  0, .tv_usec = 0 };
@@ -679,11 +673,15 @@ void setup() {
         Serial.print(F("Print config file...")); 
         printFile(filename); 
         } 
-  #if !defined(UBLOX_M10)     
-  Init_ublox(); //switch to ubx protocol
-  #else
-  Init_ubloxM10(); //switch to ubx protocol
-  #endif
+  if(ublox_type==0){
+    Serial.println("Can't detect type and or baudrate of ublox....");
+    }     
+  if((ublox_type==1)|(ublox_type==2)){
+    Init_ublox(); //switch to ubx protocol
+    }
+  if((ublox_type==3)|(ublox_type==4)){
+    Init_ubloxM10(); //switch to ubx protocol
+    }
   Serial.print("SW Ublox=");
   Serial.println(ubxMessage.monVER.swVersion);
   Serial.print ("HW Ublox=");
@@ -696,11 +694,12 @@ void setup() {
   Serial.println();  
   Serial.println (ubxMessage.monGNSS.default_Gnss);
   Serial.println (ubxMessage.monGNSS.enabled_Gnss);
-  #if !defined(UBLOX_M10)
-  Set_rate_ublox(config.sample_rate);//after reading config file !!  
-  #else
-  Set_rate_ubloxM10(config.sample_rate);//after reading config file !!  
-  #endif  
+  if((ublox_type==1)|(ublox_type==2)){
+      Set_rate_ublox(config.sample_rate);//after reading config file !! 
+      } 
+  if((ublox_type==3)|(ublox_type==4)){
+      Set_rate_ubloxM10(config.sample_rate);//after reading config file !! 
+      }  
   Update_screen(BOOT_SCREEN);
   
   const char* ssid = config.ssid; //WiFi SSID

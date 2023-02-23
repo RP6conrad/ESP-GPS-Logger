@@ -97,6 +97,7 @@ void SD_file_download(String filename)
     File download = SD.open("/"+filename);
     if (download) 
     {
+      filename.remove(0,1);//remove 1 character starting at index 0, this is /, after downloading -> _filename....
       server.sendHeader("Content-Disposition", "attachment; filename="+filename);
       server.sendHeader("Connection", "close");
       server.streamFile(download, "application/octet-stream");
@@ -141,7 +142,9 @@ void printDirectory(const char * dirname, uint8_t levels)
     }
     else
     {
-      webpage += "<tr>\n<td width='20%'>"+String(file.name())+"</td>";
+      String filename =String(file.name());
+      filename.remove(0,1);//remove 1 character starting at index 0
+      webpage += "<tr><td width='20%'>"+filename+"</td>";
       int bytes = file.size();
       String fsize = "";
       time_t file_date = file.getLastWrite();//changes JH 19/11/2022
@@ -161,7 +164,6 @@ void printDirectory(const char * dirname, uint8_t levels)
       webpage += "<td>";
       if((String(file.name()) != "config.txt") & (String(file.name()) != "/config.txt") & (String(file.name()) != "/config_backup.txt") & (String(file.name()) != "config_backup.txt")){
         webpage += F("<form action='/' method='post'>"); 
-        //webpage += F("<button type='submit' class='button_del' name='delete'"); 
         webpage += F("<button type='submit' name='delete' class='button_del' onclick='return confirmdelete();'"); 
         webpage += F("' value='"); webpage +="delete_"+String(file.name()); webpage += F("'>Delete</button>");
         webpage += F("</form>");
@@ -388,7 +390,7 @@ void handleConfigUpload() {
     doc["file_date_time"] = server.arg("file_date_time").toInt();
     doc["dynamic_model"] = server.arg("dynamic_model").toInt();
     doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt();
-    doc["timezone"] = server.arg("timezone").toInt();
+    doc["timezone"] = serialized(server.arg("timezone")); 
     doc["UBXfile"] = server.arg("UBXfile");
     doc["Sleep_info"] = server.arg("Sleep_info");
     doc["ssid"] = server.arg("ssid");
@@ -452,6 +454,7 @@ String loginIndex =
 "</script>" + style;
  
 /* Server Index Page */
+//https://github.com/italocjs/ESP32_OTA_APMODE/blob/main/Main.cpp
 String serverIndex = 
 "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
 "<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"

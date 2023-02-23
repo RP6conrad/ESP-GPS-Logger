@@ -220,7 +220,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.logGPX=doc["logGPX"]|0;
   config.file_date_time=doc["file_date_time"]|1;
   config.dynamic_model = doc["dynamic_model"]|0;//sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
-  config.timezone = doc["timezone"]|2;
+  config.timezone = doc["timezone"]|2.0;
   
   strlcpy(config.UBXfile,                  // <- destination
           doc["UBXfile"] | "/ubxGPS",  // <- source
@@ -320,7 +320,7 @@ void Session_info(GPS_data G){
   strcat(message,tekst);
   sprintf(tekst, "Speed calibration: %f \n",config.cal_speed); 
   strcat(message,tekst); 
-  sprintf(tekst, "Timezone : %d h\n",config.timezone);
+  sprintf(tekst, "Timezone : %f h\n",config.timezone);
   strcat(message,tekst); 
   strcat(message,"Dynamic model: ");
   if(config.dynamic_model==1) strcat(message,"Sea");
@@ -340,11 +340,10 @@ void Session_info(GPS_data G){
   strcat(message,"Ublox HW-version : ");
   strcat(message,ubxMessage.monVER.hwVersion);
   strcat(message," \n");
-  #if defined(UBLOX_M10)
+  if ((ublox_type==3)|(ublox_type==4));
   sprintf(tekst,"Ublox M10 ID = %02x%02x%02x%02x%02x%02x\n",ubxMessage.ubxId.ubx_id_1,ubxMessage.ubxId.ubx_id_2,ubxMessage.ubxId.ubx_id_3,ubxMessage.ubxId.ubx_id_4,ubxMessage.ubxId.ubx_id_5,ubxMessage.ubxId.ubx_id_6);
-  #else
+  if ((ublox_type==1)|(ublox_type==2));
   sprintf(tekst,"Ublox M8 ID = %02x%02x%02x%02x%02x\n",ubxMessage.ubxId.ubx_id_1,ubxMessage.ubxId.ubx_id_2,ubxMessage.ubxId.ubx_id_3,ubxMessage.ubxId.ubx_id_4,ubxMessage.ubxId.ubx_id_5);
-  #endif
   strcat(message,tekst);
   strcat(message,Ublox_type);
   strcat(message," \n");

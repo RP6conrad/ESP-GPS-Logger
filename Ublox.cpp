@@ -9,20 +9,17 @@ struct tm my_time;  // time elements structure
 time_t unix_timestamp; // a timestamp
 
 void Ublox_on(){
-   //F(19, HIGH);//Groene LED
    digitalWrite(25, HIGH); 
    digitalWrite(26, HIGH);
    digitalWrite(27, HIGH);
    delay(20);
 }
 void Ublox_off(){
-  //digitalWrite(19, LOW);//Groene LED uit
   digitalWrite(25, LOW);
   digitalWrite(26, LOW);
   digitalWrite(27, LOW);
 }
 void Ublox_serial2(int delay_ms){
- //Serial2.flush();//empty buffer 
  for(int i=0;i<delay_ms;i++){
     int msgType = processGPS();
      if ( msgType == MT_NAV_ACK){
@@ -58,8 +55,6 @@ void Ublox_serial2(int delay_ms){
      delay(2);   
      } 
 }
-
-#if !defined(UBLOX_M10)
 //Initialization of the ublox M8N with binary commands
 void Init_ublox(void){
   int wait=250;
@@ -157,14 +152,6 @@ void Set_rate_ublox(int rate){
         }
   Ublox_serial2(500);      
 }
-#endif
-void Poll_NAV_SAT(void){//for M8 & M10 !!!
-  Serial.println("Poll ublox NAV_SAT");   
-  for(int i = 0; i < sizeof(UBX_NAV_SAT); i++) {                        
-        Serial2.write( pgm_read_byte(UBX_NAV_SAT+i) );
-        } 
-  }
-#if defined(UBLOX_M10)
 //Initialization of the ublox M10N with binary commands
 void Init_ubloxM10(void){
   int wait=250;
@@ -268,8 +255,7 @@ void Set_rate_ubloxM10(int rate){
         }
   Ublox_serial2(500);      
 }
-#endif
-int Set_GPS_Time(int time_offset){    
+int Set_GPS_Time(float time_offset){    
   // convert a date and time into unix time
         if(ubxMessage.navPvt.year<2023) {
           Serial.println("GPS Reported year not plausible (<2023) !");
@@ -507,5 +493,49 @@ int processGPS() {
   }
   return MT_NONE;
 }
-
+int Auto_detect_ublox(){
+  int ublox_type=0;
+  char M10_9600_bd[20]="Ublox M10 9600bd";
+  char M8_9600_bd[20]="Ublox M8 9600bd";
+  char M8_38400_bd[20]="Ublox M8 38400bd";
+  char M10_38400_bd[20]="Ublox M10 38400bd";
+  Serial.println("Check UBX_MON_VER @9600bd ");  //check for 9600 bd ??   
+  for(int i = 0; i < sizeof(UBX_MON_VER); i++) {                        
+        Serial2.write( pgm_read_byte(UBX_MON_VER+i) );        
+        }           
+  Ublox_serial2(1000); 
+  if(ubxMessage.monVER.hwVersion[3]=='8'){
+    ublox_type=1;
+    strcpy(Ublox_type,M8_9600_bd);
+    Serial.println("Ublox M8 @9600bd ");
+    }//M8@9600 bd
+  if(ubxMessage.monVER.hwVersion[3]=='A'){
+    ublox_type=3;
+    strcpy(Ublox_type,M10_9600_bd);
+    Serial.println("Ublox M10 @9600bd ");
+    }//M10@9600 bd
+  if(ublox_type==0){//no ublox @9600 bd detected
+      //Serial2.flush();
+      Serial2.begin(38400,SERIAL_8N1, RXD2, TXD2);// Change baudrate to 38400 for new test
+      Serial2.flush();
+      Serial.println("Check UBX_MON_VER @38400bd ");  //check for 9600 bd ?? 
+      delay(100);  
+      for(int i = 0; i < sizeof(UBX_MON_VER); i++) {                        
+            Serial2.write( pgm_read_byte(UBX_MON_VER+i) );        
+            }           
+      Ublox_serial2(1000); 
+      if(ubxMessage.monVER.hwVersion[3]=='8'){
+        ublox_type=2;
+        strcpy(Ublox_type,M8_38400_bd);
+        Serial.println("Ublox M8 @38400bd ");
+        }//M8@384000 bd
+      if(ubxMessage.monVER.hwVersion[3]=='A'){
+        ublox_type=4;
+        strcpy(Ublox_type,M10_38400_bd);
+        Serial.println("Ublox M10 @38400bd ");
+        }//M10@384000 bd
+      }
+    Serial.println(ubxMessage.monVER.hwVersion[3]) ; 
+    return ublox_type;  
+}
 

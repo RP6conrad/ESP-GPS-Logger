@@ -285,23 +285,20 @@ struct UBXMessage {//was union, but messages are overwritten by next message
 
 extern UBXMessage ubxMessage;  //declaration here, definition in Ublox.cpp
 extern bool sdOK;
-
+extern int ublox_type;
 extern char dataStr[255];  //string for logging NMEA in txt, test for write 2000 chars !!
 extern char Buffer[50];
-//void calcChecksum(unsigned char* CK, int msgSize);
+
 void calcChecksum(unsigned char* CK,int msgType,int msgSize);
 boolean compareMsgHeader(const unsigned char* msgHeader);
 void Ublox_on();
 void Ublox_off();
 void Ublox_serial2(int delay_ms);
-//#if !defined(UBLOX_M10)
 void Init_ublox(void);
 void Set_rate_ublox(int);
-void Poll_NAV_SAT(void);
-//#else
 void Init_ubloxM10(void);
 void Set_rate_ubloxM10(int rate);
-//#endif
-int Set_GPS_Time(int time_offset);
+int Set_GPS_Time(float time_offset);
 int processGPS();
+int Auto_detect_ublox();
 #endif

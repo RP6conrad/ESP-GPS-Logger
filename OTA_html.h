@@ -441,18 +441,54 @@ void html_config(String& webpage){
   if(config.logGPX == 1) webpage += "<option value='1' selected>LOG GPX ON</option>\n"; else webpage += "<option value='1'>LOG GPX ON</option>\n";
   if(config.logGPX == 0) webpage += "<option value='0' selected>LOG GPX OFF</option>\n"; else webpage += "<option value='0'>LOG GPX OFF</option>\n";
   webpage += "</select>\n</td><td>logGPX: To save the GPS data in gpx format @ 1Hz, for video overlay or other purposes.</td>\n</tr>\n";  
-  #if !defined(UBLOX_M10)
   //dynamic_model
+  if((ublox_type==1)|(ublox_type==2)){
   webpage += "<tr><td>dynamic_model</td><td>\n<select id='dynamic_model' name='dynamic_model'>\n";
   if(config.dynamic_model == 0) webpage += "<option value='0' selected>portable</option>\n"; else webpage += "<option value='0'>portable</option>\n";
   if(config.dynamic_model == 1) webpage += "<option value='1' selected>sea</option>\n"; else webpage += "<option value='1'>sea</option>\n";
   if(config.dynamic_model == 2) webpage += "<option value='2' selected>automotive</option>\n"; else webpage += "<option value='2'>automotive</option>\n";
   webpage += "</select>\n</td><td>dynamic_model: Here you can choose the dynamic model of the Ublox M8N (0=portable, 1=sea, 2=automotive). As 'sea' has some disadvantages (max speed is limited to 40 knots, only sea-level..), my advice is to stay with 'portable'. </td>\n</tr>\n"; 
-  #endif
+  }
   //timezone
-  webpage += "<tr>\n<td>timezone</td><td>\n";
-  webpage += "<input size='2' type='number' required name='timezone' min='-12' max='14' value="+String(config.timezone)+" step='1'>\n";
-  webpage += "</select>\n</td><td>timezone: The local time difference in hours with UTC (can be negative ! )<a href='https://en.wikipedia.org/wiki/List_of_UTC_offsets' target='_blank'>this Link</a></td>\n</tr>\n";
+  webpage += "<tr>\n<td>timezone</td><td>\n<select id='timezone' name='timezone' type='number'>\n"; 
+  if(config.timezone == -11) webpage += "<option value='-11' selected>-11 (Pacific/Samoa)</option>\n"; else  webpage += "<option value='-11'>-11 (Pacific/Samoa)</option>\n";
+  if(config.timezone == -10) webpage += "<option value='-10' selected>-10 (US/Hawaii)</option>\n"; else  webpage += "<option value='-10'>-10 (US/Hawaii)</option>\n";
+  if(config.timezone == -9.5) webpage += "<option value='-9.5' selected>-9:30 (Pacific/Marquesas)</option>\n"; else  webpage += "<option value='-9.5'>-9:30 (Pacific/Marquesas)</option>\n";
+  if(config.timezone == -9) webpage += "<option value='-9' selected>-9 (US/Alaska)</option>\n"; else  webpage += "<option value='-9'>-9 (US/Alaska)</option>\n";
+  if(config.timezone == -8) webpage += "<option value='-8' selected>-8 (US/Pacific)</option>\n"; else  webpage += "<option value='-8'>-8 (US/Pacific)</option>\n";
+  if(config.timezone == -7) webpage += "<option value='-7' selected>-7 (US/Montaain)</option>\n"; else  webpage += "<option value='-7'>-7 (US/mountain)</option>\n";
+  if(config.timezone == -6) webpage += "<option value='-6' selected>-6 (US/Central)</option>\n"; else  webpage += "<option value='-6'>-6 (US/Central)</option>\n";
+  if(config.timezone == -5) webpage += "<option value='-5' selected>-5 (US/Eastern)</option>\n"; else  webpage += "<option value='-5'>-5 (US/Eastern)</option>\n";
+  if(config.timezone == -4) webpage += "<option value='-4' selected>-4 (Canada/Atlantic)</option>\n"; else  webpage += "<option value='-4'>-4 (Canada/Atlantic)</option>\n";
+  if(config.timezone == -3.5) webpage += "<option value='-3.5' selected>-3:30 (Canada/Newfoundland)</option>\n"; else  webpage += "<option value='-3.5'>-3:30 (Canada/Newfoundland)</option>\n";
+  if(config.timezone == -3) webpage += "<option value='-3' selected>-3 (Brazil/East)</option>\n"; else  webpage += "<option value='-3'>-3 (Brazil/East)</option>\n";
+  if(config.timezone == -2) webpage += "<option value='-2' selected>-2 (Brazil/DeNoronha)</option>\n"; else  webpage += "<option value='-2'>-2 (Brazil/DeNoronha)</option>\n";
+  if(config.timezone == -1) webpage += "<option value='-1' selected>-1 (Atlantic/CapVerde)</option>\n"; else  webpage += "<option value='-1'>-1 (Atlantic/CapVerde)</option>\n";
+  if(config.timezone == 0) webpage += "<option value='0' selected>GMT(Europe/London)</option>\n"; else  webpage += "<option value='0'>GMT(Europe/London)</option>\n";
+  if(config.timezone == 1) webpage += "<option value='1' selected>CET(Europe/Brussels)</option>\n"; else webpage += "<option value='1'>CET(Europe/Brussels)</option>\n";
+  if(config.timezone == 2) webpage += "<option value='2' selected>CET+1(Europe/Athens)</option>\n"; else webpage += "<option value='2'>CET +1(Europe/Athens)</option>\n";
+  if(config.timezone == 3) webpage += "<option value='3' selected>3 (Turkey))</option>\n"; else  webpage += "<option value='3'>3 Turkey</option>\n";
+  if(config.timezone == 3.5) webpage += "<option value='3.5' selected>3:30 (Iran)</option>\n"; else webpage += "<option value='3.5'>3:30 (Iran)</option>\n";  
+  if(config.timezone == 4) webpage += "<option value='4' selected>4 (Indian/Mauritius)</option>\n"; else  webpage += "<option value='4'>4 (Indian/Mauriatius)</option>\n";
+  if(config.timezone == 5) webpage += "<option value='5' selected>5 (Indian/Maldives)</option>\n"; else  webpage += "<option value='5'>5 (Indian/Maldives)</option>\n";
+  if(config.timezone == 5.5) webpage += "<option value='5.5' selected>5:30 (Asia/Calcutta)</option>\n"; else webpage += "<option value='5.5'>5:30 (Asia/Calcutta)</option>\n";
+  if(config.timezone == 5.75) webpage += "<option value='5.75' selected>5:45 (Asia/Katmandu)</option>\n"; else webpage += "<option value='5.75'>5:45 (Asia/Katmandu)</option>\n";
+  if(config.timezone == 6) webpage += "<option value='6' selected>6 (Asia/Omsk)</option>\n"; else  webpage += "<option value='6'>6 (Asia/Omsk)</option>\n";
+  if(config.timezone == 6.5) webpage += "<option value='6.5' selected>6:30 (Asia/Rangoon)</option>\n"; else webpage += "<option value='6.5'>6:30 (Asia/Rangoon)</option>\n";
+  if(config.timezone == 7) webpage += "<option value='7' selected>7 (Asia/Bangkok)</option>\n"; else  webpage += "<option value='7'>7 (Asia/Bangkok)</option>\n";
+  if(config.timezone == 8) webpage += "<option value='8' selected>8 (Australia/Perth)</option>\n"; else  webpage += "<option value='8'>8 (Australia/Perth)</option>\n";
+  if(config.timezone == 8.75) webpage += "<option value='8.75' selected>8:45 (Australia/Eucla)</option>\n"; else webpage += "<option value='8.75'>8:45 (Australia/Eucla)</option>\n";
+  if(config.timezone == 9) webpage += "<option value='9' selected>9 (Japan)</option>\n"; else  webpage += "<option value='9'>9 (Japan)</option>\n";
+  if(config.timezone == 9.5) webpage += "<option value='9.5' selected>9:30 (Australia/South)</option>\n"; else webpage += "<option value='9.5'>9:30 (Australia/South)</option>\n";   
+  if(config.timezone == 10) webpage += "<option value='10' selected>10 (Australia/Sydney)</option>\n"; else  webpage += "<option value='10'>10 (Australia/Sydney)</option>\n";
+  if(config.timezone == 10.5) webpage += "<option value='10.5' selected>10:30 (Australia/LHI)</option>\n"; else webpage += "<option value='10.5'>10:30 (Australia/LHI)</option>\n";   
+  if(config.timezone == 11) webpage += "<option value='11' selected>11 (Pacific/Noumea)</option>\n"; else  webpage += "<option value='11'>11 (Pacific/Noumea)</option>\n"; 
+  if(config.timezone == 12) webpage += "<option value='12' selected>12 (NZ)</option>\n"; else  webpage += "<option value='12'>12 (NZ)</option>\n";
+  if(config.timezone == 12.75) webpage += "<option value='12.75' selected>12:45 (Pacific/Chatham)</option>\n"; else webpage += "<option value='12.75'>12:45 (Pacific/Chatham)</option>\n";
+  if(config.timezone == 13) webpage += "<option value='13' selected>13 (Pacific/Fakaofo)</option>\n"; else  webpage += "<option value='13'>13 (Pacific/Fakaofo)</option>\n";
+  if(config.timezone == 14) webpage += "<option value='14' selected>14 (Pacific/Kiritimati)</option>\n"; else  webpage += "<option value='14'>14 (Pacific/Kiritimati)</option>\n";
+  
+  webpage += "</select>\n</td><td>timezone: The local time difference in hours with UTC (can be fractional / negative ! )<a href='https://en.wikipedia.org/wiki/List_of_UTC_offsets' target='_blank'>this Link</a></td>\n</tr>\n";
   //filenaming  
   webpage += "<tr><td>file_date_time</td><td>\n<select id='file_date_time' name='file_date_time'>\n";
   if(config.file_date_time == 1) webpage += "<option value='1' selected>name_date_time</option>\n"; else webpage += "<option value='1'>name_date_time</option>\n";
