@@ -2,8 +2,9 @@
 # ESP-GPS logger
 
 GPS logger for Speedsurfing, based on ESP32 & Ublox  hardware.  This is a open source project for a gps-speedlogger with a ESP32 µ-controller. This logger is approved for uploading to [http://gps-speedsurfing.com](http://gps-speedsurfing.com)
+![ESP GPS banner 1024x500](https://user-images.githubusercontent.com/58887243/228194449-03b4aee7-f6ac-44cf-936f-beec46ba28fb.jpg)
 
-![GPS_hardware1](https://user-images.githubusercontent.com/58887243/213173720-7f4f0d1d-36a7-4643-a32c-57441f66037f.jpg)
+
 #### Hardware :
 - e-paper display with build in ESP32 and micro SD-card(lilygo ttgo T5).
 - A gps module ublox M8n / M10 is connected over serial. 
@@ -22,7 +23,7 @@ GPS logger for Speedsurfing, based on ESP32 & Ublox  hardware.  This is a open s
 	- Average speed over 100m, 200m, 500m, 1852 m (nautical mile)
 	- Highest average over 30 min / 60 min. t
 	- Total distance from the session.
-	
+![GPS_hardware1](https://user-images.githubusercontent.com/58887243/213173720-7f4f0d1d-36a7-4643-a32c-57441f66037f.jpg)	
 #### Interface
 SW is written in Arduino IDE (C++). For easy access to the files on the sd, a ftp-server over wifi is integrated. Also OTA (over the air update) of the sw is possible. SW 5.58 : Thanks to the contribution of tritondm, the webserver is now extended and all files on the sd can be downloaded over this webserver. Also the complete configuration can be changed over the webserver !! No need for ftp anymore, but this is still possible. SW 5.68 : Ublox M10 is supported, see for the correct bin file. 
 ##### Building manual / first flashing :
