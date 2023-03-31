@@ -286,6 +286,14 @@
  * timezone changed from int -> float for partial timezones, drop down menu choice  !!
  * Speed screen 5 -> distance always km/h, run -> bat symbol 
  * Added auto detection ublox type M8 / M10 and 9600bd/38400 bd
+ * SW5.74
+ * Debouncing reed switch with 200ms @boot
+ * Shutdown screen 10s -> 5s
+ * Bat voltage calibration min value 1.7 -> 1.6
+ * Bugfix GPIO12 screens 
+ * Changed default settings when no config.txt
+ * Add watchtdog to task0 + task1 separat, Time out = 60 s
+ * Changed order Wifi screen, so IP is not in the middle anymore
  */
 #include <SD.h>
 #include <sd_defines.h>
@@ -343,7 +351,7 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-const char SW_version[16]="SW-ver 5.73";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="SW-ver 5.74";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
 #endif
@@ -387,7 +395,10 @@ int ublox_type=0;
 float alfa_window;
 float analog_mean=2000;
 float Mean_heading,heading_SD;
-
+int wdt_task0,wdt_task1;
+ /* variables to hold instances of tasks*/
+TaskHandle_t t1 = NULL;
+TaskHandle_t t2 = NULL;
 byte mac[6];  //unique mac adress of esp32
 IPAddress local_IP(192,168,4,1);
 IPAddress gateway(192,168,1,1);
@@ -437,8 +448,8 @@ GPS_time S3600(3600);
 Alfa_speed A250(50);
 Alfa_speed A500(50);
 Alfa_speed a500(50);//for  Alfa stats GPIO_12 screens, reset possible !!
-Button_push Short_push12 (12,100,15,1);//GPIO pin 12 is nog vrij, button_count 0 en 1 !!!
-Button_push Long_push12 (12,2000,10,4);
+Button_push Short_push12 (12,100,15,1); //GPIO12 pull up, 100ms push time, 15s long_pulse, count 1, STAT screen 4&5
+Button_push Long_push12 (12,2000,10,4); //GPIO12 pull up, 2000ms push time, 10s long_pulse, count 4, reset STAT screen 4&5
 Button_push Short_push39 (WAKE_UP_GPIO,100,10,8);//was 39
 Button_push Long_push39 (WAKE_UP_GPIO,1500,10,8);//was 39
 
@@ -465,8 +476,18 @@ void print_wakeup_reason(){
   switch(wakeup_reason)
   {
     RTC_voltage_bat=analog_mean*calibration_bat/1000;
-    case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO"); reed=1;
-                                 rtc_gpio_deinit(GPIO_NUM_xx);//was 39
+    case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO");
+                                
+                                 pinMode(WAKE_UP_GPIO,INPUT_PULLUP);
+                                 while(millis()<200){
+                                    if (digitalRead(WAKE_UP_GPIO)==1){
+                                      esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0); //was 39  1 = High, 0 = Low
+                                      go_to_sleep(3000);
+                                      break;
+                                      }
+                                    }
+                                 rtc_gpio_deinit(GPIO_NUM_xx);//was 39   
+                                 reed=1;   
                                  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
                                  Boot_screen();
                                  break;
@@ -482,7 +503,7 @@ void print_wakeup_reason(){
                                   //RTC_voltage_bat=analog_mean*calibration_bat/1000;
                                   esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0); //was 39  1 = High, 0 = Low
                                   Sleep_screen(RTC_SLEEP_screen);
-                                  go_to_sleep(3000);//was 4000
+                                  go_to_sleep(3000); //was 4000
                                   break;                               
     case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); 
                                      break;
@@ -549,7 +570,7 @@ void Shut_down(void){
             RTC_hour=(tmstruct.tm_hour);
             RTC_min=(tmstruct.tm_min);
             }
-        go_to_sleep(10);//got to sleep na 10s     
+        go_to_sleep(5);//got to sleep na 10s     
 }
 void Update_bat(void){
     analog_bat = analogRead(PIN_BAT);
@@ -627,14 +648,13 @@ static void setTimeZone(long offset, int daylight)
     tzset();
 }
 void setup() {
-  Serial.println("Configuring WDT...");
-  esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
-  esp_task_wdt_add(NULL); //add current thread to WDT watch
   Serial.begin(115200);
   Serial.println("setup Serial");
   Serial.println("Serial Txd is on pin: "+String(TX));
   Serial.println("Serial Rxd is on pin: "+String(RX));
-  
+  Serial.println("Configuring WDT...");
+  esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
+  esp_task_wdt_add(NULL); //add current thread to WDT watch
   SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
   print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
  //sometimes after OTA hangs here ???
@@ -765,7 +785,6 @@ void setup() {
   }
   //analog_mean=RTC_voltage_bat/calibration_bat*1000;//RTC_voltage_bat staat in RTC mem !!!
   delay(100);
- 
    //Create RTOS task, so logging and e-paper update are separated (update e-paper is blocking, 800 ms !!)
   xTaskCreate(
                     taskOne,          /* Task function. */
@@ -773,7 +792,7 @@ void setup() {
                     10000,            /* Stack size in bytes. */
                     NULL,             /* Parameter passed as input of the task */
                     1,                /* Priority of the task. */
-                    NULL);            /* Task handle. */
+                    &t1);            /* Task handle. */
  
   xTaskCreate(
                     taskTwo,          /* Task function. */
@@ -781,13 +800,19 @@ void setup() {
                     10000,            /* Stack size in bytes was 10000, but stack overflow on task 2 ?????? now 20000. */
                     NULL,             /* Parameter passed as input of the task */
                     1,                /* Priority of the task. */
-                    NULL);            /* Task handle. */
+                    &t2);            /* Task handle. */
 }
  
-void loop() {  
-  feedTheDog_Task0();
-  feedTheDog_Task1();
-  esp_task_wdt_reset();
+void loop() { 
+  int wdt_task0_duration=millis()-wdt_task0;
+  int wdt_task1_duration=millis()-wdt_task1;
+  int task_timeout=(WDT_TIMEOUT -1)*1000;//1 second less then reboot timeout 
+  if((wdt_task0_duration<task_timeout)&(wdt_task1_duration<task_timeout)){
+    feedTheDog_Task0();
+    feedTheDog_Task1();
+    }
+  else if(wdt_task0_duration>20000) Serial.println("Watchdog task0 triggered");
+  else Serial.println("Watchdog task1 triggered");
   Update_bat();
   delay(100);  
 }
@@ -795,6 +820,7 @@ void loop() {
 void taskOne( void * parameter )
 {
  while(true){ 
+   wdt_task0=millis();
    if (Short_push12.Button_pushed())GPIO12_screen++;//toggle screen
    if (GPIO12_screen>config.gpio12_count)GPIO12_screen=0;
    if (Long_push12.Button_pushed()){ s10.Reset_stats(); s2.Reset_stats();a500.Reset_stats();} //resetten stats   
@@ -938,11 +964,11 @@ void taskOne( void * parameter )
  
 void taskTwo( void * parameter)
 {
-  while(true){  
+  while(true){ 
+    wdt_task1=millis();
     stat_count++;//ca 1s per screen update
     if (stat_count>config.screen_count)stat_count=0;//screen_count = 2
     Update_bat();
-   
     if(RTC_voltage_bat<3.1) low_bat_count++;
     else low_bat_count=0;
     if(long_push==true){
@@ -957,9 +983,11 @@ void taskTwo( void * parameter)
     else if(millis()<2000)Update_screen(BOOT_SCREEN);
     else if(GPS_Signal_OK==false) Update_screen(WIFI_ON);
     else if(Time_Set_OK==false) Update_screen(WIFI_ON);
+    else if(Short_push12.long_pulse){Update_screen(config.gpio12_screen[GPIO12_screen]);}//heeft voorrang, na drukken GPIO_pin 12, 10 STAT4 scherm !!!
     else if((gps_speed/1000.0f<config.stat_speed)&(Field_choice==false)){
           Update_screen(config.stat_screen[stat_count]);
           }
+   
     else {
           Update_screen(SPEED);
           stat_count=0;

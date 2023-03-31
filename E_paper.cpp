@@ -851,21 +851,21 @@ if(screen==STATS7){ //Simon bar graph screen
         if(count%20<10) offset++;
         else offset--;    
         display.setFont(&FreeSansBold18pt7b);
-        display.setCursor(offset,26);
+        display.setCursor(offset,56);
         if(Wifi_on==1){
               display.print("Wifi on  ");
               if(SoftAP_connection==true) display.print("AP !");//ap mode
               else display.print ("ST !");//station mode
-              display.setCursor(offset,56);
+              display.setCursor(offset,88);
               display.setFont(&FreeSansBold12pt7b);
               display.println(IP_adress);
               }
         else {
             display.println("Wifi off");
-            display.setCursor(180+offset%2,26);//zodat SXX niet groter wordt dan 244 pix
+            display.setCursor(180+offset%2,56);//zodat SXX niet groter wordt dan 244 pix
             display.print("S");
             display.println(ubxMessage.navPvt.numSV);
-            display.setCursor(offset,56);
+            display.setCursor(offset,88);
             display.setFont(&FreeSansBold12pt7b);
             if(ubxMessage.navPvt.numSV<5){
                   display.println("Waiting for Sats");
@@ -875,7 +875,7 @@ if(screen==STATS7){ //Simon bar graph screen
                   }
            }
         display.setFont(&FreeSansBold12pt7b);   
-        display.setCursor(offset,88);
+        display.setCursor(offset,20);
         display.print(SW_version);//change to string / array
         //Info on screen  which screen  version 
         #if defined(_GxGDEH0213B73_H_) 

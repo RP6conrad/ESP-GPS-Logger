@@ -337,7 +337,7 @@ void html_config(String& webpage){
   webpage += "</select>\n</td><td>password: the password of the wlan where the esp-logger should connect to</td>\n</tr>\n";
   //cal_bat
   webpage += "<tr>\n<td>cal_bat</td><td>\n";
-  webpage += "<input size='4' type='number' required name='cal_bat' min='1.7' max='1.89' value="+String(config.cal_bat)+" step='0.01'>\n";
+  webpage += "<input size='4' type='number' required name='cal_bat' min='1.6' max='1.89' value="+String(config.cal_bat)+" step='0.01'>\n";
   webpage += "</select>\n</td><td>cal_bat: is the calibration <br> of the battery voltage measurement (1.7-1.8).</td>\n</tr>\n"; 
   //cal_speed 
   webpage += "<tr><td>cal_speed</td><td>\n<select id='cal_speed' name='cal_speed' type='number'>\n";
@@ -403,7 +403,7 @@ void html_config(String& webpage){
   //GPIO12_screens
   webpage += "<tr>\n<td>GPIO12_screens</td><td>\n";
   webpage += "<input size='8' type='number' required name='GPIO12_screens' min='0' max='1000' value="+String(config.GPIO12_screens_persist)+" step='1'>\n";
-  webpage += "</select>\n</td><td>GPIO12_screens choice : every digit shows the according GPIO_screen after each push</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>GPIO12_screens choice : Every digit shows the according GPIO_screen after each push. Screen 4 = s10 runs, screen 5 = alfa's.</td>\n</tr>\n";
   //Board_Logo
   webpage += "<tr>\n<td>Board_Logo</td><td>\n";
   webpage += "<input size='8' type='number' required name='Board_Logo' min='0' max='20' value="+String(config.Board_Logo)+" step='1'>\n";
