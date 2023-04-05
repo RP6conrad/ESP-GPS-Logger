@@ -13,13 +13,25 @@ void Boot_screen(void){
   display.setTextColor(GxEPD_BLACK);
   display.setFont(&FreeSansBold12pt7b);
   display.setCursor(offset,24);
-  display.println("WAKE UP.....");
-  display.setCursor(offset,56);
-  display.println(SW_version);//change to string / array
-  display.setCursor(offset,88);
-  display.print("GPS logger");//display.print(calibration_speed,2);
-  display.setCursor(offset,120);
-  display.print("Need for speed !");
+  if(RTC_voltage_bat<MINIMUM_VOLTAGE){
+    display.println("Go back to sleep...");
+    display.setCursor(offset,56);
+    display.println(SW_version);//change to string / array
+    display.setCursor(offset,88);
+    display.print("Voltage to low: ");
+    display.print(RTC_voltage_bat);
+    display.setCursor(offset,116);
+    display.print("Charge battery...");
+  }
+  else { 
+    display.println("WAKE UP.....");
+    display.setCursor(offset,56);
+    display.println(SW_version);//change to string / array
+    display.setCursor(offset,88);
+    display.print("GPS logger");//display.print(calibration_speed,2);
+    display.setCursor(offset,116);
+    display.print("Need for speed !");
+    }
   display.update();
 }
 void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens

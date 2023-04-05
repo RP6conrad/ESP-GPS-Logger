@@ -294,6 +294,7 @@
  * Changed default settings when no config.txt
  * Add watchtdog to task0 + task1 separat, Time out = 60 s
  * Changed order Wifi screen, so IP is not in the middle anymore
+ * Check bat voltage@boot, if too low back to sleep. This to prevent a bootloop 
  */
 #include <SD.h>
 #include <sd_defines.h>
@@ -339,7 +340,7 @@
 #define RXD2 32 //geel is Tx Ublox, Beitian wit is Tx
 #define TXD2 33 //groen is Rx Ublox, Beitian groen is Rx
 #define PIN_BAT 35
-#define CALIBRATION_BAT_V 1.75 //voor proto 1
+#define CALIBRATION_BAT_V 1.7 //voor proto 1
 #define uS_TO_S_FACTOR 1000000UL /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP  4000        /* Time ESP32 will go to sleep (in seconds, max is ?) */
 #define WDT_TIMEOUT 60             //60 seconds WDT, opgelet zoeken naar ssid time-out<dan 10s !!!
@@ -470,14 +471,23 @@ const char *filename_backup = "/config_backup.txt";
 Method to print the reason by which ESP32 has been awaken from sleep
 */
 void print_wakeup_reason(){
+  analog_bat = analogRead(PIN_BAT);
+  RTC_voltage_bat=analog_bat*calibration_bat/1000;
+  Serial.print("Battery voltage = ");
+  Serial.println(RTC_voltage_bat);
+  if(RTC_voltage_bat<MINIMUM_VOLTAGE){
+    Boot_screen();
+    delay(1000);
+    Sleep_screen(RTC_SLEEP_screen);
+    esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0);
+    go_to_sleep(4000);
+  }
   esp_sleep_wakeup_cause_t wakeup_reason;
   wakeup_reason = esp_sleep_get_wakeup_cause();
 
   switch(wakeup_reason)
-  {
-    RTC_voltage_bat=analog_mean*calibration_bat/1000;
+  {    
     case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO");
-                                
                                  pinMode(WAKE_UP_GPIO,INPUT_PULLUP);
                                  while(millis()<200){
                                     if (digitalRead(WAKE_UP_GPIO)==1){
@@ -497,8 +507,6 @@ void print_wakeup_reason(){
                                   analog_mean = analogRead(PIN_BAT);
                                   for(int i=0;i<10;i++){
                                         Update_bat();
-                                        //analog_bat = analogRead(PIN_BAT);
-                                        //analog_mean=analog_bat*0.1+analog_mean*0.9;
                                         }
                                   //RTC_voltage_bat=analog_mean*calibration_bat/1000;
                                   esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0); //was 39  1 = High, 0 = Low
@@ -515,7 +523,7 @@ void print_wakeup_reason(){
     }
 }
 
-void go_to_sleep(int sleep_time){
+void go_to_sleep(uint64_t sleep_time){
   deep_sleep=true;
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
@@ -524,7 +532,7 @@ void go_to_sleep(int sleep_time){
   digitalWrite(13, HIGH);//flash in deepsleep, CS stays HIGH!!
   gpio_deep_sleep_hold_en();
   esp_sleep_enable_timer_wakeup( uS_TO_S_FACTOR*sleep_time);
-  Serial.println("Setup ESP32 to sleep for every " + String(sleep_time) + " Seconds");
+  Serial.println("Setup ESP32 to sleep for every " + String((int)sleep_time) + " Seconds");
   Serial.println("Going to sleep now");
   Serial.flush(); 
   delay(3000);
@@ -969,7 +977,7 @@ void taskTwo( void * parameter)
     stat_count++;//ca 1s per screen update
     if (stat_count>config.screen_count)stat_count=0;//screen_count = 2
     Update_bat();
-    if(RTC_voltage_bat<3.1) low_bat_count++;
+    if(RTC_voltage_bat<MINIMUM_VOLTAGE) low_bat_count++;
     else low_bat_count=0;
     if(long_push==true){
         Off_screen(RTC_OFF_screen);
