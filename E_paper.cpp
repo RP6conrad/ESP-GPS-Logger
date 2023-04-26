@@ -165,7 +165,9 @@ void Sleep_screen(int choice){
     if(RTC_Board_Logo==9)
       display.drawExampleBitmap(Tabou_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
     if(RTC_Board_Logo==10)
-      display.drawExampleBitmap(F2_logo_zwart, 195, 0, 48, 48, GxEPD_BLACK);  
+      display.drawExampleBitmap(F2_logo_zwart, 195, 0, 48, 48, GxEPD_BLACK);
+    if(RTC_Board_Logo==12)
+      display.drawExampleBitmap(FutureFly_logo_zwart, 195, 0, 48, 48, GxEPD_BLACK);
     // Zeil Logo's:
     if(RTC_Sail_Logo==1)//Logo's Simon Dijkstra
       display.drawExampleBitmap(GAsails_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
