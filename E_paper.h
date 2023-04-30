@@ -7,9 +7,9 @@
 //  if you are not sure which version, please test each one,
 //  if it is successful then it belongs to the model of the file name
 // The 2.66 screen has other SPI pins, and more pixels. Partof the pixels are now unused.
-//#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen
+#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen
 //#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen
-#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
+//#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
 //#include <GxDEPG0266BN/GxDEPG0266BN.h>  //2.66 screen for rollz...
 //#include <GxGDEW0213M21/GxGDEW0213M21.h>  //nog een andere versie, resolutie NIET OK vanwege resolutie !!!
 //#include <GxGDEP015OC1/GxGDEP015OC1.h>    //  GDEH015OC1 1.54" screen for Jeff Turner !!!
@@ -30,6 +30,8 @@ Flip: horizontally
 #include "Fonts/FreeSansBold9pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold12pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold18pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold30pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold75pt7b.h"//gebruikt
 #include "Fonts/SansSerif_bold_46_nr.h"//bijgevoegd in lib
 #include "Fonts/SansSerif_bold_84_nr.h"//bijgevoegd in lib
 #include "Fonts/SansSerif_bold_96_nr.h"//bijgevoegd in lib
@@ -65,6 +67,7 @@ Flip: horizontally
 #define WIFI_ON 11
 #define WIFI_STATION 12
 #define WIFI_SOFT_AP 13
+#define SPEED2 14
 #define MINIMUM_VOLTAGE 3.1       // if lower then minimum_voltage, back to sleep.....
 
 extern GxEPD_Class display;
@@ -76,7 +79,7 @@ extern bool SoftAP_connection;
 extern bool GPS_Signal_OK;
 extern float RTC_voltage_bat,alfa_window;
 extern  double delta_heading,ref_heading;
-extern int bootCount,run_count,stat_count;
+extern int bootCount,run_count,stat_count,GPIO12_screen;
 extern int ftpStatus;
 extern String IP_adress;
 extern const char SW_version[16];

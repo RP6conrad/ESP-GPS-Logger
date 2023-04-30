@@ -352,7 +352,7 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-const char SW_version[16]="SW-ver 5.74";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="v 5.74.sd";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
 #endif
@@ -997,7 +997,11 @@ void taskTwo( void * parameter)
           }
    
     else {
-          Update_screen(SPEED);
+          if(config.speed_large_font==2){
+            Update_screen(SPEED2);
+          } else {
+            Update_screen(SPEED);
+          }
           stat_count=0;
           }
   }
