@@ -31,24 +31,20 @@ SOFTWARE.
 #define GPX_HEADER 0
 #define GPX_FRAME 1
 #define GPX_END 2
-/*
-<?xml version="1.0" encoding="UTF-8"?>
-<gpx creator="ESP-GPS"
-     version="1.0"
-     xmlns="http://www.topografix.com/GPX/1/0"
-     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-     xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd">
-*/     
+ 
 void log_GPX(int part,File file){
 char bufferTx[512]; 
 int i,y; 
 int year,month,day,hour,minute,sec,sat;
 if(part==GPX_HEADER){ 
-  i= sprintf(bufferTx,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");y=y+i;
-  i= sprintf(&bufferTx[y],"<gpx creator= \"ESP-GPS\"\nversion=\"1.0\"\n xmlns=\"http://www.topografix.com/GPX/1/0\"\n");y=y+i;
+  y=0;
+  i= sprintf(bufferTx,"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");y=y+i;
+  i= sprintf(&bufferTx[y],"<gpx version=\"1.0\" creator=\"ESP-GPS SW 5.75\"\n");y=y+i; 
+  i= sprintf(&bufferTx[y],"xmlns=\"http://www.topografix.com/GPX/1/0\"\n");y=y+i;
   i= sprintf(&bufferTx[y],"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n");y=y+i;
-  i= sprintf(&bufferTx[y],"xsi:schemaLocation=\"http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd\">\n");y=y+i;
-  i= sprintf(&bufferTx[y],"<trk><trkseg>");y=y+i;
+  i= sprintf(&bufferTx[y],"xsi:schemaLocation=\"http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd\">\n");y=y+i; 
+  i= sprintf(&bufferTx[y],"<trk>\n");y=y+i;
+  i= sprintf(&bufferTx[y],"<trkseg>\n");y=y+i;
   file.write((const uint8_t *)&bufferTx,y);
   } 
 if(part==GPX_FRAME){  
@@ -68,19 +64,23 @@ if(part==GPX_FRAME){
       hour=ubxMessage.navPvt.hour;
       minute=ubxMessage.navPvt.minute;
       sec=ubxMessage.navPvt.second;
-      i= sprintf(bufferTx,"<trkpt lat=\"%f\" lon=\"%f\" >\n",lat,lon);y=y+i;
-      i= sprintf(&bufferTx[y],"<ele>%f</ele>\n",msl);y=y+i;
-      i= sprintf(&bufferTx[y],"<time>%d-%d-%dT%'02d:%'02d:%'02dZ</time>",year,month,day,hour,minute,sec);y=y+i;
-      i= sprintf(&bufferTx[y],"<course>%f</course>",course);y=y+i;
-      i= sprintf(&bufferTx[y],"<speed>%f</speed>",speed);y=y+i;
+      y=0;
+      i= sprintf(bufferTx,"<trkpt lat=\"%.7f\" lon=\"%.7f\">",lat,lon);y=y+i;
+      i= sprintf(&bufferTx[y],"<ele>%.0f</ele>",msl);y=y+i;//was float !!!
+      i= sprintf(&bufferTx[y],"<time>%d-%'02d-%'02dT%'02d:%'02d:%'02dZ</time>",year,month,day,hour,minute,sec);y=y+i;
+      i= sprintf(&bufferTx[y],"<course>%.0f</course>",course);y=y+i;
+      i= sprintf(&bufferTx[y],"<speed>%.2f</speed>",speed);y=y+i;
       i= sprintf(&bufferTx[y],"<sat>%d</sat>",sat);y=y+i;
-      i= sprintf(&bufferTx[y],"<hdop>%f</hdop></trkpt>\n",hdop);y=y+i;
-     
+      i= sprintf(&bufferTx[y],"<hdop>%.2f</hdop>",hdop);y=y+i;
+      i= sprintf(&bufferTx[y],"</trkpt>\n");y=y+i;
       file.write((const uint8_t *)&bufferTx,y);
       }
     }
   if(part==GPX_END){
-     y= sprintf(bufferTx,"</trkseg>\n</trk></gpx>\n");
+     y=0;
+     i=sprintf(bufferTx,"</trkseg>\n");y=y+i;
+     i=sprintf(&bufferTx[y],"</trk>\n");y=y+i;
+     i=sprintf(&bufferTx[y],"</gpx>\n");y=y+i;
      file.write((const uint8_t *)&bufferTx,y);
      }      
 }

@@ -227,3 +227,14 @@
 *   Add watchtdog to task0 + task1 separat, Time out = 60 s
 *   Changed order Wifi screen, so IP is not in the middle anymore
 *   Check bat voltage@boot, if too low back to sleep. This to prevent a bootloop 
+  ### Changes SW5.75
+* Bugfix time format gpx files
+* Added future fly logo (basti)
+* Bugfix .txt file M8/M10 serial nr
+* Added TROUBLE screen if no ubx message for longer then 2000 ms 
+* Added SPEED2 screen with giant Font (Simon Design)
+* filesizes always in MB
+* override watchtdog_task0 when downloading (large) files
+* Added SD Free space Mb in Boot screen
+* Boot screens changes by Simon, ESP-GPS logo added 
+* Added actual SW version & Type of e-paper to Firmware page

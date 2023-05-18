@@ -340,9 +340,9 @@ void Session_info(GPS_data G){
   strcat(message,"Ublox HW-version : ");
   strcat(message,ubxMessage.monVER.hwVersion);
   strcat(message," \n");
-  if ((ublox_type==3)|(ublox_type==4));
+  if ((ublox_type==3)|(ublox_type==4))
   sprintf(tekst,"Ublox M10 ID = %02x%02x%02x%02x%02x%02x\n",ubxMessage.ubxId.ubx_id_1,ubxMessage.ubxId.ubx_id_2,ubxMessage.ubxId.ubx_id_3,ubxMessage.ubxId.ubx_id_4,ubxMessage.ubxId.ubx_id_5,ubxMessage.ubxId.ubx_id_6);
-  if ((ublox_type==1)|(ublox_type==2));
+  if ((ublox_type==1)|(ublox_type==2))
   sprintf(tekst,"Ublox M8 ID = %02x%02x%02x%02x%02x\n",ubxMessage.ubxId.ubx_id_1,ubxMessage.ubxId.ubx_id_2,ubxMessage.ubxId.ubx_id_3,ubxMessage.ubxId.ubx_id_4,ubxMessage.ubxId.ubx_id_5);
   strcat(message,tekst);
   strcat(message,Ublox_type);

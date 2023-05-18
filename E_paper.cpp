@@ -1,16 +1,10 @@
 #include "E_paper.h"
 
-extern UBXMessage ubxMessage;
-static int update_epaper=2;
-//static int offset;
-int gyro_right=1;
 void Boot_screen(void){
-  //int offset =0;
   display.init(); 
   display.setRotation(1);
   display.fillScreen(GxEPD_WHITE);
   display.setTextColor(GxEPD_BLACK);
-//  display.setFont(&FreeSansBold12pt7b);
   display.setFont(&FreeSansBold9pt7b);
   display.setCursor(offset,14);
   display.drawExampleBitmap(ESP_GPS_logo, offset+178, 0, 48, 48, GxEPD_BLACK);
@@ -24,8 +18,11 @@ void Boot_screen(void){
     display.println(RTC_voltage_bat);
     display.setCursor(offset,76);
     display.print("Please charge battery!");
-  }
-  else { 
+    Bat_level_Simon(offset);
+    display.update();
+    }
+  else {
+    display.fillScreen(GxEPD_WHITE); 
     display.println("ESP-GPS Booting");
     display.setCursor(offset,28);
     display.println(SW_version);
@@ -33,10 +30,27 @@ void Boot_screen(void){
     display.println("Need for speed!");
     display.setFont(&FreeSansBold12pt7b);
     display.setCursor(offset,70);
-    display.println("One moment please..");
-  }
-  Bat_level_Simon(offset);
-  display.update();
+    display.println("One moment please");
+    display.setCursor(offset,98);
+    if(ublox_type<0) display.println("Auto detect GPS type");
+    if(ublox_type==0)display.println("ublox not found ??  ");
+    if(ublox_type==1)display.println("M8 9600bd");
+    if(ublox_type==2)display.println("M8 38400bd");
+    if(ublox_type==3)display.println("M10 9600bd");
+    if(ublox_type==4)display.println("M10 38400bd");
+    if(freeSpace>0){
+      display.setFont(&FreeSansBold9pt7b);
+      display.setCursor(offset,120);
+      display.print("SD Free space: ");
+      display.print(freeSpace);
+      display.print("Mb");
+      display.updateWindow(0,0,250,122,true); 
+      }
+    else{
+      Bat_level_Simon(offset);
+      display.update();
+      }  
+  }  
 }
 void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
   //int offset=0;
@@ -56,19 +70,6 @@ void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
       display.setFont(&FreeSansBold12pt7b);
       display.setCursor(offset,70);
       display.println("Saving your session..");
-/*
-      display.setFont(&FreeSansBold12pt7b);
-      display.setCursor(offset,24);
-      display.println("Save session....");
-      display.setCursor(offset,56);
-      display.print("Time: ");
-      display.print(session_time,0);
-      display.print(" S");
-      display.setCursor(offset,88);
-      display.print("AVG: ");display.print(RTC_avg_10s,2);
-      display.setCursor(offset,120);
-      display.print("Dist: ");display.print(Ublox.total_distance/1000,0);
-*/
       display.updateWindow(0,0,250,122,true);
       }
   else{
@@ -88,54 +89,11 @@ void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
       display.setFont(&FreeSansBold12pt7b);
       display.setCursor(offset,70);
       display.println("Saving your session..");
-/*
-    // Buddie logo:
-      display.drawExampleBitmap(Surfbuddie_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
-      display.setFont(&FreeSansBold9pt7b);
-      display.setCursor(offset,14);
-      display.println("Saving gps session...");
-      display.setCursor(offset,30);
-      display.print("Avg 5x10sec: ");display.print(RTC_avg_10s,2);
-      if((int)(calibration_speed*100000)==194) display.print(" knots");//1.94384449 m/s to knots !!!
-      if((int)(calibration_speed*1000000)==3600) display.print(" km/h");
-      //display.println(" km/u");
-      display.setCursor(offset,46);
-      display.print("Distance: ");display.print(Ublox.total_distance/1000000,0);display.println(" km");
-      display.setCursor(offset,62);
-      display.print("Session time: ");display.print(session_time/60,0);display.println(" min");
-    // Buddie logo:
-      display.drawExampleBitmap(Surfbuddie_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
-      display.setCursor(offset,78);
-*/
-/*    
- *     //Info on screen GNSS used
-      if(ubxMessage.monGNSS.enabled_Gnss==3) display.print("GPS + GLONAS");
-      if(ubxMessage.monGNSS.enabled_Gnss==9) display.print("GNSS = GPS + GALILEO");
-      if(ubxMessage.monGNSS.enabled_Gnss==11) display.print("GPS+GLONAS+GALILEO");
-      if(ubxMessage.monGNSS.enabled_Gnss==13) display.print("GPS+GLONAS+BEIDOU");
-      display.setCursor(offset,94);
-    //Info on screen  which screen  version 
-      #if defined(_GxGDEH0213B73_H_) 
-      display.print("E-paper 213 B73");
-      #endif
-      #if defined(_GxDEPG0213BN_H_) 
-      display.print("E-paper 213 BN");
-      #endif
-      #if defined(_GxGDEM0213B74_H_) 
-      display.print("E-paper 213B74");
-      #endif
-      display.setCursor(offset,120);
-      display.print(Ublox_type);
-*/
+
       display.updateWindow(0,0,250,122,true);
   }
   delay(10000);//om te voorkomen dat update opnieuw start !!!
 }
-//for print hour&minutes with 2 digits
-void time_print(int time){
-        if (time<10)display.print("0");
-        display.print(time);
-      }
 //Screen in deepsleep, update bat voltage, refresh every 4000s !!
 void Sleep_screen(int choice){
   if (offset>9)offset--;
@@ -306,6 +264,11 @@ void Sleep_screen(int choice){
       display.update(); 
       }
 }
+//for print hour&minutes with 2 digits
+void time_print(int time){
+        if (time<10)display.print("0");
+        display.print(time);
+      }
 void Bat_level(int X_offset,int Y_offset){
     float bat_symbol=0;
     display.fillRect(X_offset+3,Y_offset,6,3,GxEPD_BLACK);
@@ -364,11 +327,6 @@ void Time(int offset){
     display.setCursor(offset,120);
     display.setFont(&FreeSansBold9pt7b);
     time_print(RTC_hour);display.print(":");time_print(RTC_min);
-//    time_print(ubxMessage.navSat.hour);display.print(":");time_print(ubxMessage.navSat.min);
-//    time_print(tmstruct.tm_hour);display.print(":");time_print(tmstruct.tm_min);
-//    display.print(time_hour);display.print(":");display.print(time_min);
-//    time_print(ubxMessage.navSat.iTOW);
-//    display.print(" ");display.print(RTC_day);display.print("-");display.print(RTC_month);display.print("-");display.print(RTC_year);display.print();
     }     
 void Speed_in_Unit(int offset){
     display.setRotation(0);
@@ -422,7 +380,7 @@ void Update_screen(int screen){
       Bat_level_Simon(offset);
       Sats_level(offset);
       Speed_in_Unit(offset);
-      delay(5000);
+      delay(1000);
     }
     if(screen==WIFI_ON){  
       update_delay=1000;
@@ -439,24 +397,19 @@ void Update_screen(int screen){
       display.println("SDcard OK");
       else display.println("No SDcard!!!");
       if(Wifi_on==1){
-//        display.fillRect(0, 50, 180, 50,GxEPD_WHITE);
-//        display.fillRect(25, 50, 50, 25,GxEPD_BLACK);
-//        display.fillRect(0, 43, 180, 79,GxEPD_WHITE);//clear lower part
-        display.setCursor(offset,56);
-        if(SoftAP_connection==true) display.print("Wifi AP:");//ap mode
-        else display.print("Wifi:");//station mode
-        display.println(config.ssid);
-        display.setCursor(offset,84);
-        display.setFont(&FreeSansBold12pt7b);
+        display.setCursor(offset,60);
         display.fillRect(0, 43, 180, 79,GxEPD_WHITE);//clear lower part
-        display.println("Connect to ");
-//        if(SoftAP_connection==true) display.print("at AP: ");//ap mode
-//        else display.print("at: ");//station mode
+        display.setFont(&FreeSansBold12pt7b);
+        display.print("Connect to :");
+        display.setCursor(offset,82);
+        if(SoftAP_connection==true) display.print("Wifi AP:");//ap mode
+        else display.print("Wifi: ");//station mode
+        display.println(config.ssid);
         display.setFont(&FreeSansBold9pt7b);
-        display.setCursor(offset,98);
-        display.print("  http://");
+        display.setCursor(offset,104);
+        display.print("http://");
         display.println(IP_adress);
-        display.setCursor(offset,112);
+        display.setCursor(offset,120);
         display.println("Use your browser");
         Bat_level_Simon(offset);
       }
@@ -464,9 +417,11 @@ void Update_screen(int screen){
         display.setFont(&FreeSansBold9pt7b);
         display.fillRect(0, 0, 180, 15,GxEPD_WHITE);
         display.setCursor(offset,14);
-        display.println("ESP-GPS ready");
-        display.setCursor(offset,56);
-        display.println("Wifi off");
+        display.print("ESP-GPS ready  Wifi off");
+        display.setCursor(offset,60);
+        display.print("SD Free space: ");
+        display.print(freeSpace);
+        display.print("Mb");        
         display.setFont(&FreeSansBold12pt7b);
         display.setCursor(offset,84);
         if(ubxMessage.navPvt.numSV<5){
@@ -476,7 +431,6 @@ void Update_screen(int screen){
           display.println("Please go outside");
           Bat_level_Simon(offset);
           Sats_level(offset);
-//          Time(offset);
         }
         else{
           display.println("Ready for action");
@@ -491,42 +445,12 @@ void Update_screen(int screen){
             display.print(config.stat_speed*3.6);
             display.print("km/h");
           }
-//          display.print("Current speed=");
-//          display.print(gps_speed/1000.0f*3.6);
-//          display.print("(<");
-//          display.print(config.stat_speed*3.6);
-//          display.print(")");
           Bat_level_Simon(offset);
           Sats_level(offset);
           M8_M10(offset);
-//          Time(offset);
           Speed_in_Unit(offset);
-//          display.update();
-//          delay(5000);
-//          display.fillScreen(GxEPD_WHITE); 
-//          display.update();
-//          Update_screen(config.stat_screen[stat_count]);
         }
       }
-//      display.setFont(&FreeSansBold12pt7b);   
-//      display.setCursor(offset,20);
-//      display.print(SW_version);//change to string / array
-      //Info on screen  which screen  version 
-/*      #if defined(_GxGDEH0213B73_H_) 
-      display.print(" B73");
-      #endif
-      #if defined(_GxDEPG0213BN_H_) 
-      display.print(" BN");
-      #endif
-      #if defined(_GxGDEM0213B74_H_) 
-      display.print(" B74");
-      #endif
-      display.setCursor(offset,120);
-      display.print("Bat:");display.print(RTC_voltage_bat,2); 
-      display.setCursor(offset+110,120);
-      display.print("FTP: ");display.println(ftpStatus);  
-      if(screen!=old_screen)count=0;//eerste keer full update 
-*/
     }
     if(screen==WIFI_STATION){  
       update_delay=100;   
@@ -540,12 +464,7 @@ void Update_screen(int screen){
       if(sdOK==true) display.println("SDcard OK");
       else display.println("No SDcard!!!");
       display.fillRect(0, 43, 180, 79,GxEPD_WHITE);//clear lower part
-//      display.setCursor(offset,56);
-//      display.print("Wifi on: ");
-//      display.println(config.ssid);
       display.setFont(&FreeSansBold12pt7b);
-//      display.setCursor(offset,120);
-//      display.println(config.ssid);
       display.setCursor(offset,70);
       display.print("Create wifi AP");
       display.setFont(&FreeSansBold9pt7b);
@@ -553,14 +472,11 @@ void Update_screen(int screen){
       display.print("Use magnet<10s!  ");
       display.println(wifi_search); 
       Bat_level_Simon(offset);
-//      Time(offset);
       if(screen!=old_screen)count=0;//eerste keer full update 
     }
     if(screen==WIFI_SOFT_AP){  
       update_delay=500;   
       display.fillScreen(GxEPD_WHITE);
-//      display.fillRect(0,0,255,122,GxEPD_WHITE);
-      display.update();
       display.drawExampleBitmap(ESP_GPS_logo, offset+178, 0, 48, 48, GxEPD_BLACK);
       display.setFont(&FreeSansBold9pt7b);
       display.setCursor(offset,14);
@@ -571,18 +487,17 @@ void Update_screen(int screen){
       if(sdOK==true)
       display.println("SDcard OK");
       else display.println("No SDcard!!!");
-//      display.fillRect(0,0,255,122,GxEPD_WHITE);         
-//      display.fillRect(0, 43, 180, 79,GxEPD_WHITE);//clear lower part
       display.setFont(&FreeSansBold12pt7b);
       display.setCursor(offset,70);
       display.print("Wifi AP:  ");
-      display.println((String)"ESP32AP " + IP_adress);
+      display.println("ESP32AP ");
       display.setCursor(offset,88);
       display.print("password ");
-      display.setCursor(offset,106);
+      display.setCursor(offset,120);
+      display.print(IP_adress);
+      display.print("  ");
       display.print(wifi_search);   
       Bat_level_Simon(offset);
-//      Time(offset);
       if(screen!=old_screen)count=0;//eerste keer full update 
     }
     if(screen==SPEED){
@@ -767,13 +682,6 @@ void Update_screen(int screen){
               display.print(" km");
             }
             Bat_level(offset+222,0);
-            /*
-            display.setCursor(offset+135,24);
-            display.setFont(&FreeSansBold12pt7b);
-            display.print("R ");
-            display.setFont(&FreeSansBold18pt7b);
-            display.print(Ublox.run_distance/1000,0);
-            */
           }
           if(field==6){
             display.setFont(&FreeSansBold12pt7b);
@@ -843,19 +751,19 @@ void Update_screen(int screen){
           display.setFont(&FreeSansBold75pt7b);
         // change color when 2s speed is in top5
           if (S2.s_max_speed*calibration_speed>S2.avg_speed[5]*calibration_speed){
-              display.fillScreen(GxEPD_BLACK);
-//            display.fillRect(0,0,255,122,GxEPD_BLACK);         
-            display.setTextColor(GxEPD_WHITE);
-          } else {
-              display.fillScreen(GxEPD_WHITE);
-//            display.fillRect(0,0,255,122,GxEPD_WHITE);         
-            display.setTextColor(GxEPD_BLACK);
-          }
+              display.fillScreen(GxEPD_BLACK);        
+              display.setTextColor(GxEPD_WHITE);
+              } 
+          else {
+              display.fillScreen(GxEPD_WHITE);      
+              display.setTextColor(GxEPD_BLACK);
+              }
           if(gps_speed*calibration_speed<10){
             display.setCursor(40,115);
-          } else {
-            display.setCursor(0,115);
           }
+          else{
+            display.setCursor(0,115);
+             }
           display.print(gps_speed*calibration_speed,0);
           if(gps_speed*calibration_speed<100){
             display.setFont(&FreeSansBold30pt7b);
@@ -878,10 +786,14 @@ void Update_screen(int screen){
           display.print("Low GPS signal !");
           Sats_level(offset);
         }
-//        Bat_level(offset+222,0);
-//        Bat_level_Simon(offset);
-//        Speed_in_Unit(offset);
       }
+      if(screen==TROUBLE){ 
+         display.setFont(&FreeSansBold12pt7b);
+         display.setCursor(offset,25);
+         display.println("No GPS frames for more then 1s.... ");
+         display.setCursor(offset,120);
+         display.print(time_now);
+      }  
       if(screen==STATS1){                        //2s,10sF,10sS, AVG
         update_delay=(config.Stat_screens_time-2)*1000;
         display.setFont(&FreeSansBold12pt7b);

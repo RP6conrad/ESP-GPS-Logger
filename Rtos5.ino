@@ -294,7 +294,18 @@
  * Changed default settings when no config.txt
  * Add watchtdog to task0 + task1 separat, Time out = 60 s
  * Changed order Wifi screen, so IP is not in the middle anymore
- * Check bat voltage@boot, if too low back to sleep. This to prevent a bootloop 
+ * Check bat voltage@boot, if too low back to sleep. This to prevent a bootloop
+ * SW5.75
+ * Bugfix time format gpx files
+ * Added future fly logo (basti)
+ * Bugfix .txt file M8/M10 serial nr
+ * Added TROUBLE screen if no ubx message for longer then 2000 ms 
+ * Added SPEED2 screen with giant Font (Simon Design)
+ * filesizes always in MB
+ * override watchtdog_task0 when downloading (large) files
+ * Added SD Free space Mb in Boot screen
+ * Boot screens changes by Simon, ESP-GPS logo added 
+ * Added actual SW version & Type of e-paper to Firmware page
  */
 #include <SD.h>
 #include <sd_defines.h>
@@ -352,7 +363,8 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 
 String IP_adress="0.0.0.0";
-const char SW_version[16]="v 5.74.sd";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 5.75";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
 #endif
@@ -375,13 +387,14 @@ bool GPS_Signal_OK = false;
 bool long_push = false;
 bool Field_choice = false;
 bool NTP_time_set = false;
-
+extern bool downloading_file;
 int analog_bat;
 int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay;
 int start_logging_millis;
 int wifi_search=10;//was 10
 int ftpStatus=0;
-int time_out_nav_pvt=1200;
+int time_out_nav_pvt=2000;
+int last_gps_msg=0;
 int nav_pvt_message=0;
 int old_message=0;
 int nav_sat_message=0;
@@ -392,11 +405,12 @@ int stat_screen=5;//keuze stat scherm indien stilstand
 int GPIO12_screen=0;//keuze welk scherm
 int low_bat_count;
 int gps_speed;
-int ublox_type=0;
+int ublox_type= -1;
 float alfa_window;
 float analog_mean=2000;
 float Mean_heading,heading_SD;
 int wdt_task0,wdt_task1;
+int freeSpace;
  /* variables to hold instances of tasks*/
 TaskHandle_t t1 = NULL;
 TaskHandle_t t2 = NULL;
@@ -695,7 +709,14 @@ void setup() {
         else {
         sdOK = true;Serial.println("SDCard found!");
         uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+        uint64_t totalBytes=SD.totalBytes() / (1024 * 1024);
+        uint64_t usedBytes=SD.usedBytes() / (1024 * 1024);
+        freeSpace=totalBytes-usedBytes;
+        Boot_screen();Boot_screen();
         Serial.printf("SD Card Size: %lluMB\n", cardSize); 
+        Serial.printf("SD Total bytes: %lluMB\n", totalBytes); 
+        Serial.printf("SD Used bytes: %lluMB\n", usedBytes); 
+        Serial.printf("SD free space: %lluMB\n", totalBytes-usedBytes); 
         Serial.println(F("Loading configuration..."));// Should load default config 
         loadConfiguration(filename, filename_backup, config); // load config file
         Serial.print(F("Print config file...")); 
@@ -819,20 +840,27 @@ void loop() {
     feedTheDog_Task0();
     feedTheDog_Task1();
     }
-  else if(wdt_task0_duration>20000) Serial.println("Watchdog task0 triggered");
-  else Serial.println("Watchdog task1 triggered");
+  if((wdt_task0_duration>task_timeout)&(downloading_file)) {
+    feedTheDog_Task0();
+    wdt_task0=millis();
+    Serial.println("Extend watchdog_timeout due long download"); 
+    }     
+  if((wdt_task0_duration>task_timeout)&(!downloading_file)) Serial.println("Watchdog task0 triggered");
+  if(wdt_task1_duration>task_timeout) Serial.println("Watchdog task1 triggered");
   Update_bat();
-  delay(100);  
+  delay(100); 
+  //if(gps_speed>4000) Ublox_off();//test voor foutmelding vanaf 4m/s
 }
 
 void taskOne( void * parameter )
 {
  while(true){ 
    wdt_task0=millis();
+   #if defined (GPIO12_ACTIF)
    if (Short_push12.Button_pushed())GPIO12_screen++;//toggle screen
    if (GPIO12_screen>config.gpio12_count)GPIO12_screen=0;
    if (Long_push12.Button_pushed()){ s10.Reset_stats(); s2.Reset_stats();a500.Reset_stats();} //resetten stats   
-     
+   #endif  
    if(Long_push39.Button_pushed()) Shut_down();
    if (Short_push39.Button_pushed()){
       config.field=Short_push39.button_count;
@@ -873,7 +901,7 @@ void taskOne( void * parameter )
           }
         #if defined (STATIC_DEBUG)
         msgType = processGPS(); //debug purposes
-        static int testtime;;
+        static int testtime;
         if((millis()-testtime)>1000){
               testtime=millis();
               Set_GPS_Time(config.timezone);
@@ -912,6 +940,7 @@ void taskOne( void * parameter )
                   float sAcc=ubxMessage.navPvt.sAcc/1000;
                   gps_speed=ubxMessage.navPvt.gSpeed; //hier alles naar mm/s !!
                   static int last_flush_time=0;
+                  last_gps_msg=millis();
                   if((millis()-last_flush_time)>60000){
                       Flush_files();
                       last_flush_time=millis();
@@ -943,7 +972,6 @@ void taskOne( void * parameter )
      else if( msgType == MT_NAV_PVT )  { //order messages in ubx should be ascending !!!
           if(Time_Set_OK==true){
                 nav_pvt_message++;
-                //if(config.logUBX_nav_sat&((nav_pvt_message)%10==0)&(nav_pvt_message>10)){Poll_NAV_SAT();}
                 }
           }      
       else if( msgType == MT_NAV_SAT )  { 
@@ -991,11 +1019,13 @@ void taskTwo( void * parameter)
     else if(millis()<2000)Update_screen(BOOT_SCREEN);
     else if(GPS_Signal_OK==false) Update_screen(WIFI_ON);
     else if(Time_Set_OK==false) Update_screen(WIFI_ON);
+    #if defined (GPIO12_ACTIF)
     else if(Short_push12.long_pulse){Update_screen(config.gpio12_screen[GPIO12_screen]);}//heeft voorrang, na drukken GPIO_pin 12, 10 STAT4 scherm !!!
+    #endif
     else if((gps_speed/1000.0f<config.stat_speed)&(Field_choice==false)){
           Update_screen(config.stat_screen[stat_count]);
           }
-   
+    else if((millis()-last_gps_msg)>time_out_nav_pvt) Update_screen(TROUBLE);
     else {
           if(config.speed_large_font==2){
             Update_screen(SPEED2);

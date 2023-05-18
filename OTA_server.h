@@ -4,13 +4,14 @@
 #include <Update.h>
 #include "Rtos5.h"
 #include "OTA_html.h"
-
+bool downloading_file=false;
 const char* host = "esp32";
+extern const char E_paper_version[16];
 WebServer server(80);
 
 //SD Card webinterface download section
 String webpage = ""; //String to save the html code
-
+String loginIndex = "";
 void append_page_header(){
   webpage = html_header;
 }
@@ -97,12 +98,13 @@ void SD_file_download(String filename)
     File download = SD.open("/"+filename);
     if (download) 
     {
+      downloading_file=true;
       filename.remove(0,1);//remove 1 character starting at index 0, this is /, after downloading -> _filename....
       server.sendHeader("Content-Disposition", "attachment; filename="+filename);
       server.sendHeader("Connection", "close");
       server.streamFile(download, "application/octet-stream");
       download.close();
-    } else {ReportFileNotPresent("download");}
+    } else {ReportFileNotPresent("download");downloading_file=false;}
   } else{ ReportSDNotPresent();}
 }
 
@@ -149,10 +151,11 @@ void printDirectory(const char * dirname, uint8_t levels)
       String fsize = "";
       time_t file_date = file.getLastWrite();//changes JH 19/11/2022
       String fd = Print_time(file_date);//Winscp MLSD expect UTC time !!!
-      if (bytes < 1024)                     fsize = String(bytes)+" B";
-      else if(bytes < (1024 * 1024))        fsize = String(bytes/1024.0,3)+" KB";
-      else if(bytes < (1024 * 1024 * 1024)) fsize = String(bytes/1024.0/1024.0,3)+" MB";
-      else                                  fsize = String(bytes/1024.0/1024.0/1024.0,3)+" GB";
+      //if (bytes < 1024)                     fsize = String(bytes)+" B";
+      //else if(bytes < (1024 * 1024))        fsize = String(bytes/1024.0,3)+" KB";
+      //else if(bytes < (1024 * 1024 * 1024)) fsize = String(bytes/1024.0/1024.0,3)+" MB";
+      //else                                  fsize = String(bytes/1024.0/1024.0/1024.0,3)+" GB";
+      fsize = String(bytes/1024.0/1024.0,3)+" MB";//fsize always in MB !!!      
       webpage += "<td>"+fsize+"</td>";
       webpage += "<td>"+fd+"</td>"; //
       webpage += "<td>";
@@ -434,25 +437,30 @@ String style =
 "input{background:#f1f1f1;border:0;padding:0 15px}body{background:#3498db;font-family:sans-serif;font-size:14px;color:#777}"
 "#file-input{padding:0;border:1px solid #ddd;line-height:44px;text-align:left;display:block;cursor:pointer}"
 "#bar,#prgbar{background-color:#f1f1f1;border-radius:10px}#bar{background-color:#3498db;width:0%;height:10px}"
-"form{background:#fff;max-width:258px;margin:75px auto;padding:30px;border-radius:5px;text-align:center}"
+"form{background:#fff;max-width:358px;margin:75px auto;padding:30px;border-radius:5px;text-align:center}"
 ".btn{background:#3498db;color:#fff;cursor:pointer}</style>";
 
 /* Login page */
-String loginIndex = 
-"<form name=loginForm>"
-"<h1>ESP32 Login</h1>"
-"<input name=userid placeholder='User ID'> "
-"<input name=pwd placeholder=Password type=Password> "
-"<input type=submit onclick=check(this.form) class=btn value=Login></form>"
-"<script>"
-"function check(form) {"
-"if(form.userid.value=='admin' && form.pwd.value=='admin')"//hier wordt het paswoord bepaald !!
-"{window.open('/serverIndex')}"
-"else"
-"{alert('Error Password or Username')}"
-"}"
-"</script>" + style;
- 
+void makeLoginString(void){
+  String  actual_SW=SW_version;
+  String e_type=E_paper_version;
+  loginIndex = "";
+  loginIndex += F("<form name=loginForm>");
+  loginIndex += F("<h1>ESP32 Login</h1>");
+  loginIndex += F("<h2>Actual firmware : "); loginIndex += actual_SW +"</h2>";
+  loginIndex += F("<h2>"); loginIndex += e_type +"</h2>";
+  loginIndex += F("<input name=userid placeholder='User ID'> ");
+  loginIndex += F("<input name=pwd placeholder=Password type=Password> ");
+  loginIndex += F("<input type=submit onclick=check(this.form) class=btn value=Login></form>");
+  loginIndex += F("<script>");
+  loginIndex += F("function check(form) {");
+  loginIndex += F("if(form.userid.value=='admin' && form.pwd.value=='admin')");//hier wordt het paswoord bepaald !!
+  loginIndex += F("{window.open('/serverIndex')}");
+  loginIndex += F("else");
+  loginIndex += F("{alert('Error Password or Username')}");
+  loginIndex += F("}");
+  loginIndex += F("</script>");loginIndex += style;
+} 
 /* Server Index Page */
 //https://github.com/italocjs/ESP32_OTA_APMODE/blob/main/Main.cpp
 String serverIndex = 
@@ -515,6 +523,7 @@ void OTA_setup(void) {
   Serial.println("mDNS responder started");
   /*return index page which is stored in serverIndex */
   server.on("/firmware", HTTP_GET, []() {
+    makeLoginString();
     server.sendHeader("Connection", "close");
     server.send(200, "text/html", loginIndex);
   });
