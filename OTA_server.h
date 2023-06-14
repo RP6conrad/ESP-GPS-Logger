@@ -2,6 +2,7 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <Update.h>
+#include <EEPROM.h>
 #include "Rtos5.h"
 #include "OTA_html.h"
 bool downloading_file=false;
@@ -398,7 +399,12 @@ void handleConfigUpload() {
     doc["Sleep_info"] = server.arg("Sleep_info");
     doc["ssid"] = server.arg("ssid");
     doc["password"] = server.arg("password");
-      
+
+    config.ublox_type=server.arg("GPS_Type").toInt();
+    if(config.ublox_type==0xFF) {//not in config.txt but saved in EEPROM !!!)
+      EEPROM.write(0, config.ublox_type);
+      EEPROM.commit();
+      }  
     // Pretty Serialize JSON to file
     if (serializeJsonPretty(doc, file) == 0) {
       Serial.println(F("Failed to write to file"));

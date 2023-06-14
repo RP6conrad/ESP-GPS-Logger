@@ -6,7 +6,7 @@
 #define DEG2RAD 0.0174532925  //is PI/180 !!!
 #define BUFFER_SIZE 10000  //gewenste buffer grootte voor de GPS groundspeed data,opgelet voor 10Hz moet de buffer veel groter zijn !!! Vb 1852m bij 2000 samples is min 10m/s
 //buffer verkleinen van 5000 tot 1000, zodat bij 2Hz en 600s toch 1 sec takt
-#define BUFFER_ALFA 2000     //gewenste buffer grootte voor alfa speed berekening, hier moet maar 500 m afstand in kunnen !!
+#define BUFFER_ALFA 2000     //gewenste buffer grootte voor alfa speed berekening, hier moet maar 500 m afstand in kunnen !!10
 #define FILTER_MIN_SATS 5   //aan 10 Hz is dit 200 s, dus laagste snelheid is dan 500m/200s, dit is 2.5m/s of <10 km/h
 #define FILTER_MAX_sACC 2   
 #define NR_OF_BAR 42 //aantal bar in de bar_graph

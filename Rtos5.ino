@@ -306,6 +306,15 @@
  * Added SD Free space Mb in Boot screen
  * Boot screens changes by Simon, ESP-GPS logo added 
  * Added actual SW version & Type of e-paper to Firmware page
+ * SW 5.76
+ * Sleeptime 3000s -> 21600s
+ * nav_sat timeout 2000 ms -> 4000 ms
+ * add 1h to speed screen, setting 9
+ * bugfix wifiAP screen : name SoftAP
+ * shutdown screen : Saving your session or Go back to sleep
+ * Autodetect GPS only once, then saved in EEPROM
+ * Can be changed over the webserver (configuration), only set AUTODETECT again !
+ * Added support for the ublox M9 (Beitian BK180), logging@20Hz + 4 gnss simultan
  */
 #include <SD.h>
 #include <sd_defines.h>
@@ -337,6 +346,7 @@
 #include <lwip/apps/sntp.h>
 #include <esp32-hal.h>
 #include <time.h>
+#include <EEPROM.h>
 #include "Rtos5.h"
 
 #define SPI_MOSI 23
@@ -353,7 +363,7 @@
 #define PIN_BAT 35
 #define CALIBRATION_BAT_V 1.7 //voor proto 1
 #define uS_TO_S_FACTOR 1000000UL /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP  4000        /* Time ESP32 will go to sleep (in seconds, max is ?) */
+#define TIME_TO_SLEEP  21600UL        /* Time ESP32 will go to sleep (no for 6h, 4/day) */
 #define WDT_TIMEOUT 60             //60 seconds WDT, opgelet zoeken naar ssid time-out<dan 10s !!!
 
 #define MIN_numSV_FIRST_FIX 5     //alvorens start loggen, changed from 4 to 5 7.1/2023
@@ -361,9 +371,9 @@
 #define MIN_numSV_GPS_SPEED_OK 4  //min aantal satellieten voor berekenen snelheid, anders 
 #define MAX_Sacc_GPS_SPEED_OK 1   //max waarde Sacc voor berekenen snelheid, anders 0
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
-
+#define EEPROM_SIZE 1             //use 1 byte in eeprom for saving type of ublox
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 5.75";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 5.76";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -387,13 +397,14 @@ bool GPS_Signal_OK = false;
 bool long_push = false;
 bool Field_choice = false;
 bool NTP_time_set = false;
+bool Shut_down_Save_session = false;
 extern bool downloading_file;
 int analog_bat;
 int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay;
 int start_logging_millis;
 int wifi_search=10;//was 10
 int ftpStatus=0;
-int time_out_nav_pvt=2000;
+int time_out_nav_pvt=4000;
 int last_gps_msg=0;
 int nav_pvt_message=0;
 int old_message=0;
@@ -405,7 +416,6 @@ int stat_screen=5;//keuze stat scherm indien stilstand
 int GPIO12_screen=0;//keuze welk scherm
 int low_bat_count;
 int gps_speed;
-int ublox_type= -1;
 float alfa_window;
 float analog_mean=2000;
 float Mean_heading,heading_SD;
@@ -444,6 +454,7 @@ RTC_DATA_ATTR int RTC_Board_Logo;
 RTC_DATA_ATTR int RTC_Sail_Logo;
 RTC_DATA_ATTR int RTC_SLEEP_screen=0;
 RTC_DATA_ATTR int RTC_OFF_screen=0;
+RTC_DATA_ATTR int RTC_counter=0;
 //Simon
 RTC_DATA_ATTR float calibration_bat=1.75;//bij ontwaken uit deepsleep niet noodzakelijk config file lezen
 RTC_DATA_ATTR float RTC_voltage_bat=3.6;
@@ -476,7 +487,7 @@ GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ ELINK_DC, /*RST=*/ ELINK_RESET);
 GxEPD_Class display(io, /*RST=*/ ELINK_RESET, /*BUSY=*/ ELINK_BUSY);
 #endif
 
-SPIClass sdSPI(VSPI);
+SPIClass sdSPI(VSPI);//was VSPI
 
 const char *filename = "/config.txt";
 const char *filename_backup = "/config_backup.txt"; 
@@ -506,7 +517,7 @@ void print_wakeup_reason(){
                                  while(millis()<200){
                                     if (digitalRead(WAKE_UP_GPIO)==1){
                                       esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0); //was 39  1 = High, 0 = Low
-                                      go_to_sleep(3000);
+                                      go_to_sleep(TIME_TO_SLEEP);
                                       break;
                                       }
                                     }
@@ -525,7 +536,7 @@ void print_wakeup_reason(){
                                   //RTC_voltage_bat=analog_mean*calibration_bat/1000;
                                   esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0); //was 39  1 = High, 0 = Low
                                   Sleep_screen(RTC_SLEEP_screen);
-                                  go_to_sleep(3000); //was 4000
+                                  go_to_sleep(TIME_TO_SLEEP); //was 4000
                                   break;                               
     case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); 
                                      break;
@@ -592,7 +603,7 @@ void Shut_down(void){
             RTC_hour=(tmstruct.tm_hour);
             RTC_min=(tmstruct.tm_min);
             }
-        go_to_sleep(5);//got to sleep na 10s     
+        go_to_sleep(5);//got to sleep after 5 s, this to prevent booting when GPIO39 is still low !     
 }
 void Update_bat(void){
     analog_bat = analogRead(PIN_BAT);
@@ -610,7 +621,7 @@ void printLocalTime(){
 }  
 //For RTOS, the watchdog has to be triggered
 void feedTheDog_Task0(){
-  TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable
+  TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
   TIMERG0.wdt_feed=1;                       // feed dog
   TIMERG0.wdt_wprotect=0;                   // write protect
 }
@@ -670,6 +681,8 @@ static void setTimeZone(long offset, int daylight)
     tzset();
 }
 void setup() {
+  EEPROM.begin(EEPROM_SIZE);
+  config.ublox_type = EEPROM.read(0);
   Serial.begin(115200);
   Serial.println("setup Serial");
   Serial.println("Serial Txd is on pin: "+String(TX));
@@ -689,21 +702,26 @@ void setup() {
   
   Ublox_on();//beitian bn220 power supply over output 25,26,27
   Serial2.setRxBufferSize(1024); // increasing buffer size ?
-  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2
-  Serial.println("Serial2 9600bd Txd is on pin: "+String(TXD2));
-  Serial.println("Serial2 9600bd Rxd is on pin: "+String(RXD2));
+  if((config.ublox_type==M8_38400BD)|(config.ublox_type==M9_38400BD)|  (config.ublox_type==M10_38400BD)){
+    Serial2.begin(38400, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2  
+    }
+  else{
+   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2
+   }   
+  Serial.println("Serial2 Txd is on pin: "+String(TXD2));
+  Serial.println("Serial2 Rxd is on pin: "+String(RXD2));
   for(int i=0;i<425;i++){//Startup string van ublox to serial, ca 424 char !!
      while (Serial2.available()) {
               Serial.print(char(Serial2.read()));
               }
      delay(2);   //was delay (1)
      }
-  ublox_type=Auto_detect_ublox();//test for ublox type and baudrate   
+  
   sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
 
   struct timeval tv = { .tv_sec =  0, .tv_usec = 0 };
   settimeofday(&tv, NULL);
-  if (!SD.begin(SDCARD_SS, sdSPI)) {//test for faster writing, JH 25/12/2022
+  if (!SD.begin(SDCARD_SS, sdSPI)) {
         sdOK = false;Serial.println("No SDCard found!");
         } 
         else {
@@ -712,7 +730,7 @@ void setup() {
         uint64_t totalBytes=SD.totalBytes() / (1024 * 1024);
         uint64_t usedBytes=SD.usedBytes() / (1024 * 1024);
         freeSpace=totalBytes-usedBytes;
-        Boot_screen();Boot_screen();
+        Boot_screen();
         Serial.printf("SD Card Size: %lluMB\n", cardSize); 
         Serial.printf("SD Total bytes: %lluMB\n", totalBytes); 
         Serial.printf("SD Used bytes: %lluMB\n", usedBytes); 
@@ -722,14 +740,22 @@ void setup() {
         Serial.print(F("Print config file...")); 
         printFile(filename); 
         } 
-  if(ublox_type==0){
-    Serial.println("Can't detect type and or baudrate of ublox....");
+  config.ublox_type = EEPROM.read(0);
+  if(config.ublox_type==0xFF) {
+    Auto_detect_ublox();//only test for ublox type and baudrate if unknown in configuration
+    if(config.ublox_type!=UBLOX_TYPE_UNKNOWN){
+      EEPROM.write(0, config.ublox_type);
+      EEPROM.commit();
+      }
+    else{
+       Serial.println("Can't detect type and or baudrate of ublox....");
+      }  
     }     
-  if((ublox_type==1)|(ublox_type==2)){
+  if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)){
     Init_ublox(); //switch to ubx protocol
     }
-  if((ublox_type==3)|(ublox_type==4)){
-    Init_ubloxM10(); //switch to ubx protocol
+  if((config.ublox_type==M9_9600BD)|(config.ublox_type==M9_38400BD)|(config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)){
+    Init_ubloxM10(); //switch to ubx protocol, same for M9/M10
     }
   Serial.print("SW Ublox=");
   Serial.println(ubxMessage.monVER.swVersion);
@@ -743,10 +769,10 @@ void setup() {
   Serial.println();  
   Serial.println (ubxMessage.monGNSS.default_Gnss);
   Serial.println (ubxMessage.monGNSS.enabled_Gnss);
-  if((ublox_type==1)|(ublox_type==2)){
+  if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)){
       Set_rate_ublox(config.sample_rate);//after reading config file !! 
       } 
-  if((ublox_type==3)|(ublox_type==4)){
+  if((config.ublox_type==M9_9600BD)|(config.ublox_type==M9_38400BD)|(config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)){
       Set_rate_ubloxM10(config.sample_rate);//after reading config file !! 
       }  
   Update_screen(BOOT_SCREEN);
@@ -913,11 +939,6 @@ void taskOne( void * parameter )
           //while (Serial2.available()) {
           //Serial.print(char(Serial2.read()));}  
  if ( msgType == MT_NAV_DOP ) {      //Logging after NAV_DOP, ublox sends first NAV_PVT, and then NAV_DOP.  
-        #if defined (STATIC_DEBUG)
-        //Serial.print(" DOPiTOW P ");Serial.print (ubxMessage.navPvt.iTOW);
-        //Serial.print(" DOPiTOW N ");Serial.println (ubxMessage.navDOP.iTOW);
-        #endif     
-      
         if((ubxMessage.navPvt.numSV>=MIN_numSV_FIRST_FIX)&((ubxMessage.navPvt.sAcc/1000.0f)<MAX_Sacc_FIRST_FIX)&(ubxMessage.navPvt.valid>=7)&(GPS_Signal_OK==false)){
               GPS_Signal_OK=true;
               first_fix_GPS=millis()/1000;
@@ -930,6 +951,7 @@ void taskOne( void * parameter )
           if(avg_speed>MIN_SPEED_START_LOGGING){
             if(Set_GPS_Time(config.timezone)){            
                 Time_Set_OK=true;
+                Shut_down_Save_session=true;
                 start_logging_millis=millis();
                 Open_files();//only start logging if GPS signal is OK
                 }
@@ -982,9 +1004,7 @@ void taskOne( void * parameter )
               Serial.print ("Max cno= ");Serial.println (Ublox_Sat.sat_info.Mean_max_cno);
               Serial.print ("Min cno= ");Serial.println (Ublox_Sat.sat_info.Mean_min_cno);
               Serial.print ("Sats= ");Serial.println (Ublox_Sat.sat_info.Mean_numSV);
-              //Serial.print("iTOW ");Serial.print(ubxMessage.navSat.iTOW);
               Serial.print("numSV ");Serial.println(ubxMessage.navSat.numSvs);
-              //Serial.print(" len ");Serial.println(ubxMessage.navSat.len);
               
               for(int i=0;i<ubxMessage.navSat.numSvs;i++){
                 Serial.print("gnssID "); Serial.print(ubxMessage.navSat.sat[i].gnssId);

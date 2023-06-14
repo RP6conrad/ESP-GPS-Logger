@@ -238,3 +238,12 @@
 * Added SD Free space Mb in Boot screen
 * Boot screens changes by Simon, ESP-GPS logo added 
 * Added actual SW version & Type of e-paper to Firmware page
+ ### Changes SW5.76
+* Sleeptime 3000s -> 21600s
+* nav_sat timeout 2000 ms -> 4000 ms
+* add 1h to speed screen, setting 9
+* bugfix wifiAP screen : name SoftAP
+* shutdown screen : Saving your session or Go back to sleep
+* Autodetect GPS only once, then saved in EEPROM
+* Can be changed over the webserver (configuration), only set AUTODETECT again !
+* Added support for the ublox M9 (Beitian BK180), logging@20Hz + 4 gnss simultan

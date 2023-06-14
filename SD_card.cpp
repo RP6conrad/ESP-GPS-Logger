@@ -221,7 +221,6 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.file_date_time=doc["file_date_time"]|1;
   config.dynamic_model = doc["dynamic_model"]|0;//sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
   config.timezone = doc["timezone"]|2.0;
-  
   strlcpy(config.UBXfile,                  // <- destination
           doc["UBXfile"] | "/ubxGPS",  // <- source
           sizeof(config.UBXfile));         // <- destination's capacity 
@@ -333,6 +332,7 @@ void Session_info(GPS_data G){
   if(ubxMessage.monGNSS.enabled_Gnss==9) strcat(message,"GNSS = GPS + GALILEO");  
   if(ubxMessage.monGNSS.enabled_Gnss==11) strcat(message,"GNSS = GPS + GLONAS + GALILEO");
   if(ubxMessage.monGNSS.enabled_Gnss==13) strcat(message,"GNSS = GPS + GLONAS + BEIDOU");
+  if(ubxMessage.monGNSS.enabled_Gnss==15) strcat(message,"GNSS = GPS + GLONAS + GALILEO + BEIDOU");//only M9
   strcat(message," \n");
   strcat(message,"Ublox SW-version : ");
   strcat(message,ubxMessage.monVER.swVersion);
@@ -340,10 +340,12 @@ void Session_info(GPS_data G){
   strcat(message,"Ublox HW-version : ");
   strcat(message,ubxMessage.monVER.hwVersion);
   strcat(message," \n");
-  if ((ublox_type==3)|(ublox_type==4))
+  if ((config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD))
   sprintf(tekst,"Ublox M10 ID = %02x%02x%02x%02x%02x%02x\n",ubxMessage.ubxId.ubx_id_1,ubxMessage.ubxId.ubx_id_2,ubxMessage.ubxId.ubx_id_3,ubxMessage.ubxId.ubx_id_4,ubxMessage.ubxId.ubx_id_5,ubxMessage.ubxId.ubx_id_6);
-  if ((ublox_type==1)|(ublox_type==2))
+  if ((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD))
   sprintf(tekst,"Ublox M8 ID = %02x%02x%02x%02x%02x\n",ubxMessage.ubxId.ubx_id_1,ubxMessage.ubxId.ubx_id_2,ubxMessage.ubxId.ubx_id_3,ubxMessage.ubxId.ubx_id_4,ubxMessage.ubxId.ubx_id_5);
+  if ((config.ublox_type==M9_9600BD)|(config.ublox_type==M9_38400BD))
+  sprintf(tekst,"Ublox M9 ID = %02x%02x%02x%02x%02x%02x\n",ubxMessage.ubxId.ubx_id_1,ubxMessage.ubxId.ubx_id_2,ubxMessage.ubxId.ubx_id_3,ubxMessage.ubxId.ubx_id_4,ubxMessage.ubxId.ubx_id_5,ubxMessage.ubxId.ubx_id_6);
   strcat(message,tekst);
   strcat(message,Ublox_type);
   strcat(message," \n");

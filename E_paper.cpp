@@ -1,4 +1,5 @@
 #include "E_paper.h"
+#include "Rtos5.h"
 
 void Boot_screen(void){
   display.init(); 
@@ -32,12 +33,14 @@ void Boot_screen(void){
     display.setCursor(offset,70);
     display.println("One moment please");
     display.setCursor(offset,98);
-    if(ublox_type<0) display.println("Auto detect GPS type");
-    if(ublox_type==0)display.println("ublox not found ??  ");
-    if(ublox_type==1)display.println("M8 9600bd");
-    if(ublox_type==2)display.println("M8 38400bd");
-    if(ublox_type==3)display.println("M10 9600bd");
-    if(ublox_type==4)display.println("M10 38400bd");
+    if(config.ublox_type==0xFF) display.println("Auto detect GPS type");
+    if(config.ublox_type==UBLOX_TYPE_UNKNOWN)display.println("ublox not found ??  ");
+    if(config.ublox_type==M8_9600BD)display.println("M8 9600bd");
+    if(config.ublox_type==M8_38400BD)display.println("M8 38400bd");
+    if(config.ublox_type==M10_9600BD)display.println("M10 9600bd");
+    if(config.ublox_type==M10_38400BD)display.println("M10 38400bd");
+    if(config.ublox_type==M9_9600BD)display.println("M9 9600bd");
+    if(config.ublox_type==M9_38400BD)display.println("M9 38400bd");
     if(freeSpace>0){
       display.setFont(&FreeSansBold9pt7b);
       display.setCursor(offset,120);
@@ -69,7 +72,12 @@ void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
       display.println("Need for speed!");
       display.setFont(&FreeSansBold12pt7b);
       display.setCursor(offset,70);
-      display.println("Saving your session..");
+      if(Shut_down_Save_session==true){
+        display.println("Saving your session..");
+        }
+      else{
+        display.println("Going back to sleep..");
+      }
       display.updateWindow(0,0,250,122,true);
       }
   else{
@@ -77,7 +85,6 @@ void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
       display.setRotation(1);
       display.fillScreen(GxEPD_WHITE);
       display.setTextColor(GxEPD_BLACK);
-//      display.fillRect(0,0,255,122,GxEPD_WHITE);
       display.setFont(&FreeSansBold9pt7b);
       display.setCursor(offset,14);
       display.drawExampleBitmap(ESP_GPS_logo, offset+178, 0, 48, 48, GxEPD_BLACK);
@@ -88,8 +95,12 @@ void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
       display.println("Need for speed!");
       display.setFont(&FreeSansBold12pt7b);
       display.setCursor(offset,70);
-      display.println("Saving your session..");
-
+      if(Shut_down_Save_session==true){
+        display.println("Saving your session..");
+        }
+      else{
+        display.println("Going back to sleep..");
+      }
       display.updateWindow(0,0,250,122,true);
   }
   delay(10000);//om te voorkomen dat update opnieuw start !!!
@@ -188,6 +199,7 @@ void Sleep_screen(int choice){
 
       time_print(RTC_hour);display.print(":");time_print(RTC_min);display.print(" ");display.print(RTC_day);display.print("-");display.print(RTC_month);display.print("-");display.print(RTC_year);
       display.print("  "); display.print(SW_version);
+      //display.print(RTC_counter++);//to check for wake up calls while sleeping...
     
       display.setCursor(col1,121);
       display.setFont(&SF_Distant_Galaxy9pt7b);
@@ -318,10 +330,12 @@ void Sats_level(int offset){
 void M8_M10(int offset){
     display.setCursor(offset+110,120);
     display.setFont(&FreeSansBold9pt7b);
-    if(ublox_type==1)display.print("M8");
-    if(ublox_type==2)display.print("M8");
-    if(ublox_type==3)display.print("M10");
-    if(ublox_type==4)display.print("M10");
+    if(config.ublox_type==M8_9600BD)display.print("M8");
+    if(config.ublox_type==M8_38400BD)display.print("M8");
+    if(config.ublox_type==M9_9600BD)display.print("M9");
+    if(config.ublox_type==M9_38400BD)display.print("M9");
+    if(config.ublox_type==M10_9600BD)display.print("M10");
+    if(config.ublox_type==M10_38400BD)display.print("M10");
     }     
 void Time(int offset){
     display.setCursor(offset,120);
@@ -365,11 +379,13 @@ void Update_screen(int screen){
       else display.println("No SD!");
       display.setFont(&FreeSansBold9pt7b);
       display.setCursor(offset,76);
-      if(ublox_type==0)display.println("ublox??");
-      if(ublox_type==1)display.println("M8 9600bd");
-      if(ublox_type==2)display.println("M8 38400bd");
-      if(ublox_type==3)display.println("M10 9600bd");
-      if(ublox_type==4)display.println("M10 38400bd");
+      if(config.ublox_type==0)display.println("ublox??");
+      if(config.ublox_type==1)display.println("M8 9600bd");
+      if(config.ublox_type==2)display.println("M8 38400bd");
+      if(config.ublox_type==3)display.println("M10 9600bd");
+      if(config.ublox_type==4)display.println("M10 38400bd");
+      if(config.ublox_type==5)display.println("M9 9600bd");
+      if(config.ublox_type==6)display.println("M9 38400bd");
       display.setCursor(offset,94);
       display.print(config.UBXfile);
       display.setFont(&FreeSansBold12pt7b);
@@ -402,9 +418,11 @@ void Update_screen(int screen){
         display.setFont(&FreeSansBold12pt7b);
         display.print("Connect to :");
         display.setCursor(offset,82);
-        if(SoftAP_connection==true) display.print("Wifi AP:");//ap mode
-        else display.print("Wifi: ");//station mode
-        display.println(config.ssid);
+        if(SoftAP_connection==true) display.print("Wifi AP:ESP32AP");//ap mode
+        else {
+          display.print("Wifi: ");//station mode
+          display.println(config.ssid);
+           }
         display.setFont(&FreeSansBold9pt7b);
         display.setCursor(offset,104);
         display.print("http://");
@@ -507,7 +525,8 @@ void Update_screen(int screen){
       int bar_position=32;
       int bar_length=config.bar_length*1000/240;//default 100% length = 1852 m
       if(config.field==1){         //only switch if config.field==1 !!!
-        if(((int)(Ublox.total_distance/1000000)%10==0)&(Ublox.alfa_distance/1000>1000))field=5;//indien x*10km, totale afstand laten zien                    
+        if(((int)(Ublox.total_distance/1000000)%10==0)&(Ublox.alfa_distance/1000>1000))field=5;//indien x*10km, totale afstand laten zien  
+        //if(S10.s_max_speed<(S10.display_speed[5]*0.95))field=8;//if run slower dan 95% of slowest run, show 1h result                  
         if((Ublox.alfa_distance/1000<350)&(alfa_window<100))field=3;//first 350 m after gibe  alfa screen !!
         if(Ublox.alfa_distance/1000>config.bar_length)field=4;//run longer dan 1852 m, NM scherm !! 
       }
@@ -518,10 +537,16 @@ void Update_screen(int screen){
         if((Ublox.alfa_distance/1000<350)&(alfa_window<100))field=3;//first 350 m after gibe  alfa screen !!  
         else field=7; 
       } 
-      if(config.field==8) {
+      if(config.field==8){
+        field=8;
+      }
+      if(config.field==9) {//1 hour default, but first alfa, and if good run, last run
+        field=8;
+        if(Ublox.alfa_distance/1000>config.bar_length)field=4;//run longer dan 1852 m, NM scherm !! 
+        if(S10.s_max_speed>S10.display_speed[5])field=1;//if run faster then slowest run, show AVG & run
         if((Ublox.alfa_distance/1000<350)&(alfa_window<100))field=3;//first 350 m after gibe  alfa screen !!  
-          else field=8; 
-      }       
+      } 
+
       if(GPS_Signal_OK==true){
         display.setFont(&SansSerif_bold_96_nr);
         if((config.speed_large_font==1)&(config.field<=4)){

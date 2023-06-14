@@ -338,32 +338,47 @@ void html_config(String& webpage){
   //cal_bat
   webpage += "<tr>\n<td>cal_bat</td><td>\n";
   webpage += "<input size='4' type='number' required name='cal_bat' min='1.6' max='1.89' value="+String(config.cal_bat)+" step='0.01'>\n";
-  webpage += "</select>\n</td><td>cal_bat: is the calibration <br> of the battery voltage measurement (1.7-1.8).</td>\n</tr>\n"; 
+  webpage += "</select>\n</td><td>cal_bat: is the calibration <br> of the battery voltage measurement (1.6-1.89).</td>\n</tr>\n"; 
   //cal_speed 
   webpage += "<tr><td>cal_speed</td><td>\n<select id='cal_speed' name='cal_speed' type='number'>\n";
   if(config.cal_speed == 3.6) webpage += "<option value='3.60' selected>3.6 km/h</option>\n"; else webpage += "<option value=3.60>3.6 km/h</option>\n";
   if(config.cal_speed <2) webpage += "<option value='1.9438' selected>1.9438 knots</option>\n"; else webpage += "<option value=1.9438>1.9438 knots</option>\n";
   webpage += "</select>\n</td><td>cal_speed: is for the conversion from gps unit m/s to km/h (3.6)or knots (1.9438).</td>\n</tr>\n";
-  
+  //Auto detect gps bd rate and type
+  webpage += "<tr>\n<td>GPS_Type</td><td>\n<select id='GPS_Type' name='GPS_Type'>";
+  if(config.ublox_type == AUTO_DETECT) webpage += "<option value='255' selected>AUTO_DETECT @ Boot</option>\n"; else  webpage += "<option value='255'>AUTO_DETECT@Boot !</option>\n";
+  if(config.ublox_type == M8_9600BD) webpage += "<option value='M8_9600BD' selected>M8@9600BD</option>\n"; else  webpage += "<option value='M8_9600BD'>M8@9600BD</option>\n";
+  if(config.ublox_type == M8_38400BD) webpage += "<option value='M8_38400BD' selected>M8@38400BD</option>\n"; else webpage += "<option value='M8_38400BD'>M8@38400BD</option>\n";
+  if(config.ublox_type == M9_9600BD) webpage += "<option value='M9_9600BD' selected>M9@9600BD</option>\n"; else webpage += "<option value='M9_9600BD'>M9@9600BD</option>\n";
+  if(config.ublox_type == M9_38400BD) webpage += "<option value='M9_38400BD' selected>M9@38400BD</option>\n"; else webpage += "<option value='M9_38400BD'>M9@38400BD</option>\n";
+  if(config.ublox_type == M10_9600BD) webpage += "<option value='M10_9600BD' selected>M10@9600BD</option>\n"; else webpage += "<option value='M10_9600BD'>M10@9600BD</option>\n";
+  if(config.ublox_type == M10_38400BD) webpage += "<option value='M10_38400BD' selected>M10@38400BD</option>\n"; else webpage += "<option value='M10_38400BD'>M10@38400BD</option>\n";
+  webpage += "</select>\n</td><td>GPS type : If auto detect ON, the type of GPS will be identified when booting. </td>\n</tr>\n";
   //sample_rate
   webpage += "<tr>\n<td>sample_rate(Hz)</td><td>\n<select id='sample_rate' name='sample_rate'>";
   if(config.sample_rate == 1) webpage += "<option value='1' selected>1 Hz</option>\n"; else  webpage += "<option value='1'>1 Hz</option>\n";
   if(config.sample_rate == 2) webpage += "<option value='2' selected>2 Hz</option>\n"; else webpage += "<option value='2'>2 Hz</option>\n";
   if(config.sample_rate == 5) webpage += "<option value='5' selected>5 Hz</option>\n"; else webpage += "<option value='5'>5 Hz</option>\n";
   if(config.sample_rate == 10) webpage += "<option value='10' selected>10 Hz</option>\n"; else webpage += "<option value='10'>10 Hz</option>\n";
-  webpage += "</select>\n</td><td>sample_rate: can be 1,2,5 or 10Hz. The higher, the more accurate,<br> but also the larger the files become! One UBX NavPVT message is 100byte, <br>so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!</td>\n</tr>\n";
+  if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)){
+    if(config.sample_rate == 20) webpage += "<option value='20' selected>20 Hz</option>\n"; else webpage += "<option value='20'>20 Hz</option>\n";
+    }
+  webpage += "</select>\n</td><td>sample_rate: can be 1,2,5, 10 (M8,M9,M10) or 20Hz (only M9!). The higher, the more accurate,<br> but also the larger the files become! One UBX NavPVT message is 100byte, <br>so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!</td>\n</tr>\n";
   //gnss
   webpage += "<tr><td>gnss</td><td>\n<select id='gnss' name='gnss'>\n";
   if(config.gnss == 2) webpage += "<option value='2' selected>GPS + GLONAS</option>\n"; else webpage += "<option value='2'>GPS + GLONAS</option>\n";
   if(config.gnss == 3) webpage += "<option value='3' selected>GPS + GLONAS + GALILEO</option>\n"; else webpage += "<option value='3'>GPS + GLONAS + GALILEO</option>\n";
   if(config.gnss == 4) webpage += "<option value='4' selected>GPS + GLONAS + BEIDOU</option>\n"; else webpage += "<option value='4'>GPS + GLONAS + BEIDOU</option>\n";
-  webpage += "</select>\n</td><td>gnss: gnss = 3 : GPS + GLONAS + GALILEO (only possible with ublox ROM version 3.01 !!). <br> Default is only GPS + GLONAS used. Some Beitian modules still have a old firmware, ROM 2.01. Here, Galileo can't be activated.</td>\n</tr>\n";
+  if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)){
+    if(config.gnss == 5) webpage += "<option value='5' selected>GPS + GLONAS + GALILEO + BEIDOU</option>\n"; else webpage += "<option value='5'>GPS + GLONAS + GALILEO + BEIDOU</option>\n";
+    }  
+  webpage += "</select>\n</td><td>gnss choice : GPS + GLONAS + GALILEO (M8 ublox ROM version 3.01, M10). <br> Some Beitian modules still have a old firmware, ROM 2.01. Here, Galileo can't be activated. M9 can do 4 GNSS simultan !</td>\n</tr>\n";
   Serial.println("gnss: "+String(config.gnss)+"\n");
   //logUBX nav-sat message@rate/10
   webpage += "<tr><td>logUBX_nav_sat</td><td>\n<select id='logUBX_nav_sat' name='logUBX_nav_sat'>\n";
   if(config.logUBX_nav_sat == 1) webpage += "<option value='1' selected>LOG UBX NAV SAT ON</option>\n"; else webpage += "<option value='1'>LOG UBX NAV SAT ON</option>\n";
   if(config.logUBX_nav_sat == 0) webpage += "<option value='0' selected>LOG UBX NAV SAT OFF</option>\n"; else webpage += "<option value='0'>LOG UBX NAV SAT OFF</option>\n";
-  webpage += "</select>\n</td><td>logUBX_nav_sat: To save the GPS NAV SAT data in ubx format. For every 10 nav_pvt messages, 1 nav_sat message is saved. This can be used to evaluate the signal quality of your gps (ucenter).</td>\n</tr>\n";  
+  webpage += "</select>\n</td><td>logUBX_nav_sat: To save the GPS NAV SAT data in ubx format. For every 10 (20Hz : 40) nav_pvt messages, 1 nav_sat message is saved. This can be used to evaluate the signal quality of your gps (ucenter).</td>\n</tr>\n";  
   //speed_field
   webpage += "<tr><td>speed_field</td><td>\n<select id='speed_field' name='speed_field'>\n";
   if(config.field == 1) webpage += "<option value='1' selected>1</option>\n"; else webpage += "<option value='1'>1</option>\n";
@@ -374,7 +389,8 @@ void html_config(String& webpage){
   if(config.field == 6) webpage += "<option value='6' selected>6</option>\n"; else webpage += "<option value='6'>6</option>\n";
   if(config.field == 7) webpage += "<option value='7' selected>7</option>\n"; else webpage += "<option value='7'>7</option>\n";
   if(config.field == 8) webpage += "<option value='8' selected>8</option>\n"; else webpage += "<option value='8'>8</option>\n";
-  webpage += "</select>\n</td><td>speed_field: The preferred value in the first line of the speed screen : 1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= Auto switching between Alfa & 0.5h, 8= Auto switching between Alfa & 1h</td>\n</tr>\n";
+  if(config.field == 9) webpage += "<option value='9' selected>9</option>\n"; else webpage += "<option value='9'>9</option>\n";
+  webpage += "</select>\n</td><td>speed_field: The preferred value in the first line of the speed screen : 1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= Auto switching between Alfa & 0.5h, 8= Auto switching between Alfa & 1h, 9= Alfa, 1h, and good run</td>\n</tr>\n";
    //speed_large_font
   webpage += "<tr><td>speed_large_font</td><td>\n<select id='speed_large_font' name='speed_large_font'>\n";
   if(config.speed_large_font == 2) webpage += "<option value='2' selected>Simon_Font ON</option>\n"; else webpage += "<option value='2'>Simon Font ON</option>\n";
@@ -443,7 +459,7 @@ void html_config(String& webpage){
   if(config.logGPX == 0) webpage += "<option value='0' selected>LOG GPX OFF</option>\n"; else webpage += "<option value='0'>LOG GPX OFF</option>\n";
   webpage += "</select>\n</td><td>logGPX: To save the GPS data in gpx format @ 1Hz, for video overlay or other purposes.</td>\n</tr>\n";  
   //dynamic_model
-  if((ublox_type==1)|(ublox_type==2)){
+  if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)){
   webpage += "<tr><td>dynamic_model</td><td>\n<select id='dynamic_model' name='dynamic_model'>\n";
   if(config.dynamic_model == 0) webpage += "<option value='0' selected>portable</option>\n"; else webpage += "<option value='0'>portable</option>\n";
   if(config.dynamic_model == 1) webpage += "<option value='1' selected>sea</option>\n"; else webpage += "<option value='1'>sea</option>\n";

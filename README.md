@@ -7,21 +7,23 @@ GPS logger for Speedsurfing, based on ESP32 & Ublox  hardware.  This is a open s
 
 #### Hardware :
 - e-paper display with build in ESP32 and micro SD-card(lilygo ttgo T5).
-- A gps module ublox M8n / M10 is connected over serial. 
+- A gps module ublox M8n / M9 / M10 is connected over serial. 
 - A 2000 mAh protected lipo (103450) 
 - Inductive charging coil
 - Watersealed housing, electrical box or GoPro housing
 #### Software
 - GPS is configured for sending ubx navpvt (+navdop + navsat) messages. 
-- Log rate can be 1,2,4 or 10 Hz. 
+- Log rate can be 1,2,4,10 or 20 Hz (20Hz only with ublox M9). 
 - Every message is logged to the sd-card. 
-- Logfile type configurable : .ubx, .sbp, .gpy, .gpx, .txt.
+- Logfile type configurable : .ubx, .sbp, .gpy, .gpx, .txt. 
+- gpy is the new compact open source format, developed for speedsurfing and is accepted @ gp3s.
 - For speedsurfing, next values are measured and visible on the e-paper : 
 	- Max speed average over 2s.
 	- Max speed average over 10s.
 	- 5*10s average from 5 runs.
 	- Average speed over 100m, 200m, 500m, 1852 m (nautical mile)
 	- Highest average over 30 min / 60 min. t
+  - Alfa gate & exit live : after a jibe you see the actual "lost heigth" and "predicted lost heigth" (should be < 50m) !
 	- Total distance from the session.
 ![GPS_hardware1](https://user-images.githubusercontent.com/58887243/213173720-7f4f0d1d-36a7-4643-a32c-57441f66037f.jpg)	
 #### Interface

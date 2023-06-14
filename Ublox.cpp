@@ -58,6 +58,10 @@ void Ublox_serial2(int delay_ms){
 //Initialization of the ublox M8N with binary commands
 void Init_ublox(void){
   int wait=250;
+  char M8_9600_bd[20]="Ublox M8 9600bd";
+  char M8_38400_bd[20]="Ublox M8 38400bd";
+  if(config.ublox_type==M8_9600BD) strcpy(Ublox_type,M8_9600_bd);
+  if(config.ublox_type==M8_38400BD) strcpy(Ublox_type,M8_38400_bd);
   //send configuration data in UBX protocol 
   Serial.println("Set ublox UBX_OUT ");     
   for(int i = 0; i < sizeof(UBLOX_UBX_OUT); i++) {                        
@@ -155,13 +159,21 @@ void Set_rate_ublox(int rate){
 //Initialization of the ublox M10N with binary commands
 void Init_ubloxM10(void){
   int wait=250;
+  char M9_9600_bd[20]="Ublox M9 9600bd";
+  char M9_38400_bd[20]="Ublox M9 38400bd";
+  char M10_9600_bd[20]="Ublox M10 9600bd";
+  char M10_38400_bd[20]="Ublox M10 38400bd";
+  if(config.ublox_type==M9_9600BD) strcpy(Ublox_type,M9_9600_bd);
+  if(config.ublox_type==M9_38400BD) strcpy(Ublox_type,M9_38400_bd);
+  if(config.ublox_type==M10_9600BD) strcpy(Ublox_type,M10_9600_bd);
+  if(config.ublox_type==M10_38400BD) strcpy(Ublox_type,M10_38400_bd);
   //send configuration data in UBX protocol 
   Serial.println("Set ublox M10 NMEA OFF ");     
   for(int i = 0; i < sizeof(UBLOX_M10_NMEA_OFF); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_M10_NMEA_OFF+i) );
         }
   Ublox_serial2(wait); 
-   if(config.gnss<4){
+   if(config.gnss<4){   //for M9, default is 4 GNSS activated, config.gnss=5  !!
       Serial.println("Set ublox M10 BEIDOU OFF ");     
       for(int i = 0; i < sizeof(UBLOX_M10_BEIDOU_OFF); i++) {                        
             Serial2.write( pgm_read_byte(UBLOX_M10_BEIDOU_OFF+i) );
@@ -208,12 +220,19 @@ void Init_ubloxM10(void){
         }
   Ublox_serial2(wait);  
   if(config.logUBX_nav_sat){
-      Serial.println("Set ublox M10 NAV_SAT_ON ");   
-      for(int i = 0; i < sizeof(UBLOX_M10_NAV_SAT); i++) {                        
-            Serial2.write( pgm_read_byte(UBLOX_M10_NAV_SAT+i) );
-            }
+      Serial.println("Set ublox M10 NAV_SAT_ON "); 
+      if(config.sample_rate<10){ 
+        for(int i = 0; i < sizeof(UBLOX_M10_NAV_SAT); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_M10_NAV_SAT+i) );
+        }
+      } 
+      else{
+        for(int i = 0; i < sizeof(UBLOX_M9_NAV_SAT); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_M9_NAV_SAT+i) );
+        }  
+      }
       Ublox_serial2(wait);
-  }     
+    }         
   Serial.println("Check UBX_MON_VER ");  //does this work for the M10 ??   
    for(int i = 0; i < sizeof(UBX_MON_VER); i++) {                        
         Serial2.write( pgm_read_byte(UBX_MON_VER+i) );        
@@ -238,7 +257,7 @@ void Init_ubloxM10(void){
   Serial2.begin(38400,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 38400, necessary for 10 Hz  NAV_PVT + NAV_DOP!!!
   Ublox_serial2(wait);        
 }
-//Initialization of the ublox M10N  rate with binary commands, choice between 1..4
+//Initialization of the ublox M10N  rate with binary commands, choice between 1..5
 void Set_rate_ubloxM10(int rate){
   int sample_rate=2;
   switch(rate){
@@ -246,6 +265,7 @@ void Set_rate_ubloxM10(int rate){
     case 2:sample_rate=2;break;
     case 5:sample_rate=3;break;
     case 10:sample_rate=4;break;
+    case 20:sample_rate=5;break;
     default:sample_rate=1;
     config.sample_rate=1;
     }
@@ -494,27 +514,26 @@ int processGPS() {
   return MT_NONE;
 }
 int Auto_detect_ublox(){
-  int ublox_type=0;
-  char M10_9600_bd[20]="Ublox M10 9600bd";
-  char M8_9600_bd[20]="Ublox M8 9600bd";
-  char M8_38400_bd[20]="Ublox M8 38400bd";
-  char M10_38400_bd[20]="Ublox M10 38400bd";
+  config.ublox_type=0;
   Serial.println("Check UBX_MON_VER @9600bd ");  //check for 9600 bd ??   
   for(int i = 0; i < sizeof(UBX_MON_VER); i++) {                        
         Serial2.write( pgm_read_byte(UBX_MON_VER+i) );        
         }           
   Ublox_serial2(1000); 
+  Serial.println(ubxMessage.monVER.hwVersion[3]);
   if(ubxMessage.monVER.hwVersion[3]=='8'){
-    ublox_type=1;
-    strcpy(Ublox_type,M8_9600_bd);
+    config.ublox_type=M8_9600BD;
     Serial.println("Ublox M8 @9600bd ");
     }//M8@9600 bd
+  if(ubxMessage.monVER.hwVersion[3]=='9'){
+    config.ublox_type=M9_9600BD;
+    Serial.println("Ublox M9 @9600bd ");
+    }//M9@9600 bd  
   if(ubxMessage.monVER.hwVersion[3]=='A'){
-    ublox_type=3;
-    strcpy(Ublox_type,M10_9600_bd);
+    config.ublox_type=M10_9600BD;
     Serial.println("Ublox M10 @9600bd ");
     }//M10@9600 bd
-  if(ublox_type==0){//no ublox @9600 bd detected
+  if(config.ublox_type==0){//no ublox @9600 bd detected
       //Serial2.flush();
       Serial2.begin(38400,SERIAL_8N1, RXD2, TXD2);// Change baudrate to 38400 for new test
       Serial2.flush();
@@ -525,17 +544,19 @@ int Auto_detect_ublox(){
             }           
       Ublox_serial2(1000); 
       if(ubxMessage.monVER.hwVersion[3]=='8'){
-        ublox_type=2;
-        strcpy(Ublox_type,M8_38400_bd);
+        config.ublox_type=M8_38400BD;
         Serial.println("Ublox M8 @38400bd ");
         }//M8@384000 bd
+      if(ubxMessage.monVER.hwVersion[3]=='9'){
+        config.ublox_type=M9_38400BD;
+        Serial.println("Ublox M9 @38400bd ");
+        }//M8@384000 bd  
       if(ubxMessage.monVER.hwVersion[3]=='A'){
-        ublox_type=4;
-        strcpy(Ublox_type,M10_38400_bd);
+        config.ublox_type=M10_38400BD;
         Serial.println("Ublox M10 @38400bd ");
         }//M10@384000 bd
       }
     Serial.println(ubxMessage.monVER.hwVersion[3]) ; 
-    return ublox_type;  
+    return config.ublox_type;  
 }
 

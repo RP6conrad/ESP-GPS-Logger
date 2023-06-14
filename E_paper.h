@@ -8,8 +8,8 @@
 //  if it is successful then it belongs to the model of the file name
 // The 2.66 screen has other SPI pins, and more pixels. Partof the pixels are now unused.
 //#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen
-//#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen
-#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
+#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen
+//#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", opgepast hier rst en busy aanpassen 
 //#include <GxDEPG0266BN/GxDEPG0266BN.h>  //2.66 screen for rollz...
 //#include <GxGDEW0213M21/GxGDEW0213M21.h>  //nog een andere versie, resolutie NIET OK vanwege resolutie !!!
 //#include <GxGDEP015OC1/GxGDEP015OC1.h>    //  GDEH015OC1 1.54" screen for Jeff Turner !!!
@@ -78,6 +78,7 @@ extern bool sdOK;
 extern bool Wifi_on;
 extern bool SoftAP_connection;
 extern bool GPS_Signal_OK;
+extern bool Shut_down_Save_session;
 extern float RTC_voltage_bat,alfa_window;
 extern  double delta_heading,ref_heading;
 extern int bootCount,run_count,stat_count,GPIO12_screen;
@@ -106,6 +107,7 @@ extern RTC_DATA_ATTR float RTC_R2_10s;
 extern RTC_DATA_ATTR float RTC_R3_10s;
 extern RTC_DATA_ATTR float RTC_R4_10s;
 extern RTC_DATA_ATTR float RTC_R5_10s;
+extern RTC_DATA_ATTR int RTC_counter;
 //Simon
 extern GPS_speed M100;
 extern GPS_speed M250;

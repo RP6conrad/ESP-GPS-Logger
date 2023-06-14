@@ -76,6 +76,7 @@ struct Config {
   char ssid[32]="SSID";//your SSID
   char password[32]="password";//your password
   int config_fail=0;
+  int ublox_type=0;
   } ;
 extern Config config;
 void AddString();
