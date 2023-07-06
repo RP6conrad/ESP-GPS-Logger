@@ -14,7 +14,7 @@
 #ifndef _GxGDEM0213B74_H_
 #define _GxGDEM0213B74_H_
 
-#include "../GxEPD.h"
+#include <GxEPD.h>
 
 // the physical number of pixels (for controller parameter)
 #define GxGDEM0213B74_X_PIXELS 128

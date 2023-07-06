@@ -361,9 +361,11 @@ void html_config(String& webpage){
   if(config.sample_rate == 5) webpage += "<option value='5' selected>5 Hz</option>\n"; else webpage += "<option value='5'>5 Hz</option>\n";
   if(config.sample_rate == 10) webpage += "<option value='10' selected>10 Hz</option>\n"; else webpage += "<option value='10'>10 Hz</option>\n";
   if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)){
+    if(config.sample_rate == 15) webpage += "<option value='15' selected>15 Hz</option>\n"; else webpage += "<option value='15'>15 Hz</option>\n";
     if(config.sample_rate == 20) webpage += "<option value='20' selected>20 Hz</option>\n"; else webpage += "<option value='20'>20 Hz</option>\n";
+    
     }
-  webpage += "</select>\n</td><td>sample_rate: can be 1,2,5, 10 (M8,M9,M10) or 20Hz (only M9!). The higher, the more accurate,<br> but also the larger the files become! One UBX NavPVT message is 100byte, <br>so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>sample_rate: can be 1,2,5,10 (M8,M9,M10) 15Hz,20Hz (only M9!). The higher, the more accurate,<br> but also the larger the files become! One UBX NavPVT message is 100byte, <br>so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!</td>\n</tr>\n";
   //gnss
   webpage += "<tr><td>gnss</td><td>\n<select id='gnss' name='gnss'>\n";
   if(config.gnss == 2) webpage += "<option value='2' selected>GPS + GLONAS</option>\n"; else webpage += "<option value='2'>GPS + GLONAS</option>\n";
@@ -403,7 +405,7 @@ void html_config(String& webpage){
   webpage += "</select>\n</td><td>bar_length: Default length = 1852 m for 100% bar (=Nautical mile)</td>\n</tr>\n";
   //Stat_screens
   webpage += "<tr>\n<td>Stat_screens</td><td>\n";
-  webpage += "<input size='8' type='number' required name='Stat_screens' min='0' max='9999' value="+String(config.Stat_screens_persist)+" step='1'>\n";
+  webpage += "<input size='8' type='number' required name='Stat_screens' min='0' max='9999999' value="+String(config.Stat_screens_persist)+" step='1'>\n";
   webpage += "</select>\n</td><td>Stat_screens choice : every digit shows the according stat_screen after each other</td>\n</tr>\n";
   //Stat_screens_time
   webpage += "<tr>\n<td>Stat_screens_time</td><td>\n";

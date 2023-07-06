@@ -5,7 +5,7 @@
 #define _GxDEPG0213BN_H_
 
 #include <Arduino.h>
-#include "../GxEPD.h"
+#include <GxEPD.h>
 
 // the physical number of pixels (for controller parameter)
 #define GxDEPG0213BN_X_PIXELS 128
