@@ -265,7 +265,8 @@ void Set_rate_ubloxM10(int rate){
     case 2:sample_rate=2;break;
     case 5:sample_rate=3;break;
     case 10:sample_rate=4;break;
-    case 20:sample_rate=5;break;
+    case 15:sample_rate=5;break;
+    case 20:sample_rate=6;break;
     default:sample_rate=1;
     config.sample_rate=1;
     }
@@ -300,7 +301,7 @@ int Set_GPS_Time(float time_offset){
         setenv("TZ","UTC",0);
         tzset();   
         unix_timestamp =  mktime(&my_time);//mktime returns local time, so TZ is important !!!
-        struct timeval tv = { .tv_sec = (unix_timestamp+time_offset*3600), .tv_usec = 0 };  //clean utc time !!     
+        struct timeval tv = { .tv_sec = (time_t)(unix_timestamp+time_offset*3600), .tv_usec = 0 };  //clean utc time !!     
         settimeofday(&tv, NULL);
         delay(10);//
         if(!getLocalTime(&tmstruct)){
@@ -351,7 +352,7 @@ int processGPS() {
   static unsigned char checksum[2];
   static byte currentMsgType = MT_NONE;
   static int payloadSize = sizeof(ubxMessage.navDummy);
-  static uint16_t len;
+  //static uint16_t len;
   while ( Serial2.available() ) {
     byte c = Serial2.read();    
     //Serial.write(c);

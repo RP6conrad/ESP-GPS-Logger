@@ -333,11 +333,11 @@
 #include "sys/time.h"
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
+#include "Arduino.h"
 #include "Ublox.h"
 #include "E_paper.h"
 #include "SD_card.h"
 #include "GPS_data.h"
-#include "Arduino.h"
 #include "ESP32FtpServerJH.h"
 #include "OTA_server.h" 
 #include <esp_task_wdt.h>
@@ -373,7 +373,7 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 #define EEPROM_SIZE 1             //use 1 byte in eeprom for saving type of ublox
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 5.76";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 5.76.1";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -396,9 +396,11 @@ bool SoftAP_connection = false;
 bool GPS_Signal_OK = false;
 bool long_push = false;
 bool Field_choice = false;
-bool NTP_time_set = false;
+int NTP_time_set = 0;
+int Gps_time_set = 0;
 bool Shut_down_Save_session = false;
 extern bool downloading_file;
+int GPS_OK = 0;
 int analog_bat;
 int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay;
 int start_logging_millis;
@@ -491,6 +493,12 @@ SPIClass sdSPI(VSPI);//was VSPI
 
 const char *filename = "/config.txt";
 const char *filename_backup = "/config_backup.txt"; 
+
+void go_to_sleep(uint64_t sleep_time);
+void Update_bat(void);
+void taskOne( void * parameter );
+void taskTwo( void * parameter);  
+
 //Config config;  
   /*
 Method to print the reason by which ESP32 has been awaken from sleep
@@ -637,6 +645,7 @@ void OnWiFiEvent(WiFiEvent_t event){
       Serial.println("ESP32 Connected to SSID Station mode");
       WiFi.mode(WIFI_MODE_STA);//switch off softAP
       Serial.println("ESP32 Soft AP switched off");
+      break;
     case SYSTEM_EVENT_STA_GOT_IP://  @this event no IP !!!         SYSTEM_EVENT_STA_CONNECTED:
       Serial.println("ESP32 Connected to WiFi Network");
       IP_adress =  WiFi.localIP().toString();
@@ -663,14 +672,14 @@ static void setTimeZone(long offset, int daylight)
     char cdt[17] = "DST";
     char tz[33] = {0};
     if(offset % 3600){
-        sprintf(cst, "UTC%ld:%02u:%02u", offset / 3600, abs((offset % 3600) / 60), abs(offset % 60));
+        sprintf(cst, "UTC%ld:%02ld:%02ld", offset / 3600, abs((offset % 3600) / 60), abs(offset % 60));
     } else {
         sprintf(cst, "UTC%ld", offset / 3600);
     }
     if(daylight != 3600){
         long tz_dst = offset - daylight;
         if(tz_dst % 3600){
-            sprintf(cdt, "DST%ld:%02u:%02u", tz_dst / 3600, abs((tz_dst % 3600) / 60), abs(tz_dst % 60));
+            sprintf(cdt, "DST%ld:%02ld:%02ld", tz_dst / 3600, abs((tz_dst % 3600) / 60), abs(tz_dst % 60));
         } else {
             sprintf(cdt, "DST%ld", tz_dst / 3600);
         }
@@ -680,26 +689,7 @@ static void setTimeZone(long offset, int daylight)
     setenv("TZ", tz, 1);
     tzset();
 }
-void setup() {
-  EEPROM.begin(EEPROM_SIZE);
-  config.ublox_type = EEPROM.read(0);
-  Serial.begin(115200);
-  Serial.println("setup Serial");
-  Serial.println("Serial Txd is on pin: "+String(TX));
-  Serial.println("Serial Rxd is on pin: "+String(RX));
-  Serial.println("Configuring WDT...");
-  esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
-  esp_task_wdt_add(NULL); //add current thread to WDT watch
-  SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
-  print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
- //sometimes after OTA hangs here ???
-  pinMode(25, OUTPUT);//Power beitian //default drive strength 2, only 2.7V @ ublox gps
-  pinMode(26, OUTPUT);//Power beitian
-  pinMode(27, OUTPUT);//Power beitian
-  rtc_gpio_set_drive_capability(GPIO_NUM_25,GPIO_DRIVE_CAP_3);//see https://www.esp32.com/viewtopic.php?t=5840
-  rtc_gpio_set_drive_capability(GPIO_NUM_26,GPIO_DRIVE_CAP_3);//3.0V @ ublox gps current 50 mA
-  gpio_set_drive_capability(GPIO_NUM_27,GPIO_DRIVE_CAP_3);//rtc_gpio_ necessary, if not no output on RTC_pins 25 en 26, 13/3/2022
-  
+int setupGPS() {
   Ublox_on();//beitian bn220 power supply over output 25,26,27
   Serial2.setRxBufferSize(1024); // increasing buffer size ?
   if((config.ublox_type==M8_38400BD)|(config.ublox_type==M9_38400BD)|  (config.ublox_type==M10_38400BD)){
@@ -716,30 +706,6 @@ void setup() {
               }
      delay(2);   //was delay (1)
      }
-  
-  sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
-
-  struct timeval tv = { .tv_sec =  0, .tv_usec = 0 };
-  settimeofday(&tv, NULL);
-  if (!SD.begin(SDCARD_SS, sdSPI)) {
-        sdOK = false;Serial.println("No SDCard found!");
-        } 
-        else {
-        sdOK = true;Serial.println("SDCard found!");
-        uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-        uint64_t totalBytes=SD.totalBytes() / (1024 * 1024);
-        uint64_t usedBytes=SD.usedBytes() / (1024 * 1024);
-        freeSpace=totalBytes-usedBytes;
-        Boot_screen();
-        Serial.printf("SD Card Size: %lluMB\n", cardSize); 
-        Serial.printf("SD Total bytes: %lluMB\n", totalBytes); 
-        Serial.printf("SD Used bytes: %lluMB\n", usedBytes); 
-        Serial.printf("SD free space: %lluMB\n", totalBytes-usedBytes); 
-        Serial.println(F("Loading configuration..."));// Should load default config 
-        loadConfiguration(filename, filename_backup, config); // load config file
-        Serial.print(F("Print config file...")); 
-        printFile(filename); 
-        } 
   config.ublox_type = EEPROM.read(0);
   if(config.ublox_type==0xFF) {
     Auto_detect_ublox();//only test for ublox type and baudrate if unknown in configuration
@@ -771,12 +737,58 @@ void setup() {
   Serial.println (ubxMessage.monGNSS.enabled_Gnss);
   if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)){
       Set_rate_ublox(config.sample_rate);//after reading config file !! 
-      } 
+  } 
   if((config.ublox_type==M9_9600BD)|(config.ublox_type==M9_38400BD)|(config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)){
       Set_rate_ubloxM10(config.sample_rate);//after reading config file !! 
-      }  
-  Update_screen(BOOT_SCREEN);
+  } 
+  return 1;
+}
+void setup() {
+  EEPROM.begin(EEPROM_SIZE);
+  config.ublox_type = EEPROM.read(0);
+  Serial.begin(115200);
+  Serial.println("setup Serial");
+  Serial.println("Serial Txd is on pin: "+String(TX));
+  Serial.println("Serial Rxd is on pin: "+String(RX));
+  Serial.println("Configuring WDT...");
+  esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
+  esp_task_wdt_add(NULL); //add current thread to WDT watch
+  SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
+  print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
+ //sometimes after OTA hangs here ???
+  pinMode(25, OUTPUT);//Power beitian //default drive strength 2, only 2.7V @ ublox gps
+  pinMode(26, OUTPUT);//Power beitian
+  pinMode(27, OUTPUT);//Power beitian
+  rtc_gpio_set_drive_capability(GPIO_NUM_25,GPIO_DRIVE_CAP_3);//see https://www.esp32.com/viewtopic.php?t=5840
+  rtc_gpio_set_drive_capability(GPIO_NUM_26,GPIO_DRIVE_CAP_3);//3.0V @ ublox gps current 50 mA
+  gpio_set_drive_capability(GPIO_NUM_27,GPIO_DRIVE_CAP_3);//rtc_gpio_ necessary, if not no output on RTC_pins 25 en 26, 13/3/2022
   
+  sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
+
+  struct timeval tv = { .tv_sec =  0, .tv_usec = 0 };
+  settimeofday(&tv, NULL);
+  if (!SD.begin(SDCARD_SS, sdSPI)) {
+        sdOK = false;Serial.println("No SDCard found!");
+  } 
+  else {
+        sdOK = true;Serial.println("SDCard found!");
+        uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+        uint64_t totalBytes=SD.totalBytes() / (1024 * 1024);
+        uint64_t usedBytes=SD.usedBytes() / (1024 * 1024);
+        freeSpace=totalBytes-usedBytes;
+        Boot_screen();
+        Serial.printf("SD Card Size: %lluMB\n", cardSize); 
+        Serial.printf("SD Total bytes: %lluMB\n", totalBytes); 
+        Serial.printf("SD Used bytes: %lluMB\n", usedBytes); 
+        Serial.printf("SD free space: %lluMB\n", totalBytes-usedBytes); 
+        Serial.println(F("Loading configuration..."));// Should load default config 
+        loadConfiguration(filename, filename_backup, config); // load config file
+        Serial.print(F("Print config file...")); 
+        printFile(filename); 
+  } 
+  
+  Update_screen(BOOT_SCREEN);
+
   const char* ssid = config.ssid; //WiFi SSID
   const char* password = config.password; //WiFi Password
   const char *soft_ap_ssid = "ESP32AP"; //accespoint ssid
@@ -836,7 +848,10 @@ void setup() {
       Serial.println("No Wifi connection !");
       WiFi.disconnect(true);
       WiFi.mode(WIFI_OFF);
-      Wifi_on=false;      
+      Wifi_on=false;
+      Update_screen(GPS_INIT_SCREEN); 
+      GPS_OK = setupGPS();
+      Update_screen(GPS_INIT_SCREEN);
   }
   //analog_mean=RTC_voltage_bat/calibration_bat*1000;//RTC_voltage_bat staat in RTC mem !!!
   delay(100);
@@ -903,7 +918,10 @@ void taskOne( void * parameter )
         setTimeZone(0,0);//set TZ to UTC, as mktime returns localtime !!!!
         printLocalTime();
         NTP_time_set=false;
-       }   
+        if(!GPS_OK) {
+          GPS_OK = setupGPS();
+        }
+       }
    if((WiFi.status() == WL_CONNECTED)|SoftAP_connection){
         ftpSrv.handleFTP();        //make sure in loop you call handleFTP()!! 
         server.handleClient();
@@ -925,6 +943,12 @@ void taskOne( void * parameter )
               SD.mkdir("/Archive");
               }
           }
+          #if defined USE_AUTO_OTA_UPDATE
+          if ((millis() - OTA_CHECK_INTERVAL) > _lastOTACheck) {
+            _lastOTACheck = millis();
+            checkFirmwareUpdates();
+          }
+          #endif
         #if defined (STATIC_DEBUG)
         msgType = processGPS(); //debug purposes
         static int testtime;
@@ -947,7 +971,8 @@ void taskOne( void * parameter )
               GPS_delay++;
               }
         if ((Time_Set_OK==false)&(GPS_Signal_OK==true)&(GPS_delay>(TIME_DELAY_FIRST_FIX*config.sample_rate))){//vertraging Time_Set_OK is nu 10 s!!
-          int avg_speed=(avg_speed+ubxMessage.navPvt.gSpeed*19)/20; //FIR filter gem. snelheid laatste 20 metingen in mm/s
+          int avg_speed = 0;
+          avg_speed=(avg_speed+ubxMessage.navPvt.gSpeed*19)/20; //FIR filter gem. snelheid laatste 20 metingen in mm/s
           if(avg_speed>MIN_SPEED_START_LOGGING){
             if(Set_GPS_Time(config.timezone)){            
                 Time_Set_OK=true;
@@ -959,7 +984,7 @@ void taskOne( void * parameter )
         }
         if ((sdOK==true)&(Time_Set_OK==true)&(nav_pvt_message>10)&(nav_pvt_message!=old_message)){
                   old_message=nav_pvt_message;
-                  float sAcc=ubxMessage.navPvt.sAcc/1000;
+                  //float sAcc=ubxMessage.navPvt.sAcc/1000;
                   gps_speed=ubxMessage.navPvt.gSpeed; //hier alles naar mm/s !!
                   static int last_flush_time=0;
                   last_gps_msg=millis();

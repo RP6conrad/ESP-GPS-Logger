@@ -32,7 +32,7 @@
 //changes JH 20/02/2021, added for timestamp file ftp
 
 String print_time(time_t timestamp) {
-  char message[120];
+  //char message[120];
   char buff[20];
   strftime(buff, 20, "%Y%m%d%H%M%S", localtime(&timestamp));//was localtime
   return buff;
@@ -260,6 +260,7 @@ if(parameters){							//checking for null pointer jh
   return false;
 }
 else Serial.println("Nullpointer detected password");
+return false;
 }
 boolean FtpServer::processCommand()
 {
@@ -277,7 +278,7 @@ boolean FtpServer::processCommand()
   //
   else if( ! strcmp( command, "CDUP" ))
   {
-    int todo;
+    //int todo;
 	  client.println("250 Ok. Current directory is \"" + String(cwdName) + "\"");
   }
   //
@@ -899,7 +900,7 @@ boolean FtpServer::doStore()
 {
   if( data.connected() )
   {
-    unsigned long ms0 = millis();
+    //unsigned long ms0 = millis();
     //Serial.print("Transfer=");
     int16_t nb = data.readBytes((uint8_t*) buf, FTP_BUF_SIZE );
     //unsigned long ms1 = millis();
@@ -908,7 +909,8 @@ boolean FtpServer::doStore()
     {
       // Serial.println( millis() << " " << nb << endl;
       //Serial.print("SD=");
-      size_t written = file.write((uint8_t*) buf, nb );
+      //size_t written = 
+      file.write((uint8_t*) buf, nb );
       /*
       unsigned long ms2 = millis();
       Serial.print(ms2-ms1);

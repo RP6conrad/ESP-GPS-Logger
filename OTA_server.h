@@ -84,7 +84,7 @@ String file_size(int bytes)
 }
 //changes JH 19/11/2022, added for formatting timestamp file
 String Print_time(time_t timestamp) {
-  char message[120];
+  //char message[120];
   char buff[30];
   strftime(buff, 30, "%Y-%m-%d  %H:%M:%S", localtime(&timestamp));
   return buff;
@@ -440,7 +440,7 @@ void handleConfigUpload() {
 /* Style */
 String style =
 "<style>#file-input,input{width:100%;height:44px;border-radius:4px;margin:10px auto;font-size:15px}"
-"input{background:#f1f1f1;border:0;padding:0 15px}body{background:#3498db;font-family:sans-serif;font-size:14px;color:#777}"
+"input{background:#f1f1f1;border:0;padding:0 15px}body{background:#3498db;font-family:'sans-serif';font-size:14px;color:#777}"
 "#file-input{padding:0;border:1px solid #ddd;line-height:44px;text-align:left;display:block;cursor:pointer}"
 "#bar,#prgbar{background-color:#f1f1f1;border-radius:10px}#bar{background-color:#3498db;width:0%;height:10px}"
 "form{background:#fff;max-width:358px;margin:75px auto;padding:30px;border-radius:5px;text-align:center}"
@@ -472,9 +472,9 @@ void makeLoginString(void){
 String serverIndex = 
 "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
 "<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"
-"<input type='file' name='update' id='file' onchange='sub(this)' style=display:none>"
+"<input type='file' name='update' id='file' onchange='sub(this)' style='display:none'>"
 "<label id='file-input' for='file'>   Choose file...</label>"
-"<input type='submit' class=btn value='Update'>"
+"<input type='submit' class='btn' value='Update'>"
 "<br><br>"
 "<a href='/'>download files</a>"
 "<div id='prg'></div>"
@@ -513,6 +513,9 @@ String serverIndex =
 "});"
 "});"
 "</script>" + style;
+
+const uint16_t OTA_CHECK_INTERVAL = 5000; // ms
+uint32_t _lastOTACheck = 0;
 
 /* setup function */
 void OTA_setup(void) {
@@ -573,4 +576,249 @@ void OTA_setup(void) {
     }
   });
   server.begin();
+
+  _lastOTACheck = millis();
+
 }
+
+#if defined USE_AUTO_OTA_UPDATE
+#include "HTTPClient.h"
+/**
+ * from https://github.com/platformio/bintray-secure-ota
+*/
+#define STRINGV(s) #s
+#ifndef OTA_URL
+#define OTA_URL http://esplogger.majasa.ee
+#endif
+#ifndef OTA_PATH
+#define OTA_PATH /api/firmware/versions/
+#endif
+// Connection port (HTTPS)
+const int port = 80;
+
+// Connection timeout
+const uint32_t RESPONSE_TIMEOUT_MS = 5000;
+
+// Variables to validate firmware content
+volatile int contentLength = 0;
+volatile bool isValidContentType = false;
+
+inline String getHeaderValue(String header, String headerName)
+{
+  return header.substring(strlen(headerName.c_str()));
+}
+
+String getApiHost() {
+  return String(STRINGV(OTA_URL));
+}
+
+String getLatestVersionRequestPath()
+{
+  String path = STRINGV(OTA_PATH);
+  return String(path + "_latest");
+}
+
+String getBinaryRequestPath(const String &version)
+{
+  return String(STRINGV(OTA_PATH) + version + "/firmware_v_"+version+".bin");
+}
+
+void processOTAUpdate(const String version) {
+  String currentHost =  getApiHost();
+  String prevHost = currentHost;
+  String firmwarePath = getBinaryRequestPath(version);
+  if (!firmwarePath.endsWith(".bin"))
+  {
+    Serial.println("Unsupported binary format. OTA update cannot be performed!");
+    return;
+  }
+  WiFiClientSecure client;
+  if (!client.connect(currentHost.c_str(), port))
+  {
+    Serial.println("Cannot connect to " + currentHost);
+    return;
+  }
+  bool redirect = true;
+  while (redirect)
+  {
+    if (currentHost != prevHost)
+    {
+      client.stop();
+      //client.setCACert(bintray.getCertificate(currentHost));
+      if (!client.connect(currentHost.c_str(), port))
+      {
+        Serial.println("Redirect detected! Cannot connect to " + currentHost + " for some reason!");
+        return;
+      }
+    }
+  client.print(String("GET ") + firmwarePath + " HTTP/1.1\r\n");
+    client.print(String("Host: ") + currentHost + "\r\n");
+    client.print("Cache-Control: no-cache\r\n");
+    client.print("Connection: close\r\n\r\n");
+
+  unsigned long timeout = millis();
+    while (client.available() == 0)
+    {
+      if (millis() - timeout > RESPONSE_TIMEOUT_MS)
+      {
+        Serial.println("Client Timeout !");
+        client.stop();
+        return;
+      }
+    }
+    while (client.available())
+    {
+      String line = client.readStringUntil('\n');
+      // Check if the line is end of headers by removing space symbol
+      line.trim();
+      // if the the line is empty, this is the end of the headers
+      if (!line.length())
+      {
+        break; // proceed to OTA update
+      }
+
+      // Check allowed HTTP responses
+      if (line.startsWith("HTTP/1.1"))
+      {
+        if (line.indexOf("200") > 0)
+        {
+          //Serial.println("Got 200 status code from server. Proceeding to firmware flashing");
+          redirect = false;
+        }
+        else if (line.indexOf("302") > 0)
+        {
+          //Serial.println("Got 302 status code from server. Redirecting to the new address");
+          redirect = true;
+        }
+        else
+        {
+          //Serial.println("Could not get a valid firmware url");
+          //Unexptected HTTP response. Retry or skip update?
+          redirect = false;
+        }
+      }
+
+      // Extracting new redirect location
+      if (line.startsWith("Location: "))
+      {
+        String newUrl = getHeaderValue(line, "Location: ");
+        //Serial.println("Got new url: " + newUrl);
+        newUrl.remove(0, newUrl.indexOf("//") + 2);
+        currentHost = newUrl.substring(0, newUrl.indexOf('/'));
+        newUrl.remove(newUrl.indexOf(currentHost), currentHost.length());
+        firmwarePath = newUrl;
+        //Serial.println("firmwarePath: " + firmwarePath);
+        continue;
+      }
+
+      // Checking headers
+      if (line.startsWith("Content-Length: "))
+      {
+        contentLength = atoi((getHeaderValue(line, "Content-Length: ")).c_str());
+        Serial.println("Got " + String(contentLength) + " bytes from server");
+      }
+
+      if (line.startsWith("Content-Type: "))
+      {
+        String contentType = getHeaderValue(line, "Content-Type: ");
+        //Serial.println("Got " + contentType + " payload.");
+        if (contentType == "application/octet-stream")
+        {
+          isValidContentType = true;
+        }
+      }
+    }
+
+  // check whether we have everything for OTA update
+  if (contentLength && isValidContentType)
+  {
+    Serial.println("Starting Over-The-Air update. This may take some time to complete ...");
+  }
+  else
+  {
+    Serial.println("There was no valid content in the response from the OTA server!");
+    client.flush();
+  }
+}
+}
+
+String requestHTTPContent()
+{
+  String payload="";
+  String currentHost =  getApiHost();
+  WiFiClientSecure client;
+  String versionPath = getLatestVersionRequestPath();
+  if (!client.connect(currentHost.c_str(), port))
+  {
+    Serial.println("Cannot connect to " + currentHost);
+    return payload;
+  }
+  client.print(String("GET ") + versionPath + " HTTP/1.1\r\n");
+  client.print(String("Host: ") + currentHost + "\r\n");
+  client.print("Cache-Control: no-cache\r\n");
+  client.print("Connection: close\r\n\r\n");
+  unsigned long timeout = millis();
+  while (client.available() == 0)
+  {
+    if (millis() - timeout > RESPONSE_TIMEOUT_MS)
+    {
+      Serial.println("Client Timeout !");
+      client.stop();
+      return payload;
+    }
+  }
+  while (client.available())
+  {
+    String line = client.readStringUntil('\n');
+    int content = 0;
+    line.trim();
+      // if the the line is empty, this is the end of the headers
+      if (!content && !line.length())
+      {
+        content=1; // proceed to OTA update
+        continue;
+      }
+    if (line.startsWith("Content-Type: "))
+      {
+        String contentType = getHeaderValue(line, "Content-Type: ");
+        //Serial.println("Got " + contentType + " payload.");
+        if (contentType == "text/plain")
+        {
+          isValidContentType = true;
+        }
+        continue;
+      }
+      if (isValidContentType && content==1)
+      { 
+        if (!line.length())
+        {
+          continue;
+        }
+        payload+=line;
+        break; //1 line for version string
+      }
+  }
+  client.flush();
+  return payload;
+}
+
+void checkFirmwareUpdates()
+{
+  // Fetch the latest firmware version
+  const String latest = requestHTTPContent();
+  if (latest.length() == 0)
+  {
+    Serial.println("Could not load info about the latest firmware, so nothing to update. Continue ...");
+    return;
+  }
+  else if (atoi(latest.c_str()) <= VERSION)
+  {
+    //Serial.println("The current firmware is up to date. Continue ...");
+    return;
+  }
+
+  Serial.println("There is a new version of firmware available: v." + latest);
+  processOTAUpdate(latest);
+}
+
+#endif

@@ -14,7 +14,7 @@
 #ifndef _GxGDEH0213B73_H_
 #define _GxGDEH0213B73_H_
 
-#include "../GxEPD.h"
+#include <GxEPD.h>
 
 // the physical number of pixels (for controller parameter)
 #define GxGDEH0213B73_X_PIXELS 128

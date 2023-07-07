@@ -34,13 +34,13 @@ void Open_files(void){
       char extension[16]=".txt";//
       char timestamp[16];
        if(config.file_date_time==1){
-          sprintf(timestamp, "_%d%02d%02d%02d%02d", tmstruct.tm_year-100,tmstruct.tm_mon+1,tmstruct.tm_mday,tmstruct.tm_hour,tmstruct.tm_min);
+          sprintf(timestamp, "_%u%02u%02u%02u%02u", tmstruct.tm_year-100,tmstruct.tm_mon+1,tmstruct.tm_mday,tmstruct.tm_hour,tmstruct.tm_min);
           strcat(filenameERR,config.UBXfile);//copy filename from config
           strcat(filenameERR,timestamp);//add timestamp
           strcat(filenameERR,extension);//add extension.txt 
           }
        if(config.file_date_time==2){
-          sprintf(timestamp, "%d%02d%02d%02d%02d_", tmstruct.tm_year-100,tmstruct.tm_mon+1,tmstruct.tm_mday,tmstruct.tm_hour,tmstruct.tm_min);
+          sprintf(timestamp, "%u%02u%02u%02u%02u_", tmstruct.tm_year-100,tmstruct.tm_mon+1,tmstruct.tm_mday,tmstruct.tm_hour,tmstruct.tm_min);
           strcat(filenameERR,timestamp);//add timestamp
           strcat(filenameERR,config.UBXfile);//copy filename from config
           strcat(filenameERR,extension);//add extension.txt 
@@ -311,7 +311,7 @@ void Session_info(GPS_data G){
   errorfile.println(SW_version);
   sprintf(tekst, "First fix : %d s\n",first_fix_GPS);
   strcat(message,tekst); 
-  sprintf(tekst, "Total time : %d s\n",(millis()-start_logging_millis)/1000);
+  sprintf(tekst, "Total time : %lu s\n",(millis()-start_logging_millis)/1000);
   strcat(message,tekst); 
   sprintf(tekst, "Total distance : %d m\n",(int)G.total_distance/1000);
   strcat(message,tekst); 
@@ -400,7 +400,7 @@ void Session_results_S(GPS_time S){
   //errorfile.close();
   //appendFile(SD,filenameERR,message); 
   for(int i=9;i>4;i--){
-      char tekst[20]="";char message[255]="";
+      char tekst[45]="";char message[255]="";
       dtostrf(S.avg_speed[i]*calibration_speed, 1, 3, tekst);
       strcat(message,tekst);
       if(Calibration==3600)strcat(message, " km/h "); 
@@ -420,7 +420,7 @@ void Session_results_S(GPS_time S){
       dtostrf(S.time_window, 1, 0, tekst);
       strcat(message,tekst); 
       if(config.logUBX_nav_sat){
-        sprintf(tekst," CNO Max: %d Avg: %d Min: %d nr Sat: %d\n",S.Max_cno[i],S.Mean_cno[i],S.Min_cno[i],S.Mean_numSat[i]);
+        sprintf(tekst," CNO Max: %u Avg: %u Min: %u nr Sat: %u\n",S.Max_cno[i],S.Mean_cno[i],S.Min_cno[i],S.Mean_numSat[i]);
         strcat(message,tekst);
         } 
       else strcat(message, "\n"); 

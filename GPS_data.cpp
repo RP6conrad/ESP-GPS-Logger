@@ -25,7 +25,7 @@ void GPS_data::push_data(float latitude,float longitude,uint32_t gSpeed) {//gspe
               Serial2.write( pgm_read_byte(UBX_PORTABLE+i) );
               }
       }
-    if((S2.avg_s<15000)&(config.dynamic_model==1)&dynamic_state==1){  //omschakelen naar dynamic_model "portable", only works with speed<25 m/s !!!
+    if((S2.avg_s<15000)&(config.dynamic_model==1)&(dynamic_state==1)){  //omschakelen naar dynamic_model "portable", only works with speed<25 m/s !!!
               dynamic_state=0;               //test with 4.5 m/s, this is 16.2 km/h
               Serial.print("Set ublox UBX_SEA ");
               Model_info(1);
@@ -408,7 +408,9 @@ double delta_heading;
 double ref_heading;
 float Alfa_indicator(GPS_speed M250,GPS_speed M100,float actual_heading){
   static float P1_lat,P1_long,P2_lat,P2_long;
-  float P_lat,P_long, P_lat_heading,P_long_heading,lambda_T,lambda_N,lambda,alfa_afstand;
+  float P_lat,P_long, P_lat_heading,P_long_heading;
+  //,lambda_T,lambda_N,lambda,
+  float alfa_afstand;
   static int old_alfa_counter;
   if(alfa_counter!=old_alfa_counter){
     Ublox.alfa_distance=0;//afstand afgelegd sinds jibe detectie      10*100.000/10.000=100 samples ?
