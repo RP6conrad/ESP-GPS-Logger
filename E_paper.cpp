@@ -1,5 +1,5 @@
 #include "E_paper.h"
-#include "Rtos5.h"
+#include "Definitions.h"
 
 #define ROW_SPACING 2
 
@@ -260,10 +260,6 @@ void Sleep_screen(int choice){
       display.print("AVG: ");display.println(RTC_avg_10s,2);
       display.setCursor(offset,88);
       display.print("2s: ");display.print(RTC_max_2s);
-      //display.println("Hz"); 
-      //display.setCursor(offset,120);
-      //display.print("Bat: ");display.print(RTC_voltage_bat,2);
-      //Bat_level(offset+222,87);
       display.update();
       }
    else{
@@ -333,12 +329,6 @@ void Sleep_screen(int choice){
     if(RTC_Sail_Logo==10) { //Severne as Sail logo !!! 
       display.drawExampleBitmap(Severne_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
     }
-      //display.setFont(&SF_Distant_Galaxy7pt7b);//font ??
-      //display.setCursor(col1,105);
-
-      //display.printf("%02d:%02d %02d-%02d-%02d %s",RTC_hour,RTC_min,RTC_day,RTC_month,RTC_year,SW_version);
-      //display.print(RTC_counter++);//to check for wake up calls while sleeping...
-    
       display.setCursor(col1,105); // was 121
       display.setFont(&SF_Distant_Galaxy9pt7b);
       display.print(RTC_Sleep_txt);
@@ -407,11 +397,6 @@ void Sleep_screen(int choice){
       display.println(RTC_mile,2); 
       display.setCursor(col4,row6);
       display.println(RTC_500m,2); 
-      /*float bat_perc=100*(1-(4.2-RTC_voltage_bat)/(4.2-3.4));
-      if (bat_perc<0) bat_perc=0;
-      if (bat_perc>100) bat_perc=100;
-      display.print(bat_perc,0); 
-      display.println("%"); */
       display.update(); 
       }
 }
@@ -437,13 +422,13 @@ void Bat_level(int X_offset,int Y_offset){
     float bat_symbol=0;
     display.fillRect(X_offset+3,Y_offset,6,3,GxEPD_BLACK);
     display.fillRect(X_offset,Y_offset+3,12,30,GxEPD_BLACK);//monitor=(4.2-RTC_voltage_bat)*26
-    if(RTC_voltage_bat<4.2) {
-        bat_symbol=(4.2-RTC_voltage_bat)*28;
+    if(RTC_voltage_bat<VOLTAGE_100) {
+        bat_symbol=(VOLTAGE_100-RTC_voltage_bat)*28;
         display.fillRect(X_offset+2,Y_offset+7,8,(int)bat_symbol,GxEPD_WHITE);
         }
     }
 void Bat_level_Simon(int offset){
-    float bat_perc=100*(1-(4.2-RTC_voltage_bat)/(4.2-3.4));
+    float bat_perc=100*(1-(VOLTAGE_100-RTC_voltage_bat)/(VOLTAGE_100-VOLTAGE_0));
     if (bat_perc<0) bat_perc=0;
     if (bat_perc>100) bat_perc=100;
 
@@ -692,26 +677,31 @@ void Update_screen(int screen){
       int field=config.field;//default is in config.txt
       int bar_position=32;
       int bar_length=config.bar_length*1000/240;//default 100% length = 1852 m
-      if(config.field==1){         //only switch if config.field==1 !!!
-        if(((int)(Ublox.total_distance/1000000)%10==0)&(Ublox.alfa_distance/1000>1000))field=5;//indien x*10km, totale afstand laten zien  
-        //if(S10.s_max_speed<(S10.display_speed[5]*0.95))field=8;//if run slower dan 95% of slowest run, show 1h result                  
+      display.setFont(&FreeSansBold6pt7b);
+      display.setCursor(displayWidth-10,INFO_BAR_TOP);
+      display.print(config.field);//show config field in small font
+      if(config.field==1){         //switch alfa, run-AVG, NM!!!
+        field=2 ; //Default Run-AVG // NM
+        if(((int)(Ublox.total_distance/1000000)%10==0)&(Ublox.alfa_distance/1000>1000))field=5;//indien x*10km, totale afstand laten zien                 
         if((Ublox.alfa_distance/1000<350)&(alfa_window<100))field=3;//first 350 m after gibe  alfa screen !!
         if(Ublox.alfa_distance/1000>config.bar_length)field=4;//run longer dan 1852 m, NM scherm !! 
       }
       if(config.field==2){
+        field=2;//default actual Run - AVG / NM
         if(Ublox.run_distance/1000>config.bar_length)field=4;//if run longer dan 1852 m, NM scherm !!
       }
       if(config.field==7) {
+        field=7;//default 0.5h
         if((Ublox.alfa_distance/1000<350)&(alfa_window<100))field=3;//first 350 m after gibe  alfa screen !!  
-        else field=7; 
       } 
       if(config.field==8){
-        field=8;
+        field=8;//default 1h
       }
       if(config.field==9) {//1 hour default, but first alfa, and if good run, last run
-        field=8;
+        field=2;
         if(Ublox.alfa_distance/1000>config.bar_length)field=4;//run longer dan 1852 m, NM scherm !! 
-        if(S10.s_max_speed>S10.display_speed[5])field=1;//if run faster then slowest run, show AVG & run
+        if(S10.s_max_speed>S10.display_speed[5])field=2;//if run faster then slowest run, show AVG & run
+        if(Ublox.alfa_distance/1000<500)field=8;// 350m - 500m : 1h !!  
         if((Ublox.alfa_distance/1000<350)&(alfa_window<100))field=3;//first 350 m after gibe  alfa screen !!  
       } 
 
@@ -720,13 +710,13 @@ void Update_screen(int screen){
         if((config.speed_large_font==1)&(config.field<=4)){
           display.setFont(&SansSerif_bold_84_nr);
         }                                                             //test for bigger font alfa
-        if(config.speed_large_font==2){                               //test for bigger font speed
+        if(config.speed_large_font==2){                               //test for bigger font speed (Simon)
           display.setFont(&FreeSansBold75pt7b);
           display.setCursor(offset+5,115);
           display.print(gps_speed*calibration_speed,0);               //print main in large font
           display.setFont(&FreeSansBold30pt7b);
           display.print(".");
-          display.println(int((gps_speed*calibration_speed-int(gps_speed*calibration_speed))*10),0); //int((x-int(x))*10)
+          display.println(int((gps_speed*calibration_speed-int(gps_speed*calibration_speed))*10),0); //int((x-int(x))*10) round to correct digit
         }
         else {
           display.setCursor(offset,120);
@@ -887,17 +877,36 @@ void Update_screen(int screen){
             display.print(S10.display_max_speed*calibration_speed,1);  //best 10s run
           }      
           if(field==7){ 
-            display.setFont(&FreeSansBold12pt7b);
-            display.print(".5hA");
-            display.setFont(&FreeSansBold18pt7b);
-            display.print(S1800.avg_s*calibration_speed,1);   //actual average last 30 min
-            display.setFont(&FreeSansBold12pt7b);
-            display.setCursor(offset+124,24);
-            display.print(".5hB");
-            display.setFont(&FreeSansBold18pt7b);
-            display.print(S1800.display_max_speed*calibration_speed,1);   //best average over 30 min
+             if(config.speed_large_font==1){ 
+              bar_position=40;//test voor bigger font, was 42
+              display.setFont(&FreeSansBold12pt7b);// !!!!
+              display.setCursor(offset,36);
+              display.print("0.5h: ");
+              display.setFont(&SansSerif_bold_46_nr);   //Test for bigger alfa fonts
+              display.print(S1800.display_max_speed*calibration_speed,2);   //best average over 30 min
+             }  
+             else{
+              display.setFont(&FreeSansBold12pt7b);
+              display.print(".5hA");
+              display.setFont(&FreeSansBold18pt7b);
+              display.print(S1800.avg_s*calibration_speed,1);   //actual average last 30 min
+              display.setFont(&FreeSansBold12pt7b);
+              display.setCursor(offset+124,24);
+              display.print(".5hB");
+              display.setFont(&FreeSansBold18pt7b);
+              display.print(S1800.display_max_speed*calibration_speed,1);   //best average over 30 min
+              }
           }       
           if(field==8){
+            if(config.speed_large_font==1){ 
+              bar_position=40;//test voor bigger font, was 42
+              display.setFont(&FreeSansBold12pt7b);// !!!!
+              display.setCursor(offset,36);
+              display.print("1h: ");
+              display.setFont(&SansSerif_bold_46_nr);   //Test for bigger alfa fonts
+              display.print(S3600.display_max_speed*calibration_speed,2);   //best average over 30 min
+             }
+            else{  
             display.setFont(&FreeSansBold12pt7b);
             display.print("1hA ");
             display.setFont(&FreeSansBold18pt7b);
@@ -907,6 +916,7 @@ void Update_screen(int screen){
             display.print("1hB ");
             display.setFont(&FreeSansBold18pt7b);
             display.print(S3600.display_max_speed*calibration_speed,1);   //best 3600s
+            }
           }
           int log_seconds=(millis()-start_logging_millis)/1000; //aantal seconden sinds loggen is gestart
           static int low_speed_seconds;

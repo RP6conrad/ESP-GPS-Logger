@@ -1,6 +1,7 @@
+#include <EEPROM.h>
 #include "GPS_data.h"
 #include "Ublox.h"
-#include "Rtos5.h"
+#include "Definitions.h"
 
 uint16_t _gSpeed[BUFFER_SIZE]; 
 float _lat[BUFFER_ALFA]; 
@@ -446,6 +447,60 @@ float Dis_point_line(float long_act,float lat_act,float long_1,float lat_1,float
   lambda=lambda_T/lambda_N;
   alfa_distance=sqrt(pow((lat_act-lat_1-lambda*(lat_2-lat_1))*corr_lat,2)+pow((long_act-long_1-lambda*(long_2-long_1))*corr_long,2));
   return alfa_distance;
+}
+int setupGPS(void) {
+  Ublox_on();//beitian bn220 power supply over output 25,26,27
+  Serial2.setRxBufferSize(1024); // increasing buffer size ?
+  if((config.ublox_type==M8_38400BD)|(config.ublox_type==M9_38400BD)|  (config.ublox_type==M10_38400BD)){
+    Serial2.begin(38400, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2  
+    }
+  else{
+   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2
+   }   
+  Serial.println("Serial2 Txd is on pin: "+String(TXD2));
+  Serial.println("Serial2 Rxd is on pin: "+String(RXD2));
+  for(int i=0;i<425;i++){//Startup string van ublox to serial, ca 424 char !!
+     while (Serial2.available()) {
+              Serial.print(char(Serial2.read()));
+              }
+     delay(2);   //was delay (1)
+     }
+  config.ublox_type = EEPROM.read(0);
+  if(config.ublox_type==0xFF) {
+    Auto_detect_ublox();//only test for ublox type and baudrate if unknown in configuration
+    if(config.ublox_type!=UBLOX_TYPE_UNKNOWN){
+      EEPROM.write(0, config.ublox_type);
+      EEPROM.commit();
+      }
+    else{
+       Serial.println("Can't detect type and or baudrate of ublox....");
+      }  
+    }     
+  if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)){
+    Init_ublox(); //switch to ubx protocol
+    }
+  if((config.ublox_type==M9_9600BD)|(config.ublox_type==M9_38400BD)|(config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)){
+    Init_ubloxM10(); //switch to ubx protocol, same for M9/M10
+    }
+  Serial.print("SW Ublox=");
+  Serial.println(ubxMessage.monVER.swVersion);
+  Serial.print ("HW Ublox=");
+  Serial.println (ubxMessage.monVER.hwVersion);
+  Serial.print ("Extensions Ublox= ");
+  for(int i=0;i<6;i++){
+    Serial.print (ubxMessage.monVER.ext[i].extension);
+    Serial.print (", ");
+    }
+  Serial.println();  
+  Serial.println (ubxMessage.monGNSS.default_Gnss);
+  Serial.println (ubxMessage.monGNSS.enabled_Gnss);
+  if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)){
+      Set_rate_ublox(config.sample_rate);//after reading config file !! 
+  } 
+  if((config.ublox_type==M9_9600BD)|(config.ublox_type==M9_38400BD)|(config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)){
+      Set_rate_ubloxM10(config.sample_rate);//after reading config file !! 
+  } 
+  return 1;
 }
  /*Heading tov reference***********************************************************************************
   

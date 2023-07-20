@@ -135,4 +135,5 @@ class Alfa_speed{
 };
 float Dis_point_line(float long_act,float lat_act,float long_1,float lat_1,float long_2,float lat_2);
 float Alfa_indicator(GPS_speed M250,GPS_speed M100,float actual_heading);
+int setupGPS(void);
 #endif

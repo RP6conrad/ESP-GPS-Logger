@@ -1,10 +1,32 @@
+  ### Changes SW5.77 (mainly by avoprykk)
+#### Fixed:
+* OTA_Server firmware upload page javascript.
+* GPS_Data changed BUFFER_SIZE from 10000 to 9500 as for fitting into 1.5M Image partition.
+* Some compiler errors about types.
+#### Changed:
+* E_paper>
+* Display unified row heights macros, changes in screens accordingly
+* ESP-GPS logo size to 24x24
+* Moved time, gps and battery for all screens to bottom row infobar.
+* New screen for GPS initialization.
+main.cpp> Ublox initialization moved after Wifi connections closed.
+#### New:
+* Partial code for OTA autoupload, dev status yet.
+M9 15Hz support
+* Added support to PlatformIO and partially for ESP-IDF (CMakefile.txt), thats why Rtos.ino moved to main.cpp. Wrapper module: https://github.com/aivoprykk/ESP-GPS-Wrapper
+* Filename Rtos.h -> Definitions.h
+* Added ESP_functions.h with general functions
+* Bugfix Short_push for speed_field choice
+* Added field 9 : Run-AVG, Alfa, NM, 1 hour
+* Bugfix bat%@boot
+
    ### Changes  SW 5.0
 *   Automatic ### switching to portable with overspeed (>20 m/s)
 *   Extra dynamic model Automotive : 2-> automotive
 *   for higher accuracy, change of datatypes to double
 *   All speeds are now in mm/s (format double)
 *   Added STATS3 screen with M100/M500, config.Stat_screens 6
-*   Added Rtos5.h for general #define
+*   Added Definitions.h for general #define
 *   Bugfix in new_run_detection, speed m/s -> mm/s
 *   Start logging if speed>MIN_SPEED_START_LOGGING, now 2m/s
 *   Added log files in oao format
@@ -247,3 +269,5 @@
 * Autodetect GPS only once, then saved in EEPROM
 * Can be changed over the webserver (configuration), only set AUTODETECT again !
 * Added support for the ublox M9 (Beitian BK180), logging@20Hz + 4 gnss simultan
+
+
