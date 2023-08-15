@@ -205,6 +205,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.Stat_screens = doc["Stat_screens"]|12;
   config.Stat_screens_time = doc["Stat_screens_time"]|2;
   config.stat_speed= doc["stat_speed"]|1;
+  config.start_logging_speed= doc["start_logging_speed"]|1;
   config.archive_days= doc["archive_days"]|0;
   config.Stat_screens_persist = config.Stat_screens;
   config.GPIO12_screens = doc["GPIO12_screens"]|12;
@@ -256,6 +257,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   //int Logo_choice=config.Logo_choice;//preserve value config.Logo_choice for config.txt update !!
   int stat_screen=config.Stat_screens;//preserve value config
   int GPIO_12_screens=config.GPIO12_screens;//preserve value config 
+  int speed_screens=config.field;//preserve speed_screen setting
   if(config.file_date_time==0) config.logTXT=1;//because txt file is needed for generating new file count !!
   for (int i=0;i<9;i++){
         config.stat_screen[i]=stat_screen%10;//STATSx heeft geen offset !!! 641
@@ -268,6 +270,12 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
         if(GPIO_12_screens>0){
             config.gpio12_count=i+1;
             }
+        config.speed_screen[i]=speed_screens%10;//vb 841, [0]=1, [1]=4,[2]=8,[3]=0.....[8]=0;
+        config.field_actual=config.speed_screen[0];//vb 841 -> 1 of 3 -> 3
+        speed_screens=speed_screens/10;
+        if(speed_screens>0){
+            config.speed_count=i+1;//vb 841 -> 3
+            }    
        }
 }
 // Prints the content of a file to the Serial

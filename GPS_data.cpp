@@ -502,11 +502,3 @@ int setupGPS(void) {
   } 
   return 1;
 }
- /*Heading tov reference***********************************************************************************
-  
-  ref_heading=atan2(((P1_long-P2_long)*corr_long),((P1_lat-P2_lat)*corr_lat))*180/PI;//dit is getest en werkt correct, wel +180° tov werkelijke richting
-  if(ref_heading<0)ref_heading=ref_heading+360;//atan2 geeft een waarde terug tussen -PI en +PI radialen !
-  delta_heading=(int)(actual_heading-ref_heading*180/PI)%360;//due to P1-P2, this is the opposite direction from travelling !
-  if(delta_heading>180) delta_heading=delta_heading-360;
-  if(delta_heading<-180) delta_heading=delta_heading+360;
-  */

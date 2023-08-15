@@ -1,3 +1,12 @@
+  ### Changes SW5.78
+* Sleeptime 21600s -> 1800s, only screen update if delta_bat_voltage> 0.01 V !!
+* Wake-up without refresh screen < 50 ms, with refresh 2665 ms !!
+* Start_logging_speed configurable over webserver
+* Watchdog when downloading file now 600s
+* Added actual 0.5h and actual 1h in speed screen with "big Font"
+* Speed_screens can be choosen, analog to the stat_screens : setting 841 will toggle between three screens : 1,4 and 8. Only one digit : toggle from 0...9
+* Especially usefull if you have the sealed pushbutton instead of the reed-switch
+
   ### Changes SW5.77 (mainly by avoprykk)
 #### Fixed:
 * OTA_Server firmware upload page javascript.

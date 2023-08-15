@@ -628,15 +628,13 @@ void Update_screen(int screen){
           display.setCursor(offset,(cursor+=ROW_9PT_W_SPACING));
           display.print("Move faster than ");
           if((int)(calibration_speed*100000)==194) {
-            display.print(config.stat_speed*1.94384449);
+            display.print(config.start_logging_speed*1.94384449);
             display.print("kn");
           }
           if((int)(calibration_speed*1000000)==3600) {
-            display.print(config.stat_speed*3.6);
+            display.print(config.start_logging_speed*3.6);
             display.print("km/h");
           }
-         
-          //M8_M10(offset);
           Speed_in_Unit(offset);
         }
       }
@@ -674,30 +672,31 @@ void Update_screen(int screen){
     if(screen==SPEED){
       update_delay=100;
       int run_rectangle_length;
-      int field=config.field;//default is in config.txt
+      int field=config.field_actual;//default is in config.txt
       int bar_position=32;
       int bar_length=config.bar_length*1000/240;//default 100% length = 1852 m
       display.setFont(&FreeSansBold6pt7b);
       display.setCursor(displayWidth-10,INFO_BAR_TOP);
-      display.print(config.field);//show config field in small font
-      if(config.field==1){         //switch alfa, run-AVG, NM!!!
+      display.print(config.field_actual);//show config field in small font
+      if(config.field_actual==1){         //switch alfa, run-AVG, NM!!!
         field=2 ; //Default Run-AVG // NM
         if(((int)(Ublox.total_distance/1000000)%10==0)&(Ublox.alfa_distance/1000>1000))field=5;//indien x*10km, totale afstand laten zien                 
         if((Ublox.alfa_distance/1000<350)&(alfa_window<100))field=3;//first 350 m after gibe  alfa screen !!
         if(Ublox.alfa_distance/1000>config.bar_length)field=4;//run longer dan 1852 m, NM scherm !! 
       }
-      if(config.field==2){
+      if(config.field_actual==2){
         field=2;//default actual Run - AVG / NM
         if(Ublox.run_distance/1000>config.bar_length)field=4;//if run longer dan 1852 m, NM scherm !!
       }
-      if(config.field==7) {
+      if(config.field_actual==7) {
         field=7;//default 0.5h
         if((Ublox.alfa_distance/1000<350)&(alfa_window<100))field=3;//first 350 m after gibe  alfa screen !!  
       } 
-      if(config.field==8){
+      if(config.field_actual==8){
         field=8;//default 1h
+         if((Ublox.alfa_distance/1000<350)&(alfa_window<100))field=3;//first 350 m after gibe  alfa screen !!  
       }
-      if(config.field==9) {//1 hour default, but first alfa, and if good run, last run
+      if(config.field_actual==9) {//1 hour default, but first alfa, and if good run, last run
         field=2;
         if(Ublox.alfa_distance/1000>config.bar_length)field=4;//run longer dan 1852 m, NM scherm !! 
         if(S10.s_max_speed>S10.display_speed[5])field=2;//if run faster then slowest run, show AVG & run
@@ -881,9 +880,10 @@ void Update_screen(int screen){
               bar_position=40;//test voor bigger font, was 42
               display.setFont(&FreeSansBold12pt7b);// !!!!
               display.setCursor(offset,36);
-              display.print("0.5h: ");
-              display.setFont(&SansSerif_bold_46_nr);   //Test for bigger alfa fonts
+              display.print("0.5h:");
               display.print(S1800.display_max_speed*calibration_speed,2);   //best average over 30 min
+              display.setFont(&SansSerif_bold_46_nr);   //Test for bigger alfa fonts
+              display.print(S1800.avg_s*calibration_speed,2);   //actual average last 30 min
              }  
              else{
               display.setFont(&FreeSansBold12pt7b);
@@ -902,9 +902,10 @@ void Update_screen(int screen){
               bar_position=40;//test voor bigger font, was 42
               display.setFont(&FreeSansBold12pt7b);// !!!!
               display.setCursor(offset,36);
-              display.print("1h: ");
-              display.setFont(&SansSerif_bold_46_nr);   //Test for bigger alfa fonts
+              display.print("1h:");
               display.print(S3600.display_max_speed*calibration_speed,2);   //best average over 30 min
+              display.setFont(&SansSerif_bold_46_nr);   //Test for bigger alfa fonts
+              display.print(S3600.avg_s*calibration_speed,2);   //actual average last 30 min
              }
             else{  
             display.setFont(&FreeSansBold12pt7b);

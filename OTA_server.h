@@ -380,6 +380,7 @@ void handleConfigUpload() {
     doc["Stat_screens"] = server.arg("Stat_screens").toInt(); 
     doc["Stat_screens_time"] = server.arg("Stat_screens_time").toInt(); 
     doc["stat_speed"] = server.arg("stat_speed").toInt(); 
+    doc["start_logging_speed"] = server.arg("start_logging_speed").toInt(); 
     doc["archive_days"] = server.arg("archive_days").toInt(); 
     doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt(); 
     doc["Board_Logo"] = server.arg("Board_Logo").toInt();

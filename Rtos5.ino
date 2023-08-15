@@ -173,7 +173,8 @@ void loop() {
     feedTheDog_Task0();
     feedTheDog_Task1();
     }
-  if((wdt_task0_duration>task_timeout)&(downloading_file)) {
+  if((wdt_task0_duration>task_timeout)&(downloading_file)&(max_count_wdt_task0<MAX_COUNT_WDT_TASK0)) {
+    max_count_wdt_task0++;
     feedTheDog_Task0();
     wdt_task0=millis();
     Serial.println("Extend watchdog_timeout due long download"); 
@@ -194,8 +195,13 @@ void taskOne( void * parameter )
    if (Long_push12.Button_pushed()){ s10.Reset_stats(); s2.Reset_stats();a500.Reset_stats();} //resetten stats   
    #endif  
    if(Long_push39.Button_pushed()) Shut_down();
+
    if (Short_push39.Button_pushed()){
-      config.field=Short_push39.button_count;
+      if(config.speed_count==0){config.field_actual=Short_push39.button_count;}
+      else{
+        if(Short_push39.button_count>config.speed_count){Short_push39.button_count=0;}
+        config.field_actual=config.speed_screen[Short_push39.button_count];
+        }
       }
    Field_choice=Short_push39.long_pulse;//10s wachttijd voor menu field keuze....//bug sw 5.54 !!
    
@@ -262,9 +268,9 @@ void taskOne( void * parameter )
               GPS_delay++;
               }
         if ((Time_Set_OK==false)&(GPS_Signal_OK==true)&(GPS_delay>(TIME_DELAY_FIRST_FIX*config.sample_rate))){//vertraging Time_Set_OK is nu 10 s!!
-          int avg_speed = 0;
+         static int avg_speed;
           avg_speed=(avg_speed+ubxMessage.navPvt.gSpeed*19)/20; //FIR filter gem. snelheid laatste 20 metingen in mm/s
-          if(avg_speed>MIN_SPEED_START_LOGGING){
+          if(avg_speed>(config.start_logging_speed*1000)){
             if(Set_GPS_Time(config.timezone)){            
                 Time_Set_OK=true;
                 Shut_down_Save_session=true;

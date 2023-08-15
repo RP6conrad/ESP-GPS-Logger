@@ -1,7 +1,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 5.77";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 5.78";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -42,7 +42,6 @@ int nav_sat_message=0;
 int next_gpy_full_frame=0;
 int nav_pvt_message_nr=0;
 int msgType;
-int stat_screen=5;//keuze stat scherm indien stilstand
 int GPIO12_screen=0;//keuze welk scherm
 int low_bat_count;
 int gps_speed;
@@ -50,6 +49,7 @@ float alfa_window;
 float analog_mean=2000;
 float Mean_heading,heading_SD;
 int wdt_task0,wdt_task1;
+int max_count_wdt_task0;
 int freeSpace;
  /* variables to hold instances of tasks*/
 TaskHandle_t t1 = NULL;
@@ -88,6 +88,8 @@ RTC_DATA_ATTR int RTC_counter=0;
 //Simon
 RTC_DATA_ATTR float calibration_bat=1.75;//bij ontwaken uit deepsleep niet noodzakelijk config file lezen
 RTC_DATA_ATTR float RTC_voltage_bat=3.6;
+RTC_DATA_ATTR float RTC_old_voltage_bat=3.6;
+
 FtpServer ftpSrv;  
 GPS_data Ublox; // create an object storing GPS_data !
 GPS_SAT_info Ublox_Sat;//create an object storing GPS_SAT info !
@@ -104,9 +106,9 @@ GPS_time S3600(3600);
 Alfa_speed A250(50);
 Alfa_speed A500(50);
 Alfa_speed a500(50);//for  Alfa stats GPIO_12 screens, reset possible !!
-Button_push Short_push12 (12,100,15,1); //GPIO12 pull up, 100ms push time, 15s long_pulse, count 1, STAT screen 4&5
+Button_push Short_push12 (12,50,15,1); //GPIO12 pull up, 100ms push time, 15s long_pulse, count 1, STAT screen 4&5
 Button_push Long_push12 (12,2000,10,4); //GPIO12 pull up, 2000ms push time, 10s long_pulse, count 4, reset STAT screen 4&5
-Button_push Short_push39 (WAKE_UP_GPIO,100,10,9);//was 39
+Button_push Short_push39 (WAKE_UP_GPIO,50,10,9);//was 39
 Button_push Long_push39 (WAKE_UP_GPIO,1500,10,9);//was 39
 
 #if defined(_GxDEPG0266BN_H_) //only for screen BN266, Rolzz... !!!
@@ -168,9 +170,11 @@ void print_wakeup_reason(){
                                   for(int i=0;i<10;i++){
                                         Update_bat();
                                         }
-                                  //RTC_voltage_bat=analog_mean*calibration_bat/1000;
                                   esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0); //was 39  1 = High, 0 = Low
-                                  Sleep_screen(RTC_SLEEP_screen);
+                                  if(abs(RTC_voltage_bat-RTC_old_voltage_bat)>MINIMUM_VOLTAGE_CHANGE){
+                                    Sleep_screen(RTC_SLEEP_screen);
+                                    RTC_old_voltage_bat=RTC_voltage_bat;
+                                    }
                                   go_to_sleep(TIME_TO_SLEEP); //was 4000
                                   break;                               
     case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); 
@@ -195,7 +199,7 @@ void go_to_sleep(uint64_t sleep_time){
   Serial.println("Setup ESP32 to sleep for every " + String((int)sleep_time) + " Seconds");
   Serial.println("Going to sleep now");
   Serial.flush(); 
-  delay(3000);
+  delay(3000);//time needed for showing go to sleep screen
   esp_deep_sleep(uS_TO_S_FACTOR*sleep_time);
 }
 
@@ -238,6 +242,7 @@ void Shut_down(void){
             RTC_hour=(tmstruct.tm_hour);
             RTC_min=(tmstruct.tm_min);
             }
+        RTC_old_voltage_bat=0; //to force refresh the sleep screen when shutting down !!!    
         go_to_sleep(5);//got to sleep after 5 s, this to prevent booting when GPIO39 is still low !     
 }
 void Update_bat(void){

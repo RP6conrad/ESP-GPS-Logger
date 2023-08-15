@@ -48,6 +48,7 @@ struct Config {
   int sample_rate=5;//gps_rate in Hz, 1, 5 or 10Hz !!!
   int gnss=3;//default setting 2 GNSS, GPS & GLONAS
   int field=1;//choice for first field in speed screen !!!
+  int field_actual=1;//actual choice in speed screen
   int speed_large_font=1;//fonts on the first line are bigger, actual speed font is smaller
   int dynamic_model=0;//choice for dynamic model "Sea",if 0 model "portable" is used !!
   float timezone=1;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)
@@ -60,10 +61,13 @@ struct Config {
   int Sail_Logo=1;
   int stat_screen[10];//which stat_screen you want to see ?
   int gpio12_screen[10];//which stat_screen when gpio 12 toggles ?
+  int speed_screen[10];//which speed fields are selected ?
   int screen_count=0;
   int gpio12_count=0;
+  int speed_count=0;
   int sleep_off_screen=11;
   int stat_speed=1;//max speed in m/s for showing Stat screens
+  int start_logging_speed=1;
   int bar_length=1852;//choice for bar indicator for length of run in m (nautical mile)
   int archive_days=10; //how many days files will be moved to the "Archive" dir
   bool logTXT=1;// switchinf off .txt files
