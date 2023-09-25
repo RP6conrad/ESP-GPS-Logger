@@ -28,11 +28,12 @@ void logERR(const char * message){
 }
 //test for existing GPSLOGxxxfiles, open txt,gps + ubx file with new name, or with timestamp !
 void Open_files(void){
+  char macAddr[16];
   if(config.file_date_time){
-      //struct tm tmstruct;
       getLocalTime(&tmstruct);
       char extension[16]=".txt";//
       char timestamp[16];
+     
        if(config.file_date_time==1){
           sprintf(timestamp, "_%u%02u%02u%02u%02u", tmstruct.tm_year-100,tmstruct.tm_mon+1,tmstruct.tm_mday,tmstruct.tm_hour,tmstruct.tm_min);
           strcat(filenameERR,config.UBXfile);//copy filename from config
@@ -44,12 +45,19 @@ void Open_files(void){
           strcat(filenameERR,timestamp);//add timestamp
           strcat(filenameERR,config.UBXfile);//copy filename from config
           strcat(filenameERR,extension);//add extension.txt 
-          }   
+          }
+        if(config.file_date_time==3){
+          sprintf(timestamp, "_%u%02u%02u%02u%02u", tmstruct.tm_year-100,tmstruct.tm_mon+1,tmstruct.tm_mday,tmstruct.tm_hour,tmstruct.tm_min);
+          sprintf(macAddr, "_2X%2X%2X", mac[3], mac[4], mac[5]);//3 last bytes from MAC
+          strcat(filenameERR,config.UBXfile);//copy filename from config
+          strcat(filenameERR,timestamp);//add timestamp
+          strcat(filenameERR,macAddr);
+          strcat(filenameERR,extension);//add extension.txt 
+          }     
       }
   else{   
-      char txt[16]="000.txt";    
-      char macAddr[16];
-      sprintf(macAddr, "_%2X%2X%2X%2X%2X%2X_", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+      char txt[16]="000.txt";
+      sprintf(macAddr, "_%2X%2X%2X%2X%2X%2X_", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);    
       strcat(filenameERR,config.UBXfile);//copy filename from config
       strcat(filenameERR,macAddr);
       int filenameSize=strlen(filenameERR);//dit is dan 7 + NULL = 8
@@ -125,7 +133,8 @@ void Log_to_SD(void){
                 static long old_iTOW;
                 static int interval;
                 interval=ubxMessage.navPvt.iTOW-old_iTOW;
-                old_iTOW=ubxMessage.navPvt.iTOW;            
+                old_iTOW=ubxMessage.navPvt.iTOW; 
+/*
                 if((interval>time_out_nav_pvt)&(sdOK==true)&(nav_pvt_message_nr>10)){//check for timeout navPvt message !!
                      next_gpy_full_frame=1;
                      dataStr[0] = 0;
@@ -138,6 +147,7 @@ void Log_to_SD(void){
                      Serial.print("Lost ubx frame");
                      Serial.println(interval);
                     }
+*/
                 if(config.logUBX==true){    
                     ubxfile.write(0xB5);
                     ubxfile.write(0x62);
@@ -251,7 +261,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   RTC_Sail_Logo=config.Sail_Logo;//copy to RTC memory !!
   calibration_bat=config.cal_bat;
   calibration_speed=config.cal_speed/1000;//3.6=km/h, 1.94384449 = knots, speed is now in mm/s
-  time_out_nav_pvt=(1000/config.sample_rate+75);//max time out = 175 ms
+  //time_out_nav_pvt=(1000/config.sample_rate+75);//max time out = 175 ms
   RTC_SLEEP_screen=config.sleep_off_screen%10;
   RTC_OFF_screen=config.sleep_off_screen/10%10;
   //int Logo_choice=config.Logo_choice;//preserve value config.Logo_choice for config.txt update !!

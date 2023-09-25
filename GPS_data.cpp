@@ -18,22 +18,36 @@ int alfa_counter;
 
 void GPS_data::push_data(float latitude,float longitude,uint32_t gSpeed) {//gspeed in mm/s !!!
     static int dynamic_state=0;
-    if((S2.avg_s>20000)&(config.dynamic_model==1)&(dynamic_state==0)){  //omschakelen naar dynamic_model "portable", only works with speed<25 m/s !!!
+    if((S2.avg_s>24000)&(config.dynamic_model==1)&(dynamic_state==0)){  //omschakelen naar dynamic_model "portable", only works with speed<25 m/s !!!
           dynamic_state=1;                   //test with 5 m/s, this is 18 km/h
           Serial.print("Set ublox UBX_PORTABLE ");
           Model_info(0);
-          for(int i = 0; i < sizeof(UBX_PORTABLE); i++) {                        
-              Serial2.write( pgm_read_byte(UBX_PORTABLE+i) );
-              }
+          if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)){
+            for(int i = 0; i < sizeof(UBX_PORTABLE); i++) {                        
+                Serial2.write( pgm_read_byte(UBX_PORTABLE+i) );
+                }
+          }     
+          else{ 
+          for(int i = 0; i < sizeof(UBX_M10_PORTABLE); i++) {                        
+                Serial2.write( pgm_read_byte(UBX_M10_PORTABLE+i) );
+                }     
+          }    
       }
-    if((S2.avg_s<15000)&(config.dynamic_model==1)&(dynamic_state==1)){  //omschakelen naar dynamic_model "portable", only works with speed<25 m/s !!!
+    if((S2.avg_s<20000)&(config.dynamic_model==1)&(dynamic_state==1)){  //omschakelen naar dynamic_model "portable", only works with speed<25 m/s !!!
               dynamic_state=0;               //test with 4.5 m/s, this is 16.2 km/h
               Serial.print("Set ublox UBX_SEA ");
               Model_info(1);
+              if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)){
               for(int i = 0; i < sizeof(UBX_SEA); i++) {                        
                   Serial2.write( pgm_read_byte(UBX_SEA+i) );
                   }
-          }
+               }
+              else{
+              for(int i = 0; i < sizeof(UBX_M10_SEA); i++) {                        
+                  Serial2.write( pgm_read_byte(UBX_M10_SEA+i) );
+                  } 
+              }
+          }      
     index_GPS++;//altijd index ophogen na update alle instanties  
   _gSpeed[index_GPS%BUFFER_SIZE]=gSpeed;//altijd gSpeed opslaan in array bereik !
   _lat[index_GPS%BUFFER_ALFA]=latitude;

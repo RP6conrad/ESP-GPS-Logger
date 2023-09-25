@@ -45,5 +45,5 @@
 #define MAX_Sacc_GPS_SPEED_OK 1   //max waarde Sacc voor berekenen snelheid, anders 0
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 #define EEPROM_SIZE 1             //use 1 byte in eeprom for saving type of ublox
-
+#define TIME_OUT_NAV_PVT 10000    //10s time out ubx nav-pvt msg before screen "TROUBLE" 
 #endif

@@ -838,7 +838,7 @@ void Update_screen(int screen){
               display.setCursor(offset,36);
               display.print("NM= ");    //Actuele nautical mile
               display.setFont(&SansSerif_bold_46_nr); 
-              display.print(M1852.m_max_speed*calibration_speed,1);//actueel topspeed NM van deze run
+              display.print(M1852.m_max_speed*calibration_speed,2);//actueel topspeed NM van deze run
             }
           }  
           if(field==5){
@@ -993,7 +993,8 @@ void Update_screen(int screen){
       if(screen==TROUBLE){ 
          display.setFont(&FreeSansBold12pt7b);
          display.setCursor(offset,ROW_1_12PT);
-         display.println("No GPS frames for more then 1s.... ");
+         display.println("No GPS frames for");
+         display.println("more then 10 s.... ");
          //display.setCursor(offset,120);
          //display.print(time_now);
       }  

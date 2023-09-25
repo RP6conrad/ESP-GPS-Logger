@@ -80,8 +80,8 @@ void Init_ublox(void){
       for(int i = 0; i < sizeof(UBX_AUTOMOTIVE); i++) {                        
         Serial2.write( pgm_read_byte(UBX_AUTOMOTIVE+i) );
         }
-      Ublox_serial2(wait); 
-      }
+  Ublox_serial2(wait); 
+  }
   if(config.gnss==3){
       Serial.println("Set ublox UBX_GNSS3 : GPS, GLONAS & GALILEO ");
       for(int i = 0; i < sizeof(UBX_GNSS3); i++) {                        
@@ -173,6 +173,20 @@ void Init_ubloxM10(void){
         Serial2.write( pgm_read_byte(UBLOX_M10_NMEA_OFF+i) );
         }
   Ublox_serial2(wait); 
+  if(config.dynamic_model==1){
+      Serial.println("Set ublox UBX_M10_SEA ");
+      for(int i = 0; i < sizeof(UBX_M10_SEA); i++) {                        
+        Serial2.write( pgm_read_byte(UBX_M10_SEA+i) );
+        }
+  Ublox_serial2(wait);       
+  }
+  if(config.dynamic_model==2){
+      Serial.println("Set ublox UBX_M10_AUTOMOTIVE ");
+      for(int i = 0; i < sizeof(UBX_M10_AUTOMOTIVE); i++) {                        
+        Serial2.write( pgm_read_byte(UBX_M10_AUTOMOTIVE+i) );
+        }
+  Ublox_serial2(wait); 
+  }
    if(config.gnss<4){   //for M9, default is 4 GNSS activated, config.gnss=5  !!
       Serial.println("Set ublox M10 BEIDOU OFF ");     
       for(int i = 0; i < sizeof(UBLOX_M10_BEIDOU_OFF); i++) {                        

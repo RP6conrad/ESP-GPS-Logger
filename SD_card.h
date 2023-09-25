@@ -20,7 +20,7 @@ extern bool GPS_logging;
 extern float Mean_heading,heading_SD;
 extern float calibration_bat;
 extern float calibration_speed;
-extern int time_out_nav_pvt;
+//extern int time_out_nav_pvt;
 extern int next_gpy_full_frame;
 extern byte mac[6];
 extern const char SW_version[16];

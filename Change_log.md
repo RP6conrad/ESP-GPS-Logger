@@ -1,3 +1,8 @@
+  ### Changes SW5.79
+* Speed screen NM big font, 2 digits after dec. point
+* Add file name option name_date_time_MAC
+* Time out nav-pvt msg -> 10s, then trouble screen
+* Check for nav-pvt msg after init gps, NOK -> then trouble screeen
   ### Changes SW5.78
 * Sleeptime 21600s -> 1800s, only screen update if delta_bat_voltage> 0.01 V !!
 * Wake-up without refresh screen < 50 ms, with refresh 2665 ms !!

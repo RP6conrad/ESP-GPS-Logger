@@ -1,7 +1,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 5.78";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 5.79";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -27,6 +27,7 @@ bool Field_choice = false;
 int NTP_time_set = 0;
 int Gps_time_set = 0;
 bool Shut_down_Save_session = false;
+bool trouble_screen = false;
 extern bool downloading_file;
 int GPS_OK = 0;
 int analog_bat;
@@ -34,7 +35,7 @@ int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay;
 int start_logging_millis;
 int wifi_search=10;//was 10
 int ftpStatus=0;
-int time_out_nav_pvt=4000;
+//int time_out_nav_pvt=TIME_OUT_NAV_PVT;
 int last_gps_msg=0;
 int nav_pvt_message=0;
 int old_message=0;

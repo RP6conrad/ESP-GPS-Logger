@@ -457,13 +457,13 @@ void html_config(String& webpage){
   if(config.logGPX == 0) webpage += "<option value='0' selected>LOG GPX OFF</option>\n"; else webpage += "<option value='0'>LOG GPX OFF</option>\n";
   webpage += "</select>\n</td><td>logGPX: To save the GPS data in gpx format @ 1Hz, for video overlay or other purposes.</td>\n</tr>\n";  
   //dynamic_model
-  if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)){
+  //if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)){
   webpage += "<tr><td>dynamic_model</td><td>\n<select id='dynamic_model' name='dynamic_model'>\n";
   if(config.dynamic_model == 0) webpage += "<option value='0' selected>portable</option>\n"; else webpage += "<option value='0'>portable</option>\n";
   if(config.dynamic_model == 1) webpage += "<option value='1' selected>sea</option>\n"; else webpage += "<option value='1'>sea</option>\n";
   if(config.dynamic_model == 2) webpage += "<option value='2' selected>automotive</option>\n"; else webpage += "<option value='2'>automotive</option>\n";
-  webpage += "</select>\n</td><td>dynamic_model: Here you can choose the dynamic model of the Ublox M8N (0=portable, 1=sea, 2=automotive). As 'sea' has some disadvantages (max speed is limited to 40 knots, only sea-level..), my advice is to stay with 'portable'. </td>\n</tr>\n"; 
-  }
+  webpage += "</select>\n</td><td>dynamic_model: Here you can choose the dynamic model of the Ublox  (0=portable, 1=sea, 2=automotive). As 'sea' has some disadvantages (max speed is limited to 40 knots, only sea-level..), my advice is to stay with 'portable'. </td>\n</tr>\n"; 
+ // }
   //timezone
   webpage += "<tr>\n<td>timezone</td><td>\n<select id='timezone' name='timezone' type='number'>\n"; 
   if(config.timezone == -11) webpage += "<option value='-11' selected>-11 (Pacific/Samoa)</option>\n"; else  webpage += "<option value='-11'>-11 (Pacific/Samoa)</option>\n";
@@ -509,11 +509,12 @@ void html_config(String& webpage){
   if(config.file_date_time == 1) webpage += "<option value='1' selected>name_date_time</option>\n"; else webpage += "<option value='1'>name_date_time</option>\n";
   if(config.file_date_time == 0) webpage += "<option value='0' selected>name_MAC_index</option>\n"; else webpage += "<option value='0'>name_MAC_index</option>\n";
   if(config.file_date_time == 2) webpage += "<option value='2' selected>date_time_name</option>\n"; else webpage += "<option value='2'>date_time_name</option>\n";
-  webpage += "</select>\n</td><td>file_date_time: To choose the type of filenaming between filename_MAC_count or filename_date_time or date_time_filename.</td>\n</tr>\n"; 
+  if(config.file_date_time == 3) webpage += "<option value='3' selected>name_date_time_MAC</option>\n"; else webpage += "<option value='3'>name_date_time_MAC</option>\n";
+  webpage += "</select>\n</td><td>file_date_time: To choose the type of filenaming between filename_MAC_count or filename_date_time or date_time_filename or name_date_time_MAC.</td>\n</tr>\n"; 
   //UBXfile
   webpage += "<tr>\n<td>UBXfile</td><td>\n";
   webpage += "<input size='10' type='text' required name='UBXfile' value="+String(config.UBXfile)+">\n";
-  webpage += "</select>\n</td><td>UBXfile: Here you can set the desired file name, this is completed with the (unique) MAC address of the ESP32 and a suffix from 000 to 999 or the timestamp when the logging started.</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>UBXfile: Here you can set the desired file name (max 10 char!), this is completed with the (unique) MAC address of the ESP32 and a suffix from 000 to 999 or the timestamp when the logging started.</td>\n</tr>\n";
   //Sleep_info
   String Sleep_info="\"" + String(config.Sleep_info) + "\"";
   webpage += "<tr>\n<td>Sleep_info</td><td>\n";

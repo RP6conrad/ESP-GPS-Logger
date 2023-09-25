@@ -256,10 +256,12 @@ void taskOne( void * parameter )
               }
         #endif
         }
-   else msgType = processGPS(); //only decoding if no Wifi connection
-          //while (Serial2.available()) {
-          //Serial.print(char(Serial2.read()));}  
- if ( msgType == MT_NAV_DOP ) {      //Logging after NAV_DOP, ublox sends first NAV_PVT, and then NAV_DOP.  
+   else {msgType = processGPS(); //only decoding if no Wifi connection
+          //while (Serial2.available()) { Serial.print(char(Serial2.read()));}
+          if((millis()-last_gps_msg)>TIME_OUT_NAV_PVT){trouble_screen=true;}//check for time out nav-pvt msg
+          else {trouble_screen=false;}
+          }  
+ if ( msgType == MT_NAV_DOP ) {      //Logging after NAV_DOP, ublox sends first NAV_PVT, and then NAV_DOP. 
         if((ubxMessage.navPvt.numSV>=MIN_numSV_FIRST_FIX)&((ubxMessage.navPvt.sAcc/1000.0f)<MAX_Sacc_FIRST_FIX)&(ubxMessage.navPvt.valid>=7)&(GPS_Signal_OK==false)){
               GPS_Signal_OK=true;
               first_fix_GPS=millis()/1000;
@@ -281,10 +283,9 @@ void taskOne( void * parameter )
         }
         if ((sdOK==true)&(Time_Set_OK==true)&(nav_pvt_message>10)&(nav_pvt_message!=old_message)){
                   old_message=nav_pvt_message;
-                  //float sAcc=ubxMessage.navPvt.sAcc/1000;
+                  //last_gps_msg=millis();
                   gps_speed=ubxMessage.navPvt.gSpeed; //hier alles naar mm/s !!
                   static int last_flush_time=0;
-                  last_gps_msg=millis();
                   if((millis()-last_flush_time)>60000){
                       Flush_files();
                       last_flush_time=millis();
@@ -314,6 +315,7 @@ void taskOne( void * parameter )
                   }     
       } 
      else if( msgType == MT_NAV_PVT )  { //order messages in ubx should be ascending !!!
+          last_gps_msg=millis(); 
           if(Time_Set_OK==true){
                 nav_pvt_message++;
                 }
@@ -359,15 +361,17 @@ void taskTwo( void * parameter)
         Shut_down();
     }
     else if(millis()<2000)Update_screen(BOOT_SCREEN);
+    else if(trouble_screen) Update_screen(TROUBLE);
     else if(GPS_Signal_OK==false) Update_screen(WIFI_ON);
     else if(Time_Set_OK==false) Update_screen(WIFI_ON);
     #if defined (GPIO12_ACTIF)
     else if(Short_push12.long_pulse){Update_screen(config.gpio12_screen[GPIO12_screen]);}//heeft voorrang, na drukken GPIO_pin 12, 10 STAT4 scherm !!!
     #endif
+    
     else if((gps_speed/1000.0f<config.stat_speed)&(Field_choice==false)){
           Update_screen(config.stat_screen[stat_count]);
           }
-    else if((millis()-last_gps_msg)>time_out_nav_pvt) Update_screen(TROUBLE);
+    
     else {
           if(config.speed_large_font==2){
             Update_screen(SPEED2);
