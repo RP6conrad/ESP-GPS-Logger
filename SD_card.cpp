@@ -225,7 +225,12 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.sleep_off_screen = doc["sleep_off_screen"]|11;
   config.logTXT=doc["logTXT"]|1;
   config.logUBX=doc["logUBX"]|1;
-  config.logUBX_nav_sat=doc["logUBX_nav_sat"]|0;
+  if(config.sample_rate<10){
+    config.logUBX_nav_sat=doc["logUBX_nav_sat"]|0;
+    }
+  else {
+    config.logUBX_nav_sat=0;
+    }  
   config.logSBP=doc["logSBP"]|1;
   config.logGPY=doc["logGPY"]|1;
   config.logGPX=doc["logGPX"]|0;
@@ -346,11 +351,13 @@ void Session_info(GPS_data G){
   strcat(message," \n");
   sprintf(tekst, "Ublox GNSS-enabled : %d\n",ubxMessage.monGNSS.enabled_Gnss);
   strcat(message,tekst);
-  if(ubxMessage.monGNSS.enabled_Gnss==3) strcat(message,"GNSS = GPS + GLONAS");
-  if(ubxMessage.monGNSS.enabled_Gnss==9) strcat(message,"GNSS = GPS + GALILEO");  
-  if(ubxMessage.monGNSS.enabled_Gnss==11) strcat(message,"GNSS = GPS + GLONAS + GALILEO");
-  if(ubxMessage.monGNSS.enabled_Gnss==13) strcat(message,"GNSS = GPS + GLONAS + BEIDOU");
-  if(ubxMessage.monGNSS.enabled_Gnss==15) strcat(message,"GNSS = GPS + GLONAS + GALILEO + BEIDOU");//only M9
+  if(ubxMessage.monGNSS.enabled_Gnss==3) strcat(message,"GNSS = GPS + GLONAS");//bitmask GAL BEI GLO GPS:0011 = 3
+  if(ubxMessage.monGNSS.enabled_Gnss==5) strcat(message,"GNSS = GPS + BEIDOU");//bitmask GAL BEI GLO GPS:0101 = 5
+  if(ubxMessage.monGNSS.enabled_Gnss==9) strcat(message,"GNSS = GPS + GALILEO"); //bitmask GAL BEI GLO GPS:1001 = 9
+  if(ubxMessage.monGNSS.enabled_Gnss==13) strcat(message,"GNSS = GPS + GALILEO + BEIDOU");//bitmask GAL BEI GLO GPS:1101 = 13
+  if(ubxMessage.monGNSS.enabled_Gnss==11) strcat(message,"GNSS = GPS + GLONAS + GALILEO");//bitmask GAL BEI GLO GPS:1011 = 11
+  if(ubxMessage.monGNSS.enabled_Gnss==7) strcat(message,"GNSS = GPS + GLONAS + BEIDOU");//bitmask GAL BEI GLO GPS:0111 = 7
+  if(ubxMessage.monGNSS.enabled_Gnss==15) strcat(message,"GNSS = GPS + GLONAS + GALILEO + BEIDOU");//only M9 //bitmask GAL BEI GLO GPS:1111 = 15
   strcat(message," \n");
   strcat(message,"Ublox SW-version : ");
   strcat(message,ubxMessage.monVER.swVersion);

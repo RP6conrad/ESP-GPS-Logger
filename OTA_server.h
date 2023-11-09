@@ -369,10 +369,21 @@ void handleConfigUpload() {
     }
     StaticJsonDocument<1024> doc;
     // Set the values in the document
-    Serial.println("calspeed:"+server.arg("cal_speed"));
+    //Serial.println("calspeed:"+server.arg("cal_speed"));
+    //gnss 4 = GPS + GALILEO + BEIDOU_B1C 
+    //gnss x = GPS + GLONAS + BEIDOU   (impossible for the M10 ???)
+    //gnss 3 = GPS + GLONAS + GALILEO
+    //gnss 2 = GPS + GLONAS (default M8 ROM 2)
+    //gnss 1 = GPS + GALILEO (not working for M8)
+    //gnss 0 = GPS + BEIDOU  
     doc["cal_bat"] = serialized(server.arg("cal_bat")); 
     doc["cal_speed"] = serialized(server.arg("cal_speed")); 
     doc["sample_rate"] = server.arg("sample_rate").toInt();
+    if((config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)) {//limit sample rate for 3/4 GNSS M10, prevent lost points
+      if((server.arg("gnss").toInt()==3)&(server.arg("sample_rate").toInt()>5)){ doc["sample_rate"] = 5;}
+      if((server.arg("gnss").toInt()==4)&(server.arg("sample_rate").toInt()>8)){ doc["sample_rate"] = 8;}
+      if((server.arg("gnss").toInt()==5)&(server.arg("sample_rate").toInt()>4)){ doc["sample_rate"] = 4;}
+      }
     doc["gnss"] = server.arg("gnss").toInt();
     doc["speed_field"] = server.arg("speed_field").toInt();
     doc["speed_large_font"] = server.arg("speed_large_font").toInt();
@@ -405,7 +416,8 @@ void handleConfigUpload() {
     if(config.ublox_type==0xFF) {//not in config.txt but saved in EEPROM !!!)
       EEPROM.write(0, config.ublox_type);
       EEPROM.commit();
-      }  
+      } 
+      
     // Pretty Serialize JSON to file
     if (serializeJsonPretty(doc, file) == 0) {
       Serial.println(F("Failed to write to file"));

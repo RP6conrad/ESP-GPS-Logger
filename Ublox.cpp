@@ -82,6 +82,19 @@ void Init_ublox(void){
         }
   Ublox_serial2(wait); 
   }
+  //gnss 4 = GPS + GALILEO + BEIDOU  (default M10)
+  //gnss x = GPS + GLONAS + BEIDOU   (impossible for the M10 ???)
+  //gnss 3 = GPS + GLONAS + GALILEO
+  //gnss 2 = GPS + GLONAS (default M8 ROM 2)
+  //gnss 1 = GPS + GALILEO (not working for M8)
+  //gnss 0 = GPS + BEIDOU  
+    if(config.gnss==1){
+      Serial.println("Set ublox UBX_GNSS2 : GPS + BEIDOU ");
+      for(int i = 0; i < sizeof(UBX_GNSS2_GPS_BEIDOU); i++) {                        
+        Serial2.write( pgm_read_byte(UBX_GNSS2_GPS_BEIDOU+i) );
+        }
+      Ublox_serial2(wait); 
+      }
   if(config.gnss==3){
       Serial.println("Set ublox UBX_GNSS3 : GPS, GLONAS & GALILEO ");
       for(int i = 0; i < sizeof(UBX_GNSS3); i++) {                        
@@ -89,7 +102,6 @@ void Init_ublox(void){
         }
       Ublox_serial2(wait); 
       }
-  
   if(config.gnss==4){
       Serial.println("Set ublox UBX_GNSS3 : GPS, GLONAS & BEIDOU ");
       for(int i = 0; i < sizeof(UBX_GNSS3_BEIDOU); i++) {                        
@@ -111,7 +123,7 @@ void Init_ublox(void){
    for(int i = 0; i < sizeof(UBX_MON_VER); i++) {                        
         Serial2.write( pgm_read_byte(UBX_MON_VER+i) );        
         }                 
-  Ublox_serial2(wait); 
+  Ublox_serial2(wait);
   Serial.println("Set ublox NAV_PVT_ON ");   
   for(int i = 0; i < sizeof(UBLOX_UBX_NAVPVT_ON); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_UBX_NAVPVT_ON+i) );
@@ -122,7 +134,7 @@ void Init_ublox(void){
         Serial2.write( pgm_read_byte(UBLOX_UBX_NAVDOP_ON+i) );
         }
   Ublox_serial2(wait); 
-  if(config.logUBX_nav_sat){
+  if((config.logUBX_nav_sat)&(config.logUBX)){
       Serial.println("Set ublox NAV_SAT_ON ");   
       for(int i = 0; i < sizeof(UBLOX_UBX_NAVSAT_ON); i++) {                        
             Serial2.write( pgm_read_byte(UBLOX_UBX_NAVSAT_ON+i) );
@@ -143,10 +155,12 @@ void Set_rate_ublox(int rate){
   int sample_rate=2;
   switch(rate){
     case 1:sample_rate=2;break;
-    case 5:sample_rate=3;break;
-    case 10:sample_rate=4;break;
-    case 2:sample_rate=5;break;
-    case 18:sample_rate=6;break;
+    case 2:sample_rate=3;break;
+    case 4:sample_rate=4;break;
+    case 5:sample_rate=5;break;
+    case 8:sample_rate=6;break;
+    case 10:sample_rate=7;break;
+    case 18:sample_rate=8;break;
     default:sample_rate=2;
     config.sample_rate=1;
     }
@@ -187,17 +201,44 @@ void Init_ubloxM10(void){
         }
   Ublox_serial2(wait); 
   }
-   if(config.gnss<4){   //for M9, default is 4 GNSS activated, config.gnss=5  !!
+  //Default M10 = GPS+GALILEO+BEIDOU
+  //GNSS 5 = GPS + GALILEO + GLONAS + BEIDOU (only M9)
+  //gnss 4 = GPS + GALILEO + BEIDOU_B1C  (default is beidou B1L !! M10)
+  //gnss x = GPS + GLONAS + BEIDOU (switch off QZSS first M10 !!!)
+  //gnss 3 = GPS + GLONAS + GALILEO
+  //gnss 2 = GPS + GLONAS
+  //gnss 1 = GPS + GALILEO
+  
+  if(config.gnss==4){   //for M9, default is 4 GNSS activated, config.gnss=6  !!
+        Serial.println("Set ublox M10 GLONAS OFF ");     
+        for(int i = 0; i < sizeof(UBLOX_M10_GLONAS_OFF); i++) {                        
+              Serial2.write( pgm_read_byte(UBLOX_M10_GLONAS_OFF+i) );
+              }
+        Ublox_serial2(wait);
+        Serial.println("Set ublox M10 BEIDOU B1 OFF ");     
+        for(int i = 0; i < sizeof(UBLOX_M10_BEIDOU_B1_OFF); i++) {                        
+              Serial2.write( pgm_read_byte(UBLOX_M10_BEIDOU_B1_OFF+i) );
+              }
+        Ublox_serial2(wait);
+        Serial.println("Set ublox M10 BEIDOU B1C ON ");     
+        for(int i = 0; i < sizeof(UBLOX_M10_BEIDOU_B1C_ON); i++) {                        
+              Serial2.write( pgm_read_byte(UBLOX_M10_BEIDOU_B1C_ON+i) );
+              }
+        Ublox_serial2(wait);
+
+
+        }     
+  if(((config.gnss==5)&(config.sample_rate<10)&((config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD)))){  
+        Serial.println("Set ublox M10 4 GNSS ");     
+        for(int i = 0; i < sizeof(UBLOX_M10_4GNSS); i++) {                        
+              Serial2.write( pgm_read_byte(UBLOX_M10_4GNSS+i) );
+              }
+        Ublox_serial2(wait);
+        }            
+  if(config.gnss==3){          
       Serial.println("Set ublox M10 BEIDOU OFF ");     
       for(int i = 0; i < sizeof(UBLOX_M10_BEIDOU_OFF); i++) {                        
             Serial2.write( pgm_read_byte(UBLOX_M10_BEIDOU_OFF+i) );
-            }
-      Ublox_serial2(wait); 
-      }
-     if(config.gnss==3){          
-      Serial.println("Set ublox M10 GALILEO ON ");     
-      for(int i = 0; i < sizeof(UBLOX_M10_GAL_ON); i++) {                        
-            Serial2.write( pgm_read_byte(UBLOX_M10_GAL_ON+i) );
             }
       Ublox_serial2(wait);  
       Serial.println("Set ublox M10 GLONAS ON ");     
@@ -206,10 +247,15 @@ void Init_ubloxM10(void){
             }
       Ublox_serial2(wait);      
       } 
-      if(config.gnss==2){          
+  if(config.gnss==2){          
       Serial.println("Set ublox M10 GALILEO OFF ");     
       for(int i = 0; i < sizeof(UBLOX_M10_GAL_OFF); i++) {                        
             Serial2.write( pgm_read_byte(UBLOX_M10_GAL_OFF+i) );
+            }
+      Ublox_serial2(wait);
+      Serial.println("Set ublox M10 BEIDOU OFF ");     
+      for(int i = 0; i < sizeof(UBLOX_M10_BEIDOU_OFF); i++) {                        
+            Serial2.write( pgm_read_byte(UBLOX_M10_BEIDOU_OFF+i) );
             }
       Ublox_serial2(wait);  
       Serial.println("Set ublox M10 GLONAS ON ");     
@@ -217,7 +263,19 @@ void Init_ubloxM10(void){
             Serial2.write( pgm_read_byte(UBLOX_M10_GLONAS_ON+i) );
             }
       Ublox_serial2(wait);      
-      }     
+      }
+  if(config.gnss==1){     
+      Serial.println("Set ublox M10 BEIDOU OFF ");     
+      for(int i = 0; i < sizeof(UBLOX_M10_BEIDOU_OFF); i++) {                        
+            Serial2.write( pgm_read_byte(UBLOX_M10_BEIDOU_OFF+i) );
+            }
+      Ublox_serial2(wait);      
+      Serial.println("Set ublox M10 GLONAS OFF ");     
+      for(int i = 0; i < sizeof(UBLOX_M10_GLONAS_OFF); i++) {                        
+            Serial2.write( pgm_read_byte(UBLOX_M10_GLONAS_OFF+i) );
+            }
+      Ublox_serial2(wait);      
+      }         
   Serial.println("Set ublox M10 UBX On ");     
   for(int i = 0; i < sizeof(UBLOX_M10_UBX); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_M10_UBX+i) );
@@ -233,20 +291,30 @@ void Init_ubloxM10(void){
         Serial2.write( pgm_read_byte(UBLOX_M10_NAV_DOP+i) );
         }
   Ublox_serial2(wait);  
-  if(config.logUBX_nav_sat){
+  if((config.logUBX_nav_sat)&(config.logUBX)){
       Serial.println("Set ublox M10 NAV_SAT_ON "); 
       if(config.sample_rate<10){ 
-        for(int i = 0; i < sizeof(UBLOX_M10_NAV_SAT); i++) {                        
+        for(int i = 0; i < sizeof(UBLOX_M10_NAV_SAT); i++) {     //NAV_SAT_RATE = sample_rate/10                   
         Serial2.write( pgm_read_byte(UBLOX_M10_NAV_SAT+i) );
         }
       } 
       else{
-        for(int i = 0; i < sizeof(UBLOX_M9_NAV_SAT); i++) {                        
+        for(int i = 0; i < sizeof(UBLOX_M9_NAV_SAT); i++) {       //NAV_SAT_RATE = sample_rate/40                  
         Serial2.write( pgm_read_byte(UBLOX_M9_NAV_SAT+i) );
         }  
       }
       Ublox_serial2(wait);
-    }         
+    } 
+  /*    
+  if(config.sample_rate>5){                //to prevent lost points@10 Hz !!!
+                   //max nr of sats in nav solution 18
+    Serial.println("Set ublox UBLOX_M10_CFG_NAVSPG_INFIL_MAXSVS ");  
+    for(int i = 0; i < sizeof(UBLOX_M10_CFG_NAVSPG_INFIL_MAXSVS); i++) {                    
+      Serial2.write( pgm_read_byte(UBLOX_M10_CFG_NAVSPG_INFIL_MAXSVS+i) );
+      }  
+      Ublox_serial2(wait);    
+  } 
+  */       
   Serial.println("Check UBX_MON_VER ");  //does this work for the M10 ??   
    for(int i = 0; i < sizeof(UBX_MON_VER); i++) {                        
         Serial2.write( pgm_read_byte(UBX_MON_VER+i) );        
@@ -277,10 +345,12 @@ void Set_rate_ubloxM10(int rate){
   switch(rate){
     case 1:sample_rate=1;break;
     case 2:sample_rate=2;break;
-    case 5:sample_rate=3;break;
-    case 10:sample_rate=4;break;
-    case 15:sample_rate=5;break;
-    case 20:sample_rate=6;break;
+    case 4:sample_rate=3;break;
+    case 5:sample_rate=4;break;
+    case 8:sample_rate=5;break;
+    case 10:sample_rate=6;break;
+    case 15:sample_rate=7;break;
+    case 20:sample_rate=8;break;
     default:sample_rate=1;
     config.sample_rate=1;
     }
@@ -293,7 +363,7 @@ void Set_rate_ubloxM10(int rate){
 int Set_GPS_Time(float time_offset){    
   // convert a date and time into unix time
         if(ubxMessage.navPvt.year<2023) {
-          Serial.println("GPS Reported year not plausible (<2023) !");
+          //Serial.println("GPS Reported year not plausible (<2023) !");
           return false; 
           }//check if year is plausible 
         my_time.tm_sec = ubxMessage.navPvt.second;
@@ -325,7 +395,7 @@ int Set_GPS_Time(float time_offset){
         //localtime_r(&unix_timestamp, &tmstruct);
         if((tmstruct.tm_year+1900)<2023){
           Serial.printf("\nNow is : %d-%02d-%02d %02d:%02d:%02d\n",(tmstruct.tm_year)+1900,( tmstruct.tm_mon)+1, tmstruct.tm_mday,tmstruct.tm_hour , tmstruct.tm_min, tmstruct.tm_sec);
-          Serial.println("GPS Reported year not plausible (<2023) !");
+          //Serial.println("GPS Reported year not plausible (<2023) !");
           return false; 
           }
         Serial.println("GPS Local Time is set");
@@ -366,7 +436,7 @@ int processGPS() {
   static unsigned char checksum[2];
   static byte currentMsgType = MT_NONE;
   static int payloadSize = sizeof(ubxMessage.navDummy);
-  //static uint16_t len;
+  //static uint16_t len;//10 Hz M10 issue ??
   while ( Serial2.available() ) {
     byte c = Serial2.read();    
     //Serial.write(c);

@@ -1134,15 +1134,6 @@ uint8_t FtpServer::getDateTime( uint16_t * pyear, uint8_t * pmonth, uint8_t * pd
   return 15;
 }
 
-// Create string YYYYMMDDHHMMSS from date and time
-//
-// parameters:
-//    date, time 
-//    tstr: where to store the string. Must be at least 15 characters long
-//
-// return:
-//    pointer to tstr
-
 char * FtpServer::makeDateTimeStr( char * tstr, uint16_t date, uint16_t time )
 {
   sprintf( tstr, "%04u%02u%02u%02u%02u%02u",

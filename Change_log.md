@@ -1,3 +1,12 @@
+  ### Changes SW5.80
+* Extended choice for sample rate : add 4 Hz and 8 Hz  
+* extended choices for GNSS 
+** M10 4GNSS : GPS+GLONAS+GALILEO+BEIDOU, max 4Hz or lost points....
+** M10 3GNSS : GPS+GALILEO+BEIDOU_B1C :  8Hz possible with no lost points (default = GPS+GALILEO+BEIDOU_B1L )
+** M10 3GNSS : GPS+GALILEO+GLONAS, max 5Hz or lost points....
+** M10 2GNSS : GPS+GLONAS or GPS+GALILEO : 10Hz possible with no lost points 
+* Sample_rate limited in function of GNSS settings (M10)
+* Wifi AP bug fixes
   ### Changes SW5.79
 * Speed screen NM big font, 2 digits after dec. point
 * Add file name option name_date_time_MAC

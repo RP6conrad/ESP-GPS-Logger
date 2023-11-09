@@ -358,28 +358,36 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>sample_rate(Hz)</td><td>\n<select id='sample_rate' name='sample_rate'>";
     if(config.sample_rate == 1) webpage += "<option value='1' selected>1 Hz</option>\n"; else  webpage += "<option value='1'>1 Hz</option>\n";
     if(config.sample_rate == 2) webpage += "<option value='2' selected>2 Hz</option>\n"; else webpage += "<option value='2'>2 Hz</option>\n";
+    if(config.sample_rate == 4) webpage += "<option value='4' selected>4 Hz</option>\n"; else webpage += "<option value='4'>4 Hz</option>\n";
     if(config.sample_rate == 5) webpage += "<option value='5' selected>5 Hz</option>\n"; else webpage += "<option value='5'>5 Hz</option>\n";
+    if(config.sample_rate == 8) webpage += "<option value='8' selected>8 Hz</option>\n"; else webpage += "<option value='8'>8 Hz</option>\n";
     if(config.sample_rate == 10) webpage += "<option value='10' selected>10 Hz</option>\n"; else webpage += "<option value='10'>10 Hz</option>\n";
-    if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)){
+    if(((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD))|((config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD))&(config.gnss==1)){
       if(config.sample_rate == 15) webpage += "<option value='15' selected>15 Hz</option>\n"; else webpage += "<option value='15'>15 Hz</option>\n";
       if(config.sample_rate == 20) webpage += "<option value='20' selected>20 Hz</option>\n"; else webpage += "<option value='20'>20 Hz</option>\n";  
       }
-  webpage += "</select>\n</td><td>sample_rate: can be 1,2,5,10 (M8,M9,M10) 15Hz,20Hz (only M9!). The higher, the more accurate,<br> but also the larger the files become! One UBX NavPVT message is 100byte, <br>so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>sample_rate: can be 1,2,4,5,8,10 (M8,M9,M10) 15Hz,20Hz (only M9!). The higher, the more accurate, but also the larger the files become!<br> One UBX NavPVT message is 100byte, so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!<br>For the M10, max. sample-rate depends on GNSS settings ! 4 GNSS : max  4 Hz, 3 GNSS : max 5 Hz, 2 GNSS : max 10 Hz !</td>\n</tr>\n";
   //gnss
   webpage += "<tr><td>gnss</td><td>\n<select id='gnss' name='gnss'>\n";
+  if((config.ublox_type == M8_9600BD)|(config.ublox_type == M8_38400BD)){
+      if(config.gnss == 0) webpage += "<option value='0' selected>GPS + BEIDOU</option>\n"; else webpage += "<option value='0'>GPS + BEIDOU</option>\n";
+      }
+  else{      
+      if(config.gnss == 1) webpage += "<option value='1' selected>GPS + GALILEO</option>\n"; else webpage += "<option value='1'>GPS + GALILEO</option>\n";
+      }
   if(config.gnss == 2) webpage += "<option value='2' selected>GPS + GLONAS</option>\n"; else webpage += "<option value='2'>GPS + GLONAS</option>\n";
   if(config.gnss == 3) webpage += "<option value='3' selected>GPS + GLONAS + GALILEO</option>\n"; else webpage += "<option value='3'>GPS + GLONAS + GALILEO</option>\n";
-  if(config.gnss == 4) webpage += "<option value='4' selected>GPS + GLONAS + BEIDOU</option>\n"; else webpage += "<option value='4'>GPS + GLONAS + BEIDOU</option>\n";
-  if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)){
+  if(config.gnss == 4) webpage += "<option value='4' selected>GPS + GALILEO + BEIDOU_B1C</option>\n"; else webpage += "<option value='4'>GPS + GALILEO + BEIDOU_B1C</option>\n";
+  if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)|(config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD)){
     if(config.gnss == 5) webpage += "<option value='5' selected>GPS + GLONAS + GALILEO + BEIDOU</option>\n"; else webpage += "<option value='5'>GPS + GLONAS + GALILEO + BEIDOU</option>\n";
-    }  
-  webpage += "</select>\n</td><td>gnss choice : GPS + GLONAS + GALILEO (M8 ublox ROM version 3.01, M10). <br> Some Beitian modules still have a old firmware, ROM 2.01. Here, Galileo can't be activated. M9 can do 4 GNSS simultan !</td>\n</tr>\n";
+    }   
+  webpage += "</select>\n</td><td>gnss choice, for the M10, 3 or 4 gnss simultanous limits the sample rate ! :<br> M8 (ROM version 2.01) : max 2 GNSS (GPS + GLONAS)<br> M8 (ROM version 3.01) : max 3 GNSS (GPS + GLONAS + GALILEO)<br> M9 : max 4 GNSS (GPS + GLONAS + GALILEO + BEIDOU)<br> M10: max 4 GNSS  (GPS + GLONAS + GALILEO + BEIDOU), but depends on sample-rate !</td>\n</tr>\n";
   Serial.println("gnss: "+String(config.gnss)+"\n");
   //logUBX nav-sat message@rate/10
   webpage += "<tr><td>logUBX_nav_sat</td><td>\n<select id='logUBX_nav_sat' name='logUBX_nav_sat'>\n";
   if(config.logUBX_nav_sat == 1) webpage += "<option value='1' selected>LOG UBX NAV SAT ON</option>\n"; else webpage += "<option value='1'>LOG UBX NAV SAT ON</option>\n";
   if(config.logUBX_nav_sat == 0) webpage += "<option value='0' selected>LOG UBX NAV SAT OFF</option>\n"; else webpage += "<option value='0'>LOG UBX NAV SAT OFF</option>\n";
-  webpage += "</select>\n</td><td>logUBX_nav_sat: To save the GPS NAV SAT data in ubx format. For every 10 (20Hz : 40) nav_pvt messages, 1 nav_sat message is saved. This can be used to evaluate the signal quality of your gps (ucenter).</td>\n</tr>\n";  
+  webpage += "</select>\n</td><td>logUBX_nav_sat: To save the GPS NAV SAT data in ubx format. For every 10 nav_pvt messages, 1 nav_sat message is saved. This can be used to evaluate the signal quality of your gps (ucenter). Only active if logUBX is ON and rate<10 Hz !!.</td>\n</tr>\n";  
   //speed_field
   //webpage += "<tr><td>speed_field</td><td>\n<select id='speed_field' name='speed_field'>\n";
   webpage += "<tr>\n<td>speed_field</td><td>\n";

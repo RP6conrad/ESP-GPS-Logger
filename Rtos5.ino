@@ -105,7 +105,7 @@ void setup() {
             WiFi.mode(WIFI_AP);
             WiFi.softAP(soft_ap_ssid, soft_ap_password); 
             wifi_search=100;
-            IP_adress =  WiFi.softAPIP().toString();
+            //IP_adress =  WiFi.softAPIP().toString();
             Serial.println(IP_adress);
             Serial.println("start OTA Server");
             OTA_setup(); //start webserver and ota - for use on AP Mode
@@ -144,7 +144,7 @@ void setup() {
       Update_screen(GPS_INIT_SCREEN); 
       GPS_OK = setupGPS();
       Update_screen(GPS_INIT_SCREEN);
-  }
+      }
   //analog_mean=RTC_voltage_bat/calibration_bat*1000;//RTC_voltage_bat staat in RTC mem !!!
   delay(100);
    //Create RTOS task, so logging and e-paper update are separated (update e-paper is blocking, 800 ms !!)
