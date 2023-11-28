@@ -65,13 +65,13 @@ if(part==GPX_FRAME){
       minute=ubxMessage.navPvt.minute;
       sec=ubxMessage.navPvt.second;
       y=0;
-      i= sprintf(bufferTx,"      <trkpt lat=\"%.7f\" lon=\"%.7f\">",lat,lon);y=y+i;
-      i= sprintf(&bufferTx[y],"        <ele>%.0f</ele>",msl);y=y+i;//was float !!!
-      i= sprintf(&bufferTx[y],"        <time>%d-%'02d-%'02dT%'02d:%'02d:%'02dZ</time>",year,month,day,hour,minute,sec);y=y+i;
-      i= sprintf(&bufferTx[y],"        <course>%.0f</course>",course);y=y+i;
-      i= sprintf(&bufferTx[y],"        <speed>%.2f</speed>",speed);y=y+i;
-      i= sprintf(&bufferTx[y],"        <sat>%d</sat>",sat);y=y+i;
-      i= sprintf(&bufferTx[y],"        <hdop>%.2f</hdop>",hdop);y=y+i;
+      i= sprintf(bufferTx,"      <trkpt lat=\"%.7f\" lon=\"%.7f\">\n",lat,lon);y=y+i;
+      i= sprintf(&bufferTx[y],"        <ele>%.0f</ele>\n",msl);y=y+i;//was float !!!
+      i= sprintf(&bufferTx[y],"        <time>%d-%'02d-%'02dT%'02d:%'02d:%'02dZ</time>\n",year,month,day,hour,minute,sec);y=y+i;
+      i= sprintf(&bufferTx[y],"        <course>%.0f</course>\n",course);y=y+i;
+      i= sprintf(&bufferTx[y],"        <speed>%.2f</speed>\n",speed);y=y+i;
+      i= sprintf(&bufferTx[y],"        <sat>%d</sat>\n",sat);y=y+i;
+      i= sprintf(&bufferTx[y],"        <hdop>%.2f</hdop>\n",hdop);y=y+i;
       i= sprintf(&bufferTx[y],"      </trkpt>\n");y=y+i;
       file.write((const uint8_t *)&bufferTx,y);
       }
