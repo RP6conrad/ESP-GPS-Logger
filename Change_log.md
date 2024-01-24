@@ -1,3 +1,11 @@
+  ### Changes SW5.81
+* added drop down menu for Sail and Board logos  
+* added board logos Carbon Art, Thommen, Bic
+* added saillogo S2_Maui=11
+* gpx.h changes for better fit to the standard (http -> https, indentations, stand alone, contribution from Michael G)
+* removed limits for sample-rate 
+* added warning after upload if the sample-rates are too high
+* ShortPush39 50ms->10ms
   ### Changes SW5.80
 * Extended choice for sample rate : add 4 Hz and 8 Hz  
 * extended choices for GNSS 

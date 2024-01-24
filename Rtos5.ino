@@ -201,6 +201,7 @@ void taskOne( void * parameter )
       else{
         if(Short_push39.button_count>config.speed_count){Short_push39.button_count=0;}
         config.field_actual=config.speed_screen[Short_push39.button_count];
+        //Serial.print("config.field_actual ");Serial.println(config.field_actual);
         }
       }
    Field_choice=Short_push39.long_pulse;//10s wachttijd voor menu field keuze....//bug sw 5.54 !!

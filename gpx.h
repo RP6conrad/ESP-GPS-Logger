@@ -39,7 +39,7 @@ int year,month,day,hour,minute,sec,sat;
 if(part==GPX_HEADER){ 
   y=0;
   i= sprintf(bufferTx,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");y=y+i;
-  i= sprintf(&bufferTx[y],"<gpx version=\"1.0\" creator=\"ESP-GPS SW 5.75\" ");y=y+i;
+  i= sprintf(&bufferTx[y],"<gpx version=\"1.0\" creator=\"ESP-GPS SW 5.81\" ");y=y+i;
   i= sprintf(&bufferTx[y],"xmlns=\"http://www.topografix.com/GPX/1/0\" ");y=y+i;
   i= sprintf(&bufferTx[y],"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" ");y=y+i;
   i= sprintf(&bufferTx[y],"xsi:schemaLocation=\"http://www.topografix.com/GPX/1/0 https://www.topografix.com/GPX/1/0/gpx.xsd\">\n");y=y+i;
@@ -66,7 +66,7 @@ if(part==GPX_FRAME){
       sec=ubxMessage.navPvt.second;
       y=0;
       i= sprintf(bufferTx,"      <trkpt lat=\"%.7f\" lon=\"%.7f\">\n",lat,lon);y=y+i;
-      i= sprintf(&bufferTx[y],"        <ele>%.0f</ele>\n",msl);y=y+i;//was float !!!
+      i= sprintf(&bufferTx[y],"        <ele>%.2f</ele>\n",msl);y=y+i;//was float !!!
       i= sprintf(&bufferTx[y],"        <time>%d-%'02d-%'02dT%'02d:%'02d:%'02dZ</time>\n",year,month,day,hour,minute,sec);y=y+i;
       i= sprintf(&bufferTx[y],"        <course>%.0f</course>\n",course);y=y+i;
       i= sprintf(&bufferTx[y],"        <speed>%.2f</speed>\n",speed);y=y+i;

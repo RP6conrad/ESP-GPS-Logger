@@ -280,8 +280,6 @@ void Sleep_screen(int choice){
     
     // Board Logo's:
     // add special logos - funlogos
-    if(RTC_Board_Logo==11) // Schwechater - Austrian Beer - by tritondm
-      display.drawExampleBitmap(epd_bitmap_Schwechater, 195, -10, 79, 132, GxEPD_BLACK);
     //Board logos
     if(RTC_Board_Logo==1)//Logo's Simon Dijkstra
       display.drawExampleBitmap(Starboard_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
@@ -303,10 +301,17 @@ void Sleep_screen(int choice){
       display.drawExampleBitmap(Tabou_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);
     if(RTC_Board_Logo==10)
       display.drawExampleBitmap(F2_logo_zwart, 195, 0, 48, 48, GxEPD_BLACK);
+    if(RTC_Board_Logo==11) // Schwechater - Austrian Beer - by tritondm
+      display.drawExampleBitmap(epd_bitmap_Schwechater, 195, -10, 79, 132, GxEPD_BLACK);  
     if(RTC_Board_Logo==12)
-      display.drawExampleBitmap(FutureFly_logo_zwart, 195, 0, 48, 48, GxEPD_BLACK);
+      display.drawExampleBitmap(Thommen1_logo_BW, 195, 0, 64, 48, GxEPD_BLACK);
     if(RTC_Board_Logo==13)
-      display.drawExampleBitmap(ESP_GPS_logo, 195, 0, 48, 48, GxEPD_BLACK);
+      display.drawExampleBitmap(BIC_logo_BW, 195, 0, 48, 48, GxEPD_BLACK);  
+    if(RTC_Board_Logo==14)
+      display.drawExampleBitmap(Carbon_art, 195, 0, 48, 39, GxEPD_BLACK); 
+    if(RTC_Board_Logo==15)
+      display.drawExampleBitmap(FutureFly_logo_zwart, 195, 0, 48, 48, GxEPD_BLACK);       
+
     // Zeil Logo's:
     if(RTC_Sail_Logo==1)//Logo's Simon Dijkstra
       display.drawExampleBitmap(GAsails_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
@@ -328,7 +333,10 @@ void Sleep_screen(int choice){
       display.drawExampleBitmap(Naish_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK); 
     if(RTC_Sail_Logo==10) { //Severne as Sail logo !!! 
       display.drawExampleBitmap(Severne_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
-    }
+      }
+    if(RTC_Sail_Logo==11) { //Severne as Sail logo !!! 
+      display.drawExampleBitmap(S2maui_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);  
+      }
       display.setCursor(col1,105); // was 121
       display.setFont(&SF_Distant_Galaxy9pt7b);
       display.print(RTC_Sleep_txt);
@@ -699,8 +707,8 @@ void Update_screen(int screen){
       if(config.field_actual==9) {//1 hour default, but first alfa, and if good run, last run
         field=2;
         if(Ublox.alfa_distance/1000>config.bar_length)field=4;//run longer dan 1852 m, NM scherm !! 
-        if(S10.s_max_speed>S10.display_speed[5])field=2;//if run faster then slowest run, show AVG & run
-        if(Ublox.alfa_distance/1000<500)field=8;// 350m - 500m : 1h !!  
+        if(S10.s_max_speed>S10.display_speed[5])field=2;//if run faster then slowest run, show AVG & run after 1000 m
+        if(Ublox.alfa_distance/1000<1000)field=8;// 350m - 1000m : 1h !!  
         if((Ublox.alfa_distance/1000<350)&(alfa_window<100))field=3;//first 350 m after gibe  alfa screen !!  
       } 
 
@@ -1285,13 +1293,12 @@ void Update_screen(int screen){
   return_value=false;
   button_status=digitalRead(Input_pin);
   if(digitalRead(Input_pin)==1) push_millis=millis();
-  if(((millis()-push_millis)>time_out_millis)&(old_button_status==0)){
-    Serial.print ("Class button push ");
-    Serial.println (millis()-push_millis);
-    if (long_pulse) button_count++;
+  if(((millis()-push_millis)>time_out_millis)&(old_button_status==0)){ 
+    button_count++;
     if(button_count>max_button_count)button_count=0;
     old_button_status=1;
     millis_10s=millis();
+    //Serial.print ("Class button_count ");Serial.print(button_count);
     return_value=true;
   }
   else return_value=false; 
