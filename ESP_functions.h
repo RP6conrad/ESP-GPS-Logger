@@ -1,7 +1,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 5.81";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 5.81_sd";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -11,6 +11,9 @@ const char E_paper_version[16]="E-paper 213BN";
 #endif
 #if defined(_GxGDEM0213B74_H_) 
 const char E_paper_version[16]="E-paper 213B74";
+#endif
+#if defined(_GxDEPG0266BN_H_) 
+const char E_paper_version[16]="E-paper 266BN";
 #endif
 char Ublox_type[20]="Ublox unknown...";
 
