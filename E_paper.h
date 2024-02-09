@@ -75,9 +75,10 @@ Flip: horizontally
 
 
 extern GxEPD_Class display;
-extern int sdTrouble,wifi_search,gps_speed;
+extern int sdTrouble,gps_speed;
+extern volatile int wifi_search;
 extern int start_logging_millis;
-extern bool sdOK;
+extern bool sdOK,LITTLEFS_OK;
 extern bool Wifi_on;
 extern bool SoftAP_connection;
 extern bool GPS_Signal_OK;
@@ -129,19 +130,5 @@ void Bat_level(int X_offset,int Y_offset);
 void Bat_level_Simon(int offset);
 void Sat_level(int offset);
 void time_print(int time);
-class Button_push{
-            public:
-            Button_push(int GPIO_pin,int push_time,int long_pulse_time,int max_count);//constructor
-            boolean Button_pushed(void);//return true if button is pushed longer then push_time
-            boolean long_pulse;
-            int button_count;
-            private:
-            boolean button_status, old_button_status,return_value;
-            int Input_pin;
-            int push_millis; 
-            int time_out_millis; 
-            int millis_10s;
-            int max_pulse_time; 
-            int max_button_count;        
-};
+
 #endif

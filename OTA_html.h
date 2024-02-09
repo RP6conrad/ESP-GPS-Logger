@@ -312,7 +312,6 @@ const char html_header[] PROGMEM = R"=====(
 <br><br><br>
   )=====";
 
-
 //Config Part
 const char html_config_header[] PROGMEM = R"=====(
 <FORM action='/configupload' method='post'>
@@ -323,8 +322,21 @@ const char html_config_header[] PROGMEM = R"=====(
             <th>Info</th>
         </tr>
   )=====";
-
-//config fill the current config Info
+void Drop_down_menu(int config_item,int value,String drop_text,String& webpage){
+  webpage += "<option value='";
+  webpage += String(value);
+  if(config_item == value) webpage +="' selected>";else  webpage +="'>";
+  webpage +=drop_text;
+  webpage +="</option>\n"; 
+  }
+void Drop_down_menu(float config_item,float value,String drop_text,String& webpage){
+  webpage += "<option value='";
+  webpage += String(value);
+  if(abs(config_item-value)<0.1) webpage +="' selected>";else  webpage +="'>";//check if float diff < 0.1 !!!
+  webpage +=drop_text;
+  webpage +="</option>\n"; 
+  }  
+//configfill the current config Info
 void html_config(String& webpage){
   //ssid
   String ssid="\"" + String(config.ssid) + "\"";//problem with white space in SSID depends on position in webpage ???
@@ -346,58 +358,56 @@ void html_config(String& webpage){
   webpage += "</select>\n</td><td>cal_speed: is for the conversion from gps unit m/s to km/h (3.6)or knots (1.9438).</td>\n</tr>\n";
   //Auto detect gps bd rate and type
   webpage += "<tr>\n<td>GPS_Type</td><td>\n<select id='GPS_Type' name='GPS_Type'>";
-  if(config.ublox_type == AUTO_DETECT) webpage += "<option value='255' selected>AUTO_DETECT @ Boot</option>\n"; else  webpage += "<option value='255'>AUTO_DETECT@Boot !</option>\n";
-  if(config.ublox_type == M8_9600BD) webpage += "<option value='M8_9600BD' selected>M8@9600BD</option>\n"; else  webpage += "<option value='M8_9600BD'>M8@9600BD</option>\n";
-  if(config.ublox_type == M8_38400BD) webpage += "<option value='M8_38400BD' selected>M8@38400BD</option>\n"; else webpage += "<option value='M8_38400BD'>M8@38400BD</option>\n";
-  if(config.ublox_type == M9_9600BD) webpage += "<option value='M9_9600BD' selected>M9@9600BD</option>\n"; else webpage += "<option value='M9_9600BD'>M9@9600BD</option>\n";
-  if(config.ublox_type == M9_38400BD) webpage += "<option value='M9_38400BD' selected>M9@38400BD</option>\n"; else webpage += "<option value='M9_38400BD'>M9@38400BD</option>\n";
-  if(config.ublox_type == M10_9600BD) webpage += "<option value='M10_9600BD' selected>M10@9600BD</option>\n"; else webpage += "<option value='M10_9600BD'>M10@9600BD</option>\n";
-  if(config.ublox_type == M10_38400BD) webpage += "<option value='M10_38400BD' selected>M10@38400BD</option>\n"; else webpage += "<option value='M10_38400BD'>M10@38400BD</option>\n";
+  Drop_down_menu(config.ublox_type,255,"AUTO_DETECT @ Boot",webpage);
+  Drop_down_menu(config.ublox_type,M8_9600BD,"M8@9600BD",webpage);
+  Drop_down_menu(config.ublox_type,M8_38400BD,"M8@38400BD",webpage);
+  Drop_down_menu(config.ublox_type,M9_9600BD,"M9@9600BD",webpage);
+  Drop_down_menu(config.ublox_type,M9_38400BD,"M9@38400BD",webpage);
+  Drop_down_menu(config.ublox_type,M10_9600BD,"M10@9600BD",webpage);
+  Drop_down_menu(config.ublox_type,M10_38400BD,"M10@38400BD",webpage);
   webpage += "</select>\n</td><td>GPS type : If auto detect ON, the type of GPS will be identified when booting. </td>\n</tr>\n";
   //sample_rate
   webpage += "<tr>\n<td>sample_rate(Hz)</td><td>\n<select id='sample_rate' name='sample_rate'>";
-    if(config.sample_rate == 1) webpage += "<option value='1' selected>1 Hz</option>\n"; else  webpage += "<option value='1'>1 Hz</option>\n";
-    if(config.sample_rate == 2) webpage += "<option value='2' selected>2 Hz</option>\n"; else webpage += "<option value='2'>2 Hz</option>\n";
-    if(config.sample_rate == 4) webpage += "<option value='4' selected>4 Hz</option>\n"; else webpage += "<option value='4'>4 Hz</option>\n";
-    if(config.sample_rate == 5) webpage += "<option value='5' selected>5 Hz</option>\n"; else webpage += "<option value='5'>5 Hz</option>\n";
-    if(config.sample_rate == 8) webpage += "<option value='8' selected>8 Hz</option>\n"; else webpage += "<option value='8'>8 Hz</option>\n";
-    if(config.sample_rate == 10) webpage += "<option value='10' selected>10 Hz</option>\n"; else webpage += "<option value='10'>10 Hz</option>\n";
-    if(((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD))|((config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD))&(config.gnss==1)){
-      if(config.sample_rate == 15) webpage += "<option value='15' selected>15 Hz</option>\n"; else webpage += "<option value='15'>15 Hz</option>\n";
-      if(config.sample_rate == 20) webpage += "<option value='20' selected>20 Hz</option>\n"; else webpage += "<option value='20'>20 Hz</option>\n";  
-      }
+  Drop_down_menu(config.sample_rate,1,"1 Hz",webpage);
+  Drop_down_menu(config.sample_rate,2,"2 Hz",webpage);
+  Drop_down_menu(config.sample_rate,4,"4 Hz",webpage);
+  Drop_down_menu(config.sample_rate,5,"5 Hz",webpage);
+  Drop_down_menu(config.sample_rate,8,"8 Hz",webpage);
+  Drop_down_menu(config.sample_rate,10,"10 Hz",webpage);
+  if(((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD))|((config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD))&(config.gnss==1)){
+    Drop_down_menu(config.sample_rate,15,"15 Hz",webpage);
+    Drop_down_menu(config.sample_rate,20,"20 Hz",webpage);
+    }
   webpage += "</select>\n</td><td>sample_rate: can be 1,2,4,5,8,10 (M8,M9,M10) 15Hz,20Hz (only M9!). The higher, the more accurate, but also the larger the files become!<br> One UBX NavPVT message is 100byte, so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!<br>For the M10, max. sample-rate depends on GNSS settings ! 4 GNSS : max  4 Hz, 3 GNSS : max 5 Hz, 2 GNSS : max 10 Hz !</td>\n</tr>\n";
   //gnss
   webpage += "<tr><td>gnss</td><td>\n<select id='gnss' name='gnss'>\n";
   if((config.ublox_type == M8_9600BD)|(config.ublox_type == M8_38400BD)){
-      if(config.gnss == 0) webpage += "<option value='0' selected>GPS + BEIDOU</option>\n"; else webpage += "<option value='0'>GPS + BEIDOU</option>\n";
+      Drop_down_menu(config.gnss,0,"GPS + BEIDOU",webpage);
       }
-  else{      
-      if(config.gnss == 1) webpage += "<option value='1' selected>GPS + GALILEO</option>\n"; else webpage += "<option value='1'>GPS + GALILEO</option>\n";
+  else{ 
+      Drop_down_menu(config.gnss,1,"GPS + GALILEO",webpage);     
       }
-  if(config.gnss == 2) webpage += "<option value='2' selected>GPS + GLONAS</option>\n"; else webpage += "<option value='2'>GPS + GLONAS</option>\n";
-  if(config.gnss == 3) webpage += "<option value='3' selected>GPS + GLONAS + GALILEO</option>\n"; else webpage += "<option value='3'>GPS + GLONAS + GALILEO</option>\n";
-  if(config.gnss == 4) webpage += "<option value='4' selected>GPS + GALILEO + BEIDOU_B1C</option>\n"; else webpage += "<option value='4'>GPS + GALILEO + BEIDOU_B1C</option>\n";
+  Drop_down_menu(config.gnss,2,"GPS + GLONAS",webpage);
+  Drop_down_menu(config.gnss,3,"GPS + GLONAS + GALILEO",webpage);
+  Drop_down_menu(config.gnss,4,"GPS + GALILEO + BEIDOU_B1C",webpage);      
   if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)|(config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD)){
-    if(config.gnss == 5) webpage += "<option value='5' selected>GPS + GLONAS + GALILEO + BEIDOU</option>\n"; else webpage += "<option value='5'>GPS + GLONAS + GALILEO + BEIDOU</option>\n";
+    Drop_down_menu(config.gnss,5,"GPS + GLONAS + GALILEO + BEIDOU",webpage);
     }   
   webpage += "</select>\n</td><td>gnss choice, for the M10, 3 or 4 gnss simultanous limits the sample rate ! :<br> M8 (ROM version 2.01) : max 2 GNSS (GPS + GLONAS)<br> M8 (ROM version 3.01) : max 3 GNSS (GPS + GLONAS + GALILEO)<br> M9 : max 4 GNSS (GPS + GLONAS + GALILEO + BEIDOU)<br> M10: max 4 GNSS  (GPS + GLONAS + GALILEO + BEIDOU), but depends on sample-rate !</td>\n</tr>\n";
-  Serial.println("gnss: "+String(config.gnss)+"\n");
   //logUBX nav-sat message@rate/10
   webpage += "<tr><td>logUBX_nav_sat</td><td>\n<select id='logUBX_nav_sat' name='logUBX_nav_sat'>\n";
-  if(config.logUBX_nav_sat == 1) webpage += "<option value='1' selected>LOG UBX NAV SAT ON</option>\n"; else webpage += "<option value='1'>LOG UBX NAV SAT ON</option>\n";
-  if(config.logUBX_nav_sat == 0) webpage += "<option value='0' selected>LOG UBX NAV SAT OFF</option>\n"; else webpage += "<option value='0'>LOG UBX NAV SAT OFF</option>\n";
+  Drop_down_menu(config.logUBX_nav_sat,1,"LOG UBX NAV SAT ON",webpage);
+  Drop_down_menu(config.logUBX_nav_sat,0,"LOG UBX NAV SAT OFF",webpage);
   webpage += "</select>\n</td><td>logUBX_nav_sat: To save the GPS NAV SAT data in ubx format. For every 10 nav_pvt messages, 1 nav_sat message is saved. This can be used to evaluate the signal quality of your gps (ucenter). Only active if logUBX is ON and rate<10 Hz !!.</td>\n</tr>\n";  
   //speed_field
-  //webpage += "<tr><td>speed_field</td><td>\n<select id='speed_field' name='speed_field'>\n";
   webpage += "<tr>\n<td>speed_field</td><td>\n";
   webpage += "<input size='8' type='number' required name='speed_field' min='1' max='99999' value="+String(config.field)+" step='1'>\n";
   webpage += "</select>\n</td><td>speed_field: The preferred value in the first line of the speed screen : 1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= Auto switching between Alfa & 0.5h, 8= Auto switching between Alfa & 1h, 9= Alfa, 1h, and good run. If more then 1 digit, toggle between separat digits : 841 toggle between 1,4 and 8 !</td>\n</tr>\n";
   //speed_large_font
   webpage += "<tr><td>speed_large_font</td><td>\n<select id='speed_large_font' name='speed_large_font'>\n";
-  if(config.speed_large_font == 2) webpage += "<option value='2' selected>Simon_Font ON</option>\n"; else webpage += "<option value='2'>Simon Font ON</option>\n";
-  if(config.speed_large_font == 1) webpage += "<option value='1' selected>Large_Font ON</option>\n"; else webpage += "<option value='1'>Large Font ON</option>\n";
-  if(config.speed_large_font == 0) webpage += "<option value='0' selected>Large Font OFF</option>\n"; else webpage += "<option value='0'>Large Font OFF</option>\n";
+  Drop_down_menu(config.speed_large_font,2,"Simon_Font ON",webpage);
+  Drop_down_menu(config.speed_large_font,1,"Large_Font ON",webpage);
+  Drop_down_menu(config.speed_large_font,2,"Large_Font OFF",webpage);
   webpage += "</select>\n</td><td>speed_large_font: To choose the font sizes of the first line in the speed screen. Choice 0 = small, 1 = medium, 2 = large.</td>\n</tr>\n";  
   //bar_length
   webpage += "<tr>\n<td>bar_length</td><td>\n";
@@ -428,13 +438,39 @@ void html_config(String& webpage){
   webpage += "<input size='8' type='number' required name='GPIO12_screens' min='0' max='1000' value="+String(config.GPIO12_screens_persist)+" step='1'>\n";
   webpage += "</select>\n</td><td>GPIO12_screens choice : Every digit shows the according GPIO_screen after each push. Screen 4 = s10 runs, screen 5 = alfa's.</td>\n</tr>\n";
   //Board_Logo
-  webpage += "<tr>\n<td>Board_Logo</td><td>\n";
-  webpage += "<input size='8' type='number' required name='Board_Logo' min='0' max='20' value="+String(config.Board_Logo)+" step='1'>\n";
-  webpage += "</select>\n</td><td>Board_Logo: from 1 - 20. See the info on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a> >10 are different single logos</td>\n</tr>\n";
-  //Sail_Logo
-  webpage += "<tr>\n<td>Sail_Logo</td><td>\n";
-  webpage += "<input size='8' type='number' required name='Sail_Logo' min='0' max='20' value="+String(config.Sail_Logo)+" step='1'>\n";
-  webpage += "</select>\n</td><td>Sail_Logo: from 1 - 20. See the info on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a> >10 are different single logos</td>\n</tr>\n";
+  webpage += "<tr>\n<td>Board_Logo</td><td>\n<select id='Board_Logo' name='Board_Logo'>";
+  Drop_down_menu(config.Board_Logo,0,"No logo",webpage);
+  Drop_down_menu(config.Board_Logo,1,"Starboard",webpage);
+  Drop_down_menu(config.Board_Logo,2,"Fanatic",webpage);
+  Drop_down_menu(config.Board_Logo,3,"JP",webpage);
+  Drop_down_menu(config.Board_Logo,4,"Nove Nove",webpage);
+  Drop_down_menu(config.Board_Logo,5,"Mistral",webpage);
+  Drop_down_menu(config.Board_Logo,6,"Goya",webpage);
+  Drop_down_menu(config.Board_Logo,7,"Patrik",webpage);
+  Drop_down_menu(config.Board_Logo,8,"Severne",webpage);
+  Drop_down_menu(config.Board_Logo,9,"Tabou",webpage);
+  Drop_down_menu(config.Board_Logo,10,"F2",webpage);
+  Drop_down_menu(config.Board_Logo,11,"Schweighofer",webpage);
+  Drop_down_menu(config.Board_Logo,12,"Thommen",webpage);
+  Drop_down_menu(config.Board_Logo,13,"Bic",webpage);
+  Drop_down_menu(config.Board_Logo,14,"Carbon Art",webpage);
+  Drop_down_menu(config.Board_Logo,15,"Future Fly",webpage);
+  webpage += "</select>\n</td><td>Board_Logo :  See the logos on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a></td>\n</tr>\n";
+  //Sail_Logo Drop down menu
+  webpage += "<tr>\n<td>Sail_Logo</td><td>\n<select id='Sail_Logo' name='Sail_Logo'>";
+  Drop_down_menu(config.Sail_Logo,0,"No logo",webpage);
+  Drop_down_menu(config.Sail_Logo,1,"GA-Sails",webpage);
+  Drop_down_menu(config.Sail_Logo,2,"Duotone",webpage);
+  Drop_down_menu(config.Sail_Logo,3,"Neil Pryde NP",webpage);
+  Drop_down_menu(config.Sail_Logo,4,"Neil Pryde O",webpage);
+  Drop_down_menu(config.Sail_Logo,5,"Loft Sails",webpage);
+  Drop_down_menu(config.Sail_Logo,6,"Gun",webpage);
+  Drop_down_menu(config.Sail_Logo,7,"Point 7",webpage);
+  Drop_down_menu(config.Sail_Logo,8,"Simmer",webpage);
+  Drop_down_menu(config.Sail_Logo,9,"Naish",webpage);
+  Drop_down_menu(config.Sail_Logo,10,"Severne",webpage);
+  Drop_down_menu(config.Sail_Logo,11,"S2 Maui",webpage);
+  webpage += "</select>\n</td><td>Sail_Logo :  See the logos on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a></td>\n</tr>\n";
   //sleep_off_screen
   webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
   webpage += "<input size='8' type='number' required name='sleep_off_screen' min='0' max='1000' value="+String(config.sleep_off_screen)+" step='1'>\n";
@@ -474,50 +510,49 @@ void html_config(String& webpage){
  // }
   //timezone
   webpage += "<tr>\n<td>timezone</td><td>\n<select id='timezone' name='timezone' type='number'>\n"; 
-  if(config.timezone == -11) webpage += "<option value='-11' selected>-11 (Pacific/Samoa)</option>\n"; else  webpage += "<option value='-11'>-11 (Pacific/Samoa)</option>\n";
-  if(config.timezone == -10) webpage += "<option value='-10' selected>-10 (US/Hawaii)</option>\n"; else  webpage += "<option value='-10'>-10 (US/Hawaii)</option>\n";
-  if(config.timezone == -9.5) webpage += "<option value='-9.5' selected>-9:30 (Pacific/Marquesas)</option>\n"; else  webpage += "<option value='-9.5'>-9:30 (Pacific/Marquesas)</option>\n";
-  if(config.timezone == -9) webpage += "<option value='-9' selected>-9 (US/Alaska)</option>\n"; else  webpage += "<option value='-9'>-9 (US/Alaska)</option>\n";
-  if(config.timezone == -8) webpage += "<option value='-8' selected>-8 (US/Pacific)</option>\n"; else  webpage += "<option value='-8'>-8 (US/Pacific)</option>\n";
-  if(config.timezone == -7) webpage += "<option value='-7' selected>-7 (US/Montaain)</option>\n"; else  webpage += "<option value='-7'>-7 (US/mountain)</option>\n";
-  if(config.timezone == -6) webpage += "<option value='-6' selected>-6 (US/Central)</option>\n"; else  webpage += "<option value='-6'>-6 (US/Central)</option>\n";
-  if(config.timezone == -5) webpage += "<option value='-5' selected>-5 (US/Eastern)</option>\n"; else  webpage += "<option value='-5'>-5 (US/Eastern)</option>\n";
-  if(config.timezone == -4) webpage += "<option value='-4' selected>-4 (Canada/Atlantic)</option>\n"; else  webpage += "<option value='-4'>-4 (Canada/Atlantic)</option>\n";
-  if(config.timezone == -3.5) webpage += "<option value='-3.5' selected>-3:30 (Canada/Newfoundland)</option>\n"; else  webpage += "<option value='-3.5'>-3:30 (Canada/Newfoundland)</option>\n";
-  if(config.timezone == -3) webpage += "<option value='-3' selected>-3 (Brazil/East)</option>\n"; else  webpage += "<option value='-3'>-3 (Brazil/East)</option>\n";
-  if(config.timezone == -2) webpage += "<option value='-2' selected>-2 (Brazil/DeNoronha)</option>\n"; else  webpage += "<option value='-2'>-2 (Brazil/DeNoronha)</option>\n";
-  if(config.timezone == -1) webpage += "<option value='-1' selected>-1 (Atlantic/CapVerde)</option>\n"; else  webpage += "<option value='-1'>-1 (Atlantic/CapVerde)</option>\n";
-  if(config.timezone == 0) webpage += "<option value='0' selected>GMT(Europe/London)</option>\n"; else  webpage += "<option value='0'>GMT(Europe/London)</option>\n";
-  if(config.timezone == 1) webpage += "<option value='1' selected>CET(Europe/Brussels)</option>\n"; else webpage += "<option value='1'>CET(Europe/Brussels)</option>\n";
-  if(config.timezone == 2) webpage += "<option value='2' selected>CET+1(Europe/Athens)</option>\n"; else webpage += "<option value='2'>CET +1(Europe/Athens)</option>\n";
-  if(config.timezone == 3) webpage += "<option value='3' selected>3 (Turkey))</option>\n"; else  webpage += "<option value='3'>3 Turkey</option>\n";
-  if(config.timezone == 3.5) webpage += "<option value='3.5' selected>3:30 (Iran)</option>\n"; else webpage += "<option value='3.5'>3:30 (Iran)</option>\n";  
-  if(config.timezone == 4) webpage += "<option value='4' selected>4 (Indian/Mauritius)</option>\n"; else  webpage += "<option value='4'>4 (Indian/Mauriatius)</option>\n";
-  if(config.timezone == 5) webpage += "<option value='5' selected>5 (Indian/Maldives)</option>\n"; else  webpage += "<option value='5'>5 (Indian/Maldives)</option>\n";
-  if(config.timezone == 5.5) webpage += "<option value='5.5' selected>5:30 (Asia/Calcutta)</option>\n"; else webpage += "<option value='5.5'>5:30 (Asia/Calcutta)</option>\n";
-  if(config.timezone == 5.75) webpage += "<option value='5.75' selected>5:45 (Asia/Katmandu)</option>\n"; else webpage += "<option value='5.75'>5:45 (Asia/Katmandu)</option>\n";
-  if(config.timezone == 6) webpage += "<option value='6' selected>6 (Asia/Omsk)</option>\n"; else  webpage += "<option value='6'>6 (Asia/Omsk)</option>\n";
-  if(config.timezone == 6.5) webpage += "<option value='6.5' selected>6:30 (Asia/Rangoon)</option>\n"; else webpage += "<option value='6.5'>6:30 (Asia/Rangoon)</option>\n";
-  if(config.timezone == 7) webpage += "<option value='7' selected>7 (Asia/Bangkok)</option>\n"; else  webpage += "<option value='7'>7 (Asia/Bangkok)</option>\n";
-  if(config.timezone == 8) webpage += "<option value='8' selected>8 (Australia/Perth)</option>\n"; else  webpage += "<option value='8'>8 (Australia/Perth)</option>\n";
-  if(config.timezone == 8.75) webpage += "<option value='8.75' selected>8:45 (Australia/Eucla)</option>\n"; else webpage += "<option value='8.75'>8:45 (Australia/Eucla)</option>\n";
-  if(config.timezone == 9) webpage += "<option value='9' selected>9 (Japan)</option>\n"; else  webpage += "<option value='9'>9 (Japan)</option>\n";
-  if(config.timezone == 9.5) webpage += "<option value='9.5' selected>9:30 (Australia/South)</option>\n"; else webpage += "<option value='9.5'>9:30 (Australia/South)</option>\n";   
-  if(config.timezone == 10) webpage += "<option value='10' selected>10 (Australia/Sydney)</option>\n"; else  webpage += "<option value='10'>10 (Australia/Sydney)</option>\n";
-  if(config.timezone == 10.5) webpage += "<option value='10.5' selected>10:30 (Australia/LHI)</option>\n"; else webpage += "<option value='10.5'>10:30 (Australia/LHI)</option>\n";   
-  if(config.timezone == 11) webpage += "<option value='11' selected>11 (Pacific/Noumea)</option>\n"; else  webpage += "<option value='11'>11 (Pacific/Noumea)</option>\n"; 
-  if(config.timezone == 12) webpage += "<option value='12' selected>12 (NZ)</option>\n"; else  webpage += "<option value='12'>12 (NZ)</option>\n";
-  if(config.timezone == 12.75) webpage += "<option value='12.75' selected>12:45 (Pacific/Chatham)</option>\n"; else webpage += "<option value='12.75'>12:45 (Pacific/Chatham)</option>\n";
-  if(config.timezone == 13) webpage += "<option value='13' selected>13 (Pacific/Fakaofo)</option>\n"; else  webpage += "<option value='13'>13 (Pacific/Fakaofo)</option>\n";
-  if(config.timezone == 14) webpage += "<option value='14' selected>14 (Pacific/Kiritimati)</option>\n"; else  webpage += "<option value='14'>14 (Pacific/Kiritimati)</option>\n";
-  
+  Drop_down_menu(config.timezone,-11.0,"-11 (Pacific/Samoa)",webpage);
+  Drop_down_menu(config.timezone,-10.0,"-10 (US/Hawaii)",webpage);
+  Drop_down_menu(config.timezone,-9.5,"-9:30 (Pacific/Marquesas)",webpage);
+  Drop_down_menu(config.timezone,-9.0,"-9 (US/Alaska)",webpage);
+  Drop_down_menu(config.timezone,-8.0,"-8 (US/Pacific)",webpage);
+  Drop_down_menu(config.timezone,-7.0,"-7 (US/Montaain)",webpage); 
+  Drop_down_menu(config.timezone,-6.0,"-6 (US/Central)",webpage);
+  Drop_down_menu(config.timezone,-5.0,"-5 (US/Eastern)",webpage); 
+  Drop_down_menu(config.timezone,-4.0,"-4 (Canada/Atlantic)",webpage); 
+  Drop_down_menu(config.timezone,-3.5,"-3:30 (Canada/Newfoundland)",webpage); 
+  Drop_down_menu(config.timezone,-3.0,"-3 (Brazil/East)",webpage); 
+  Drop_down_menu(config.timezone,-2.0,"-2 (Brazil/DeNoronha)",webpage);
+  Drop_down_menu(config.timezone,-1.0,"-1 (Atlantic/CapVerde)",webpage); 
+  Drop_down_menu(config.timezone,0.0,"GMT(Europe/London)",webpage);
+  Drop_down_menu(config.timezone,1.0,"CET(Europe/Brussels)",webpage);
+  Drop_down_menu(config.timezone,2.0,"CET+1(Europe/Athens)",webpage);
+  Drop_down_menu(config.timezone,3.0,"+3 (Turkey)",webpage);  
+  Drop_down_menu(config.timezone,3.5,"+3:30 (Iran)",webpage);
+  Drop_down_menu(config.timezone,4.0,"+4 (Indian/Mauritius)",webpage);
+  Drop_down_menu(config.timezone,5.0,"+5 (Indian/Maldives)",webpage);
+  Drop_down_menu(config.timezone,5.5,"+5:30 (Asia/Calcutta)",webpage);
+  Drop_down_menu(config.timezone,5.75,"+5:45 (Asia/Katmandu)",webpage);
+  Drop_down_menu(config.timezone,6.0,"+6 (Asia/Omsk)",webpage);
+  Drop_down_menu(config.timezone,6.5,"+6:30 (Asia/Rangoon)",webpage);
+  Drop_down_menu(config.timezone,7.0,"+7 (Asia/Bangkok)",webpage);
+  Drop_down_menu(config.timezone,8.0,"+8 (Australia/Perth)",webpage);
+  Drop_down_menu(config.timezone,8.75,"+8:45 (Australia/Eucla)",webpage);
+  Drop_down_menu(config.timezone,9.0,"+9 (Japan)",webpage); 
+  Drop_down_menu(config.timezone,9.5,"+9:30 (Australia/South)",webpage);
+  Drop_down_menu(config.timezone,10.0,"+10 (Australia/Sydney)",webpage);
+  Drop_down_menu(config.timezone,10.5,"+10:30 (Australia/LHI)",webpage);
+  Drop_down_menu(config.timezone,11.0,"+11 (Pacific/Noumea)",webpage);
+  Drop_down_menu(config.timezone,12.0,"+12 (NZ)",webpage);
+  Drop_down_menu(config.timezone,12.75,"+12:45 (Pacific/Chatham)",webpage);
+  Drop_down_menu(config.timezone,13.0,"+13 (Pacific/Fakaofo)",webpage);
+  Drop_down_menu(config.timezone,14.0,"+14 (Pacific/Kiritimati)",webpage);    
   webpage += "</select>\n</td><td>timezone: The local time difference in hours with UTC (can be fractional / negative ! )<a href='https://en.wikipedia.org/wiki/List_of_UTC_offsets' target='_blank'>this Link</a></td>\n</tr>\n";
   //filenaming  
   webpage += "<tr><td>file_date_time</td><td>\n<select id='file_date_time' name='file_date_time'>\n";
-  if(config.file_date_time == 1) webpage += "<option value='1' selected>name_date_time</option>\n"; else webpage += "<option value='1'>name_date_time</option>\n";
-  if(config.file_date_time == 0) webpage += "<option value='0' selected>name_MAC_index</option>\n"; else webpage += "<option value='0'>name_MAC_index</option>\n";
-  if(config.file_date_time == 2) webpage += "<option value='2' selected>date_time_name</option>\n"; else webpage += "<option value='2'>date_time_name</option>\n";
-  if(config.file_date_time == 3) webpage += "<option value='3' selected>name_date_time_MAC</option>\n"; else webpage += "<option value='3'>name_date_time_MAC</option>\n";
+  Drop_down_menu(config.file_date_time,0,"name_MAC_index",webpage);
+  Drop_down_menu(config.file_date_time,1,"name_date_time",webpage);   
+  Drop_down_menu(config.file_date_time,2,"date_time_name",webpage);
+  Drop_down_menu(config.file_date_time,3,"name_date_time_MAC",webpage);
   webpage += "</select>\n</td><td>file_date_time: To choose the type of filenaming between filename_MAC_count or filename_date_time or date_time_filename or name_date_time_MAC.</td>\n</tr>\n"; 
   //UBXfile
   webpage += "<tr>\n<td>UBXfile</td><td>\n";

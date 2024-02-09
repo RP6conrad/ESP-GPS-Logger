@@ -29,6 +29,7 @@
 #include <esp32-hal.h>
 #include <time.h>
 #include <EEPROM.h>
+#include <LITTLEFS.h>
 #include "Definitions.h"
 #include "ESP_functions.h"
 
@@ -59,7 +60,27 @@ void setup() {
   struct timeval tv = { .tv_sec =  0, .tv_usec = 0 };
   settimeofday(&tv, NULL);
   if (!SD.begin(SDCARD_SS, sdSPI)) {
-        sdOK = false;Serial.println("No SDCard found!");
+        sdOK = false;
+        Serial.println("No SDCard found!");
+        if (!LITTLEFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
+          Serial.println("LITTLEFS Mount Failed");
+          return;
+        } 
+    else {
+      Serial.print("LITTLEFS Mounted with success. Total space= ");
+      int total_bytes = LITTLEFS.totalBytes();
+      int used_bytes = LITTLEFS.usedBytes();
+      Serial.print(total_bytes);
+      Serial.println(" bytes");
+      Serial.print("Free space left= ");
+      Serial.print(total_bytes-used_bytes);
+      Serial.println(" bytes");
+      LITTLEFS_OK = true;
+      Boot_screen();
+      loadConfiguration(filename, filename_backup, config);  // load config file
+      Serial.print(F("Print config file..."));
+      if (sdOK|LITTLEFS_OK) printFile(filename); 
+    }
   } 
   else {
         sdOK = true;Serial.println("SDCard found!");
@@ -78,7 +99,6 @@ void setup() {
         Serial.print(F("Print config file...")); 
         printFile(filename); 
   } 
-  
   Update_screen(BOOT_SCREEN);
 
   const char* ssid = config.ssid; //WiFi SSID
@@ -87,37 +107,23 @@ void setup() {
   const char *soft_ap_password = "password"; //accespoint password
     
   WiFi.onEvent(OnWiFiEvent);
-  WiFi.mode(WIFI_STA);
-  WiFi.softAP(soft_ap_ssid, soft_ap_password);
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.softAP(soft_ap_ssid,soft_ap_password);
   WiFi.begin(ssid, password);
   Serial.print("T5 MAC adress: ");
   WiFi.macAddress(mac);
  
   // Wait for connection during 10s in station mode
-  bool ota_notrunning=true;
+ // bool ota_notrunning=true;
+
+  attachInterrupt(WAKE_UP_GPIO, isr, FALLING);
   while ((WiFi.status() != WL_CONNECTED)&(SoftAP_connection==false)) {
+    if(Long_push39.Button_pushed()) Shut_down();
     esp_task_wdt_reset();
-    server.handleClient(); // wait for client handle, and update BAT Status, this section should be moved to the loop... 
+    //server.handleClient(); // wait for client handle, and update BAT Status, this section should be moved to the loop... 
     Update_bat();         //client counter wait until download is finished to prevent stoping the server during download
-    if(digitalRead(WAKE_UP_GPIO)==false){//switch over to AP-mode, search time 100 s
-       if(ota_notrunning){
-            WiFi.disconnect();
-            WiFi.mode(WIFI_AP);
-            WiFi.softAP(soft_ap_ssid, soft_ap_password); 
-            wifi_search=100;
-            //IP_adress =  WiFi.softAPIP().toString();
-            Serial.println(IP_adress);
-            Serial.println("start OTA Server");
-            OTA_setup(); //start webserver and ota - for use on AP Mode
-            ota_notrunning=false;
-          }else{
-            wifi_search=100;
-            Serial.println("Set AP Counter to 100");
-          }
-        }
     if(wifi_search<=10) Update_screen(WIFI_STATION);
     else Update_screen(WIFI_SOFT_AP);
-    //delay(250);
     Serial.print(".");
     wifi_search--;
     if(wifi_search<=0){
@@ -135,8 +141,10 @@ void setup() {
       Wifi_on=true;
       ftpSrv.begin("esp32","esp32");    //username, password for ftp
       OTA_setup();  //start webserver for over the air update
+      detachInterrupt(WAKE_UP_GPIO);
       }
   else{
+      detachInterrupt(WAKE_UP_GPIO);
       Serial.println("No Wifi connection !");
       WiFi.disconnect(true);
       WiFi.mode(WIFI_OFF);

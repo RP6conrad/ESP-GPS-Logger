@@ -31,15 +31,14 @@ SOFTWARE.
 #define GPX_HEADER 0
 #define GPX_FRAME 1
 #define GPX_END 2
- 
 void log_GPX(int part,File file){
 char bufferTx[512]; 
 int i,y; 
 int year,month,day,hour,minute,sec,sat;
 if(part==GPX_HEADER){ 
   y=0;
-  i= sprintf(bufferTx,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");y=y+i;
-  i= sprintf(&bufferTx[y],"<gpx version=\"1.0\" creator=\"ESP-GPS SW 5.81\" ");y=y+i;
+  i= sprintf(bufferTx,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");y=y+1;
+  i= sprintf(&bufferTx[y],"<gpx version=\"1.0\" creator=\"ESP-GPS %s\" ",SW_version);y=y+i;
   i= sprintf(&bufferTx[y],"xmlns=\"http://www.topografix.com/GPX/1/0\" ");y=y+i;
   i= sprintf(&bufferTx[y],"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" ");y=y+i;
   i= sprintf(&bufferTx[y],"xsi:schemaLocation=\"http://www.topografix.com/GPX/1/0 https://www.topografix.com/GPX/1/0/gpx.xsd\">\n");y=y+i;

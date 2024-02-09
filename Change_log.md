@@ -1,3 +1,15 @@
+  ### Changes SW 5.82
+ * Moved Button_push class E_Paper -> ESP_functions.h
+ * BUFFER_SIZE 9500 -> 9000 due to ESP32 2.0x lib, to prevent "DRAM segment data does not fit."
+ * interrupt on WAKE_UP_GPIO for set Wifi_Search to 150 without delay
+ * Boot with Wifi station and acces point simultanous
+ * Added local storage if no SD card found, only 1.5 Mb, total flash is only 4 Mb !!!
+ * If in AP-mode, but counting down, shutdown is possible now.
+ * Added Storage space + bat voltage + Firmware version to webserver files page
+ * Added partitions.csv in the root dir, ESP32 V1.0 with 4MB flash
+ * If this file is in the sketch dir, it will be used instead of the Arduino Menu setting !!
+* Added Free storage space to webpage files  
+* Added partitions.csv in the root dir, this is used instead the "Arduino default" with 4MB flash...
   ### Changes SW5.81
 * added drop down menu for Sail and Board logos  
 * added board logos Carbon Art, Thommen, Bic

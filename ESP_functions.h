@@ -1,7 +1,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 5.81";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 5.82";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -17,6 +17,7 @@ char Ublox_type[20]="Ublox unknown...";
 int sdTrouble=0;
 bool sdOK = false;
 bool button = false;
+bool LITTLEFS_OK;
 bool reed = false;
 bool deep_sleep = false;
 bool Wifi_on=true;
@@ -33,7 +34,7 @@ int GPS_OK = 0;
 int analog_bat;
 int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay;
 int start_logging_millis;
-int wifi_search=10;//was 10
+volatile int wifi_search=10;//was 10
 int ftpStatus=0;
 //int time_out_nav_pvt=TIME_OUT_NAV_PVT;
 int last_gps_msg=0;
@@ -90,7 +91,25 @@ RTC_DATA_ATTR int RTC_counter=0;
 RTC_DATA_ATTR float calibration_bat=1.75;//bij ontwaken uit deepsleep niet noodzakelijk config file lezen
 RTC_DATA_ATTR float RTC_voltage_bat=3.6;
 RTC_DATA_ATTR float RTC_old_voltage_bat=3.6;
-
+/*Eenmaal flankdetectie indien GPIO langer dan push_time gedrukt
+* Ook variabele die dan long_pulse_time hoog blijft
+* Ook variabele die optelt tot maw elke keer push
+*/
+class Button_push{
+            public:
+            Button_push(int GPIO_pin,int push_time,int long_pulse_time,int max_count);//constructor
+            boolean Button_pushed(void);//return true if button is pushed longer then push_time
+            boolean long_pulse;
+            int button_count;
+            private:
+            boolean button_status, old_button_status,return_value;
+            int Input_pin;
+            int push_millis; 
+            int time_out_millis; 
+            int millis_10s;
+            int max_pulse_time; 
+            int max_button_count;        
+};
 FtpServer ftpSrv;  
 GPS_data Ublox; // create an object storing GPS_data !
 GPS_SAT_info Ublox_Sat;//create an object storing GPS_SAT info !
@@ -281,7 +300,7 @@ void OnWiFiEvent(WiFiEvent_t event){
       break;
     case SYSTEM_EVENT_STA_DISCONNECTED:         //test
       Serial.println("ESP32 disconnected to WIFI");
-      SoftAP_connection=false;
+      //SoftAP_connection=false;
       break;
     case SYSTEM_EVENT_STA_GOT_IP://  @this event no IP !!!         SYSTEM_EVENT_STA_CONNECTED:
       Serial.println("ESP32 Connected to WiFi Network");
@@ -325,5 +344,36 @@ static void setTimeZone(long offset, int daylight)
     Serial.println(tz);
     setenv("TZ", tz, 1);
     tzset();
+}
+void IRAM_ATTR isr() {
+	wifi_search=150;
+}
+/*Eenmaal flankdetectie indien GPIO langer dan push_time gedrukt
+* Ook variabele die dan long_pulse_time hoog blijft
+* Ook variabele die optelt tot maw elke keer push
+*/
+Button_push::Button_push(int GPIO_pin, int push_time, int long_pulse_time, int max_count) {
+  pinMode(GPIO_pin, INPUT_PULLUP);
+  Input_pin = GPIO_pin;
+  time_out_millis = push_time;
+  max_pulse_time = long_pulse_time;
+  max_button_count = max_count;
+}
+boolean Button_push::Button_pushed(void) {
+  return_value = false;
+  button_status = digitalRead(Input_pin);
+  if (digitalRead(Input_pin) == 1) push_millis = millis();
+  if (((millis() - push_millis) > time_out_millis) & (old_button_status == 0)) {
+    button_count++;
+    if (button_count > max_button_count) button_count = 0;
+    old_button_status = 1;
+    millis_10s = millis();
+    //Serial.print ("Class button_count ");Serial.print(button_count);
+    return_value = true;
+  } else return_value = false;
+  if ((millis() - millis_10s) < (1000 * max_pulse_time)) long_pulse = true;
+  else long_pulse = false;
+  if (digitalRead(Input_pin) == 1) old_button_status = 0;
+  return return_value;
 }
 #endif

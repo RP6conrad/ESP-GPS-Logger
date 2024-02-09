@@ -1,4 +1,7 @@
 //JsonConfigFile.ino for reading config file !!!
+//Changed next file for compiling with Arduino IDE 2.02 (SD(esp32) to SD)
+//C:\Users\andre\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.6\libraries\SD\library.properties
+
 #ifndef SD_CARD_H
 #define SD_CARD_H
 #include "Ublox.h"
@@ -12,10 +15,10 @@ extern int Time_Set_OK;
 extern int NTP_time_set;
 extern int Gps_time_set;
 extern int first_fix_GPS;
-extern int wifi_search;
+extern volatile int wifi_search;
 extern int sdTrouble;
 extern int start_logging_millis;
-extern bool sdOK,button;
+extern bool sdOK,button,LITTLEFS_OK;
 extern bool GPS_logging;
 extern float Mean_heading,heading_SD;
 extern float calibration_bat;

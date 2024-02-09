@@ -33,6 +33,7 @@
 #define CALIBRATION_BAT_V 1.7 //voor proto 1
 #define VOLTAGE_100 4.2     //reading 100% bat
 #define VOLTAGE_0 3.4       //reading 0% bat
+#define VOLTAGE_LOW 25      //reading 25% bat
 #define MINIMUM_VOLTAGE 3.1       // if lower then minimum_voltage, back to sleep.....
 #define MINIMUM_VOLTAGE_CHANGE  0.01  //refresh screen if change > 0.01
 #define uS_TO_S_FACTOR 1000000UL /* Conversion factor for micro seconds to seconds */
@@ -46,4 +47,5 @@
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
 #define EEPROM_SIZE 1             //use 1 byte in eeprom for saving type of ublox
 #define TIME_OUT_NAV_PVT 10000    //10s time out ubx nav-pvt msg before screen "TROUBLE" 
+#define FORMAT_LITTLEFS_IF_FAILED true
 #endif
