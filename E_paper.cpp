@@ -400,7 +400,7 @@ void Sleep_screen(int choice) {
     display.setCursor(col3, row2);
     display.print("Dist:");
     display.setCursor(col3, row3);
-    display.print("Alph :");
+    display.print("Alph:");
     display.setCursor(col3, row4);
     display.print("1h:");  //
     display.setCursor(col3, row5);

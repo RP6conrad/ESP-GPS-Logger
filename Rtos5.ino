@@ -48,12 +48,12 @@ void setup() {
   print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
   analog_mean = analogRead(PIN_BAT);//fill FIR filter
  //sometimes after OTA hangs here ???
-  pinMode(25, OUTPUT);//Power beitian //default drive strength 2, only 2.7V @ ublox gps
-  pinMode(26, OUTPUT);//Power beitian
-  pinMode(27, OUTPUT);//Power beitian
-  rtc_gpio_set_drive_capability(GPIO_NUM_25,GPIO_DRIVE_CAP_3);//see https://www.esp32.com/viewtopic.php?t=5840
-  rtc_gpio_set_drive_capability(GPIO_NUM_26,GPIO_DRIVE_CAP_3);//3.0V @ ublox gps current 50 mA
-  gpio_set_drive_capability(GPIO_NUM_27,GPIO_DRIVE_CAP_3);//rtc_gpio_ necessary, if not no output on RTC_pins 25 en 26, 13/3/2022
+  pinMode(UBLOX_POWER1, OUTPUT);//Power beitian //default drive strength 2, only 2.7V @ ublox gps
+  pinMode(UBLOX_POWER2, OUTPUT);//Power beitian
+  pinMode(UBLOX_POWER3, OUTPUT);//Power beitian
+  rtc_gpio_set_drive_capability(UBLOX_RTC_GPIO1,GPIO_DRIVE_CAP_3);//see https://www.esp32.com/viewtopic.php?t=5840
+  rtc_gpio_set_drive_capability(UBLOX_RTC_GPIO2,GPIO_DRIVE_CAP_3);//3.0V @ ublox gps current 50 mA
+  gpio_set_drive_capability(UBLOX_GPIO3,GPIO_DRIVE_CAP_3);//rtc_gpio_ necessary, if not no output on RTC_pins 25 en 26, 13/3/2022
   
   sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
 
@@ -76,7 +76,7 @@ void setup() {
       Serial.print(total_bytes-used_bytes);
       Serial.println(" bytes");
       LITTLEFS_OK = true;
-      Boot_screen();
+      //Boot_screen();
       loadConfiguration(filename, filename_backup, config);  // load config file
       Serial.print(F("Print config file..."));
       if (sdOK|LITTLEFS_OK) printFile(filename); 
@@ -88,7 +88,7 @@ void setup() {
         uint64_t totalBytes=SD.totalBytes() / (1024 * 1024);
         uint64_t usedBytes=SD.usedBytes() / (1024 * 1024);
         freeSpace=totalBytes-usedBytes;
-        Boot_screen();
+        //Boot_screen();
         Serial.printf("SD Card Size: %lluMB\n", cardSize); 
         Serial.printf("SD Total bytes: %lluMB\n", totalBytes); 
         Serial.printf("SD Used bytes: %lluMB\n", usedBytes); 
@@ -99,6 +99,7 @@ void setup() {
         Serial.print(F("Print config file...")); 
         printFile(filename); 
   } 
+  Boot_screen();
   Update_screen(BOOT_SCREEN);
 
   const char* ssid = config.ssid; //WiFi SSID
@@ -149,6 +150,7 @@ void setup() {
       WiFi.disconnect(true);
       WiFi.mode(WIFI_OFF);
       Wifi_on=false;
+      SoftAP_connection=false;
       Update_screen(GPS_INIT_SCREEN); 
       GPS_OK = setupGPS();
       Update_screen(GPS_INIT_SCREEN);
@@ -245,7 +247,7 @@ void taskOne( void * parameter )
            // printLocalTime();
             NTP_time_set=true;
             }
-          if(!SD.exists("/Archive")){
+          if(!SD.exists("/Archive")&sdOK){
               SD.mkdir("/Archive");
               }
           }
@@ -290,7 +292,7 @@ void taskOne( void * parameter )
                 }
           }      //    Alleen speed>0 indien snelheid groter is dan 1m/s + sACC<1 + sat<5 + speed>35 m/s !!!
         }
-        if ((sdOK==true)&(Time_Set_OK==true)&(nav_pvt_message>10)&(nav_pvt_message!=old_message)){
+        if ((sdOK|LITTLEFS_OK)&(Time_Set_OK==true)&(nav_pvt_message>10)&(nav_pvt_message!=old_message)){
                   old_message=nav_pvt_message;
                   //last_gps_msg=millis();
                   gps_speed=ubxMessage.navPvt.gSpeed; //hier alles naar mm/s !!

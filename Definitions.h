@@ -4,9 +4,7 @@
 //#define STATIC_DEBUG        //indien gps test zonder snelheid en met wifi actief
 //#define DLS                  //set date on march 26 1:55, to test daylightsaving
 #define GPIO12_ACTIF        //if GPIO12 is used as wake up, standard GPIO12 function is not activated !!
-#define WAKE_UP_GPIO 39          //default 39
-#define GPIO_NUM_xx GPIO_NUM_39   //default GPIO_NUM_39 type is no int
-//#define MIN_SPEED_START_LOGGING 2000        //was 2000 min speed in mm/s over 2 s alvorens start loggen naar SD 
+
 #define TIME_DELAY_FIRST_FIX 10 //10 navpvt messages alvorens start loggen
 #define TIME_DELAY_NEW_RUN 10 //int time_delay_new_run
 #define EPOCH_2022 1640995200 //start of the year 2022 1640995200
@@ -26,9 +24,17 @@
 #define SDCARD_CLK 14
 #define SDCARD_MOSI 15
 #define SDCARD_MISO 2
+#define WAKE_UP_GPIO 39          //default 39
+#define GPIO_NUM_xx GPIO_NUM_39   //default GPIO_NUM_39 type is no int
 #define RXD2 32 //yellow is Tx Ublox, Beitian white is Tx
 #define TXD2 33 //green is Rx Ublox, Beitian green is Rx
 #define PIN_BAT 35 //adc for bat voltage
+#define UBLOX_POWER1 25
+#define UBLOX_RTC_GPIO1 GPIO_NUM_25
+#define UBLOX_POWER2 26
+#define UBLOX_RTC_GPIO2 GPIO_NUM_26
+#define UBLOX_POWER3 27
+#define UBLOX_GPIO3 GPIO_NUM_27
 /*Other definitions...**********************************************************************/
 #define CALIBRATION_BAT_V 1.7 //voor proto 1
 #define VOLTAGE_100 4.2     //reading 100% bat

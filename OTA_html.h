@@ -407,7 +407,7 @@ void html_config(String& webpage){
   webpage += "<tr><td>speed_large_font</td><td>\n<select id='speed_large_font' name='speed_large_font'>\n";
   Drop_down_menu(config.speed_large_font,2,"Simon_Font ON",webpage);
   Drop_down_menu(config.speed_large_font,1,"Large_Font ON",webpage);
-  Drop_down_menu(config.speed_large_font,2,"Large_Font OFF",webpage);
+  Drop_down_menu(config.speed_large_font,0,"Large_Font OFF",webpage);
   webpage += "</select>\n</td><td>speed_large_font: To choose the font sizes of the first line in the speed screen. Choice 0 = small, 1 = medium, 2 = large.</td>\n</tr>\n";  
   //bar_length
   webpage += "<tr>\n<td>bar_length</td><td>\n";

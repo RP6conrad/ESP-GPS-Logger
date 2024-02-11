@@ -72,13 +72,13 @@ void ReportFileNotPresent(String target) {
   SendHTML_Stop();
 }
 
-//File size conversion
-String file_size(int bytes) {
+//File size conversion kb-> MB / GB
+String file_size(int kbytes) {
   String fsize = "";
-  if (bytes < 1024) fsize = String(bytes) + " B";
-  else if (bytes < (1024 * 1024)) fsize = String(bytes / 1024.0, 3) + " KB";
-  else if (bytes < (1024 * 1024 * 1024)) fsize = String(bytes / 1024.0 / 1024.0, 3) + " MB";
-  else fsize = String(bytes / 1024.0 / 1024.0 / 1024.0, 3) + " GB";
+  //if (kbytes < 1024) fsize = String(kbytes) + " B";
+  if (kbytes < 1024) fsize = String(kbytes) + " KB";
+  else if (kbytes < (1024 * 1024)) fsize = String(kbytes /1024.0, 2) + " MB";
+  else fsize = String(kbytes / 1024.0 / 1024.0, 2) + " GB";
   return fsize;
 }
 //changes JH 19/11/2022, added for formatting timestamp file
@@ -263,12 +263,12 @@ void SD_dir(int archive) {
     File root;
     if (sdOK) root = SD.open("/");
     if (LITTLEFS_OK) root = LITTLEFS.open("/");
-    int free_bytes;
-    if(LITTLEFS_OK) free_bytes = LITTLEFS.totalBytes() - LITTLEFS.usedBytes();
+    uint64_t free_kbytes;
+    if(LITTLEFS_OK) free_kbytes = (LITTLEFS.totalBytes() - LITTLEFS.usedBytes())/1024;
     if(sdOK) {
-        uint64_t totalBytes=SD.totalBytes() / (1024 * 1024);
-        uint64_t usedBytes=SD.usedBytes() / (1024 * 1024);
-        free_bytes=totalBytes-usedBytes;
+        uint64_t totalBytes=SD.totalBytes();
+        uint64_t usedBytes=SD.usedBytes();
+        free_kbytes=(totalBytes-usedBytes)/1024;
         }
     float bat_perc = 100 * (1 - (VOLTAGE_100 - RTC_voltage_bat) / (VOLTAGE_100 - VOLTAGE_0));
     if (bat_perc>100)bat_perc=100;
@@ -276,17 +276,24 @@ void SD_dir(int archive) {
     String font_color_start = "<FONT COLOR=\"RED\">";
     String font_color_end ="</FONT>"; 
     String voltage_percent;
-    String free_space = "Free storage space = " + file_size(free_bytes);
+    String free_space = "Free storage space = " + file_size(free_kbytes);
     String voltage_lipo = "&emsp;Bat voltage = " + String(RTC_voltage_bat, 2) + " Volt";
     String firmware = "Firmware "+ String(SW_version);
+    String gps_warning = "<h3>"+ font_color_start+"Sample-rate too high for the actual gnss setting, possible lost points in the log file !!"+font_color_end + "</h3>";
+    bool GPS_warning=false;
     if(bat_perc<VOLTAGE_LOW) voltage_percent = "&emsp;"+font_color_start+"Bat = " + String(bat_perc,0)+" % &emsp;"+font_color_end;
     else voltage_percent = "&emsp;Bat % = " + String(bat_perc,0)+" % &emsp;";
-    
+    if ((config.ublox_type == M10_9600BD) | (config.ublox_type == M10_38400BD) | (config.ublox_type == AUTO_DETECT)) {  //limit sample rate for 3/4 GNSS M10, prevent lost points
+      if (((config.gnss == 3) & (config.sample_rate> 5)) | ((config.gnss== 4) & (config.sample_rate > 8)) | ((config.gnss== 5) & (config.sample_rate > 4))) {GPS_warning=true;}
+      //  gps_warning="<h3>"+ font_color_start+"Sample-rate too high for the actual gnss setting, possible lost points in the log file !!"+font_color_end + "</h3>";
+      //    webpage += F("<tr><th><p style=\"color:red;\"/p><b>Sample-rate too high for the actual gnss setting, possible lost points in the log file !!</b></th></tr></div>");
+        }
     if (root) {
       root.rewindDirectory();
       SendHTML_Header();
       webpage += F("<table id='esplogger'>");
       webpage += "<h3>" + free_space + voltage_lipo + voltage_percent + firmware + "</h3>";
+      if(GPS_warning) webpage += gps_warning;
       webpage += F("<tr><th>Name</th><th>Size</th><th>Timestamp</th><th>Download</th><th>Delete</th></tr>");
       printDirectory("/", archive);
       webpage += F("\n</table>");
@@ -361,7 +368,7 @@ void handleFileUpload() {
       webpage += F("<tr><th>Uploaded File Name: ");
       webpage += uploadfile.filename + "</th></tr>";
       webpage += F("<tr><th>File Size: ");
-      webpage += file_size(uploadfile.totalSize) + "</th></tr></table></div>";
+      webpage += file_size(uploadfile.totalSize/1024) + "</th></tr></table></div>";
       webpage += F("<a href='/'>[Back]</a><br><br>");
       append_page_footer();
       server.send(200, "text/html", webpage);
@@ -477,14 +484,15 @@ void handleConfigUpload() {
       webpage += F("<div style='overflow-x:auto;'><table id='esplogger'>");
       webpage += F("<tr><th>Upload was successful!</th></tr></table>");  //</table></div>");
       //webpage += F("<tr><th><p style=\"color:red;\"/p>Sample-rate too high for the actual gnss setting, possible lost points in the log file !!</th></tr></div>");
-
+      /*
       if ((config.ublox_type == M10_9600BD) | (config.ublox_type == M10_38400BD) | (config.ublox_type == AUTO_DETECT)) {  //limit sample rate for 3/4 GNSS M10, prevent lost points
         if (((doc["gnss"] == 3) & (doc["sample_rate"] > 5)) | ((doc["gnss"] == 4) & (doc["sample_rate"] > 8)) | ((doc["gnss"] == 5) & (doc["sample_rate"] > 4))) {
           webpage += F("<tr><th><p style=\"color:red;\"/p><b>Sample-rate too high for the actual gnss setting, possible lost points in the log file !!</b></th></tr></div>");
         }
       } else {
+      */  
         webpage += F("</div>");
-      }
+      //}
 
       webpage += F("<a href='/config");
       webpage += "'>[Back]</a><br><br>";
