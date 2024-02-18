@@ -31,6 +31,7 @@ int NTP_time_set = 0;
 int Gps_time_set = 0;
 bool Shut_down_Save_session = false;
 bool trouble_screen = false;
+bool test_screen = false;
 extern bool downloading_file;
 int GPS_OK = 0;
 int analog_bat;
@@ -86,8 +87,8 @@ RTC_DATA_ATTR float RTC_R5_10s;
 RTC_DATA_ATTR char RTC_Sleep_txt[32]="Your ID";
 RTC_DATA_ATTR int RTC_Board_Logo;
 RTC_DATA_ATTR int RTC_Sail_Logo;
-RTC_DATA_ATTR int RTC_SLEEP_screen=0;
-RTC_DATA_ATTR int RTC_OFF_screen=0;
+RTC_DATA_ATTR int RTC_SLEEP_screen=1;
+RTC_DATA_ATTR int RTC_OFF_screen=1;
 RTC_DATA_ATTR int RTC_counter=0;
 //Simon
 RTC_DATA_ATTR float calibration_bat=1.75;//bij ontwaken uit deepsleep niet noodzakelijk config file lezen
@@ -115,12 +116,36 @@ Button_push Long_push12 (12,2000,10,4); //GPIO12 pull up, 2000ms push time, 10s 
 Button_push Short_push39 (WAKE_UP_GPIO,10,10,9);//was 39
 Button_push Long_push39 (WAKE_UP_GPIO,1500,10,9);//was 39
 
+//#define LILYGO_T5_V266
+
+//#include <boards.h>
+//#include <GxEPD.h>
+//#include <GxIO/GxIO_SPI/GxIO_SPI.h>
+//#include <GxIO/GxIO.h>
+//GxIO_Class io(SPI,  EPD_CS, EPD_DC,  EPD_RSET);
+//GxEPD_Class display(io, EPD_RSET, EPD_BUSY);
+
+
 #if defined(_GxDEPG0266BN_H_) //only for screen BN266, Rolzz... !!!
+
+//GxEPD2_BW<GxEPD2_266_BN, GxEPD2_266_BN::HEIGHT>     display(GxEPD2_266_BN(/*CS=D8*/ SS, /*DC=D3*/ 0, /*RST=D4*/ 2, /*BUSY=D2*/ 4));  // DEPG0266BN 152x296, SSD1680, TTGO T5 V2.66 / T92_V1.0
+//GxEPD2_BW<GxEPD2_266_BN, GxEPD2_266_BN::HEIGHT>     display(GxEPD2_266_BN(/*CS=15*/ SS, /*DC=4*/ 4, /*RST=2*/ 2, /*BUSY=5*/ 5));     // DEPG0266BN 152x296, SSD1680, TTGO T5 V2.66 / T92_V1.0
+//GxEPD2_BW<GxEPD2_266_BN, GxEPD2_266_BN::HEIGHT>     display(GxEPD2_266_BN(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));       // DEPG0266BN 152x296, SSD1680, TTGO T5 V2.4.1
+//GxEPD2_BW<GxEPD2_266_BN, MAX_HEIGHT(GxEPD2_266_BN)> display(GxEPD2_266_BN(/*CS=PA4*/ SS, /*DC=*/ PA3, /*RST=*/ PA2, /*BUSY=*/ PA1)); // DEPG0266BN 152x296, SSD1680, TTGO T5 V2.66 / T92_V1.0
+
+//GxIO_Class io(SPI, /*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16); 
+//GxEPD_Class display(io, /*RST=*/ 16, /*BUSY=*/ 4);
+
+//GxIO_Class io(SPI, /*CS=5*/ SS, /*DC=*/ 19, /*RST=*/ 4); // LILYGO® TTGO T5 2.66
+//GxEPD_Class display(io, /*RST=*/ 4, /*BUSY=*/ 34); // LILYGO® TTGO T5 2.66
+
 GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ 19, /*RST=*/4);
 GxEPD_Class display(io, /*RST=*/4, /*BUSY=*/34);
 #else
-GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ ELINK_DC, /*RST=*/ ELINK_RESET);
-GxEPD_Class display(io, /*RST=*/ ELINK_RESET, /*BUSY=*/ ELINK_BUSY);
+GxIO_Class io(SPI, /*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16); // arbitrary selection of 17, 16
+GxEPD_Class display(io, /*RST=*/ 16, /*BUSY=*/ 4); // arbitrary selection of (16), 4
+//GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ ELINK_DC, /*RST=*/ ELINK_RESET);
+//GxEPD_Class display(io, /*RST=*/ ELINK_RESET, /*BUSY=*/ ELINK_BUSY);
 #endif
 
 SPIClass sdSPI(VSPI);//was VSPI

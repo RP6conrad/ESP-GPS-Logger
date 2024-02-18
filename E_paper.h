@@ -22,21 +22,39 @@ Scaling: scale to fit, keeping proportions
 Center: horizontally & vertically
 Flip: horizontally 
 */
-// https://tchapi.github.io/Adafruit-GFX-Font-Customiser/ used for extracting only needed digits and decimal point !!
+// https://tchapi.github.io/Adafruit-GFX-Font-Customiser/ used for extracting only needed digits and decimal point. Mind to change from pt to pixel by *3/4 !!
 // FreeFonts from Adafruit_GFX
-#include "Fonts/FreeMonoBold8pt7b.h"//gebruikt
+//#include "Fonts/FreeMono9pt7b.h"//gebruikt
+//#include "Fonts/FreeMono12pt7b.h"//gebruikt
+//#include "Fonts/FreeMono15pt7b.h"//gebruikt
+
 #include "Fonts/FreeMonoBold9pt7b.h"//gebruikt
 #include "Fonts/FreeMonoBold12pt7b.h"//gebruikt
+#include "Fonts/FreeMonoBold15pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold6pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold9pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold12pt7b.h"//gebruikt
-#include "Fonts/FreeSansBold18pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold15pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold18pt7b.h"//
 #include "Fonts/FreeSansBold24pt7b.h"//
 #include "Fonts/FreeSansBold30pt7b.h"//gebruikt
-#include "Fonts/FreeSansBold75pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold40pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold50pt7b.h"//gebruikt
+//#include "Fonts/FreeSansBold60pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold100pt7b.h"//gebruikt
+
+#include "Fonts/impact40pt7b.h"//gebruikt
+#include "Fonts/impact50pt7b.h"//gebruikt
+//#include "Fonts/impact53pt7b.h"//gebruikt
+#include "Fonts/impact60pt7b.h"//gebruikt
+//#include "Fonts/impact67pt7b.h"//gebruikt
+#include "Fonts/impact80pt7b.h"//gebruikt
+//#include "Fonts/impact100pt7b.h"//gebruikt
+
 #include "Fonts/SansSerif_bold_46_nr.h"//bijgevoegd in lib
 #include "Fonts/SansSerif_bold_84_nr.h"//bijgevoegd in lib
 #include "Fonts/SansSerif_bold_96_nr.h"//bijgevoegd in lib
+
 #include "Fonts/Sea_Dog_2001_Italic9pt7b.h"//simon
 #include "Fonts/Sea_Dog_2001_Italic12pt7b.h"//simon
 #include "Fonts/Sea_Dog_2001_Italic16pt7b.h"//simon

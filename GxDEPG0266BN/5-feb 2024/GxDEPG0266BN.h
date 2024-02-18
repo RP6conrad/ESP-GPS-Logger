@@ -49,9 +49,9 @@ class GxDEPG0266BN : public GxEPD
     void fillScreen(uint16_t color); // 0x0 black, >0x0 white, to buffer
     void update(void);
     // to buffer, may be cropped, drawPixel() used, update needed
-    void  drawBitmap(const uint8_t *bitmap, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color, int16_t mode = bm_normal);
+    void  drawBitmap(const uint8_t *bitmap, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color, int16_t mode = bm_invert);
     // to full screen, filled with white if size is less, no update needed
-    void drawBitmap(const uint8_t *bitmap, uint32_t size, int16_t mode = bm_normal); // only bm_normal, bm_invert, bm_partial_update modes implemented
+    void drawBitmap(const uint8_t *bitmap, uint32_t size, int16_t mode = bm_invert); // only bm_normal, bm_invert, bm_partial_update modes implemented
     void eraseDisplay(bool using_partial_update = false);
     // partial update of rectangle from buffer to screen, does not power off
     void updateWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h, bool using_rotation = true);

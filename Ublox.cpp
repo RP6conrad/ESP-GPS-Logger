@@ -644,4 +644,3 @@ int Auto_detect_ublox(){
     Serial.println(ubxMessage.monVER.hwVersion[3]) ; 
     return config.ublox_type;  
 }
-
