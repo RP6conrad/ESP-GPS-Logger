@@ -165,6 +165,7 @@ void SetSailLogo(){
   if(RTC_Sail_Logo==9)   display.drawExampleBitmap(Naish_logoS_zwart     , displayWidth-FromRight, 50, 48, 48, GxEPD_WHITE, GxEPD::bm_flip_x);
   if(RTC_Sail_Logo==10)  display.drawExampleBitmap(Severne_logoS_zwart   , displayWidth-FromRight, 50, 48, 48, GxEPD_WHITE, GxEPD::bm_flip_x);
   if(RTC_Sail_Logo==11)  display.drawExampleBitmap(S2maui_logoS_zwart    , displayWidth-FromRight, 50, 48, 48, GxEPD_WHITE, GxEPD::bm_flip_x);
+  if(RTC_Sail_Logo==12)  display.drawExampleBitmap(North_Sails_logoS_zwart, displayWidth-FromRight, 50, 48, 48, GxEPD_WHITE, GxEPD::bm_flip_x);
 }
 void SetFont_Sleep(){
   if(displayHeight<130){display.setFont(&SF_Distant_Galaxy9pt7b); Font=9;  NumPix=Font*2*3/4; TotPix=Font*2;}
@@ -294,6 +295,7 @@ void Boot_screen(void){
   }
 }
 void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
+  SetScreen();
   //int offset=0;
   float session_time=(millis()-start_logging_millis)/1000 ;
   display.setRotation(1);
@@ -335,6 +337,7 @@ void Off_screen(int choice){//choice 0 = old screen, otherwise Simon screens
 }
 //Screen in deepsleep, update bat voltage, refresh every 4000s !!
 void Sleep_screen(int choice){
+  SetScreen();
   offset=0;
   display.init(); 
   display.setRotation(1);
@@ -519,6 +522,7 @@ int TimeRtc(int offset){
 }     
 int DateTimeRtc(int offset){
   SetFont_M();
+  Serial.print("InfoBarRow=");Serial.println(InfoBarRow);
   display.setCursor(offset,InfoBarRow);
   display.printf("%02d:%02d %02d-%02d-%02d",RTC_hour,RTC_min,RTC_day,RTC_month,RTC_year);
   return 0;
@@ -555,6 +559,7 @@ void sdCardInfo(int offset, int skip_if_not_ok) {
   else display.print("OK");
 }
 void Update_screen(int screen){
+  SetScreen();
   static int count,old_screen,update_delay;
   update_time();
   update_epaper=1; //was zonder else
