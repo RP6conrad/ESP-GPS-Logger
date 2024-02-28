@@ -357,6 +357,7 @@ void taskTwo( void * parameter)
       Off_screen(RTC_OFF_screen);
       Shut_down();
     }
+/*
 //////////////////// testing screens ///////////////////////////////////////////////////////////
     else if(test_screen==true){   // set in ESP_functions.h bool test_screen = true;          //
       Update_screen(SPEED);       // scrolling through font and fields only works with speed  //
@@ -368,7 +369,8 @@ void taskTwo( void * parameter)
 //      delay(1000); 
     }
 /////////////////////////////////////////////////////////////////////////////////////
-    else if(millis()<2000)Update_screen(BOOT_SCREEN);
+*/
+    else if(millis()<2000) Update_screen(BOOT_SCREEN);
     else if(trouble_screen) Update_screen(TROUBLE);
     else if(GPS_Signal_OK==false) Update_screen(WIFI_ON);
     else if(Time_Set_OK==false) Update_screen(WIFI_ON);

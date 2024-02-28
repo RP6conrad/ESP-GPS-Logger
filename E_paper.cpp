@@ -121,7 +121,7 @@ void SetCols(int stats){
     else        {col1=0+offset;col2=32+offset;col3=108+offset;col4=167+offset;} // stats screen 213
   } else {
     if(stats==0){col1=0+offset;col2=30+offset;col3=105+offset;col4=170+offset;} // sleep screen 266
-    else        {col1=0+offset;col2=40+offset;col3=123+offset;col4=195+offset;} // stats screen 266
+    else        {col1=0+offset;col2=40+offset;col3=135+offset;col4=195+offset;} // stats screen 266
   }
   Serial.print("stats=");Serial.println(stats);
 }
@@ -147,8 +147,9 @@ void SetBoardLogo(){
   if(RTC_Board_Logo==11) display.drawExampleBitmap(epd_bitmap_Schwechater, displayWidth-FromRight, -10, 79, 132, GxEPD_WHITE, GxEPD::bm_flip_x);
   if(RTC_Board_Logo==12) display.drawExampleBitmap(Thommen1_logo_BW      , displayWidth-FromRight, 0, 64, 48, GxEPD_WHITE, GxEPD::bm_flip_x);
   if(RTC_Board_Logo==13) display.drawExampleBitmap(BIC_logo_BW           , displayWidth-FromRight, 0, 48, 48, GxEPD_WHITE, GxEPD::bm_flip_x);
-  if(RTC_Board_Logo==14) display.drawExampleBitmap(Carbon_art            , displayWidth-FromRight, 0, 48, 39, GxEPD_WHITE, GxEPD::bm_flip_x);
+  if(RTC_Board_Logo==14) display.drawExampleBitmap(Carbon_art            , displayWidth-FromRight, 0, 48, 48, GxEPD_WHITE, GxEPD::bm_flip_x);
   if(RTC_Board_Logo==15) display.drawExampleBitmap(FutureFly_logo_zwart  , displayWidth-FromRight, 0, 48, 48, GxEPD_WHITE, GxEPD::bm_flip_x);
+  if(RTC_Board_Logo==16) display.drawExampleBitmap(OneHundred_logoS_zwart, displayWidth-FromRight, 0, 48, 48, GxEPD_WHITE, GxEPD::bm_flip_x);
 }
 void SetSailLogo(){
   if(displayHeight<130) FromRight=60;
@@ -188,6 +189,10 @@ void SetFont_M(){
 void SetFont_L(){
   if(displayHeight<130){display.setFont(&FreeSansBold12pt7b);Font=12;      NumPix=Font*2*3/4; TotPix=Font*2;}
   else                 {display.setFont(&FreeSansBold15pt7b);Font=15;      NumPix=Font*2*3/4; TotPix=Font*2;}
+}
+void SetFont_LS(){
+  if(displayHeight<130){display.setFont(&FreeSansBold11pt7b);Font=12;      NumPix=Font*2*3/4; TotPix=Font*2;}
+  else                 {display.setFont(&FreeSansBold14pt7b);Font=15;      NumPix=Font*2*3/4; TotPix=Font*2;}
 }
 void SetFont_XL(){
   if(displayHeight<130){display.setFont(&FreeSansBold15pt7b);Font=15;      NumPix=Font*2*3/4; TotPix=Font*2;}
@@ -279,13 +284,10 @@ void Boot_screen(void){
   if(RTC_voltage_bat<MINIMUM_VOLTAGE){
     CURSOR(1,Font); display.printf("EPS-GPS sleeping");
     CURSOR(2,Font); display.print("Go back to sleep...");
-    SetFont_M();
     CURSOR(4,Font); display.printf("Voltage to low: %f", RTC_voltage_bat);
-    SetFont_S();
-    CURSOR(6,Font); display.print("Please charge battery!");
+    CURSOR(5,Font); display.print("Please charge battery!");
     display.update();
-  }
-  else {
+  }   else {
     CURSOR(1,Font); display.printf("ESP-GPS booting");
     display.updateWindow(0,0,displayWidth,displayWidth,true); 
     delay(100);
@@ -340,8 +342,6 @@ void Sleep_screen(int choice){
   displayWidth = display.width();
   display.fillScreen(GxEPD_WHITE);
   display.setTextColor(GxEPD_BLACK);
-  InfoBarRtc(offset);
-  Speed_in_Unit(offset);
   if(choice==0){
     SetFont_XL();
     CURSOR(1,Font); display.print("Dist: "); display.print(RTC_distance,0);
@@ -350,6 +350,7 @@ void Sleep_screen(int choice){
   }
   else{
     SetFont_M();
+    InfoBarRtc(offset);
     SetBoardLogo();
     SetSailLogo();
     SetCols(0);
@@ -380,6 +381,7 @@ void Sleep_screen(int choice){
     CURSOR_COLC(4,col4,Font); display.print(":");display.print(RTC_1h,2); 
     CURSOR_COLC(5,col4,Font); display.print(":");display.print(RTC_mile,2);
     CURSOR_COLC(6,col4,Font); display.print(":");display.print(RTC_500m,2); 
+    Speed_in_Unit(offset);
     SetFont_Sleep();
     CURSOR_COLC(7,col1,Font); display.print(RTC_Sleep_txt);
     display.update();
@@ -441,14 +443,22 @@ void Bat_level_Simon(int offset){
     if (bat_perc<100) display.setCursor(offset+displayWidth-65,InfoBarRow);
     else              display.setCursor(offset+displayWidth-90,InfoBarRow);
   }
-  display.print(int(bat_perc)); display.print("%");
+  if (RTC_bat_choice==1) { display.print(int(bat_perc)); display.print("%");}
+  else             { display.print(RTC_voltage_bat,2); display.print("V");}
+}
+void Bat_level_print(int volt ){
+  float bat_perc=100*(1-(VOLTAGE_100-RTC_voltage_bat)/(VOLTAGE_100-VOLTAGE_0));
+  if (bat_perc<0) bat_perc=0;
+  if (bat_perc>100) bat_perc=100;
+  if (volt==1) {display.print(RTC_voltage_bat,2); display.print("V");}
+  else         {display.print(int(bat_perc)); display.print("%");}
 }
 void Sats_level(int offset){
   if(!ubxMessage.monVER.swVersion[0]) return;
   SetFont_M();
 //  int circelL=5;
 //  int circelS=2;
-  int posX=displayWidth*0.65+offset;
+  int posX=displayWidth*0.63+offset;
   int posY=InfoBarTop;//-(circelL+2*circelS); 
 //  Serial.print("posX=");Serial.print(posX);
 //  Serial.print("posY=");Serial.print(posY);
@@ -712,194 +722,198 @@ void Update_screen(int screen){
     }
   }
 
-//    if(GPS_Signal_OK==true){
-    if(GPS_Signal_OK==false){    //////////// for test purposes - set bool test_screen = false in ESP_functions ////////////////
+    if(GPS_Signal_OK==true){
+//    if(GPS_Signal_OK==false){    //////////// for test purposes - set bool test_screen = false in ESP_functions ////////////////
 
       if(config.speed_large_font==0) SetFont_Speed_IL();                    // larger font for speed and smaller font for runs
       else  SetFont_Speed_I();                                              // smaller font for speed and bigger font for runs
 
       if(gps_speed*calibration_speed<10) TextWidth=1*Font;                  // 1 digit speed
-      else TextWidth=2*Font;                                                // 2 digit speed
+      else                               TextWidth=2*Font;                  // 2 digit speed
       display.setCursor(offset+displayWidth/2-TextWidth/2,displayHeight-2); // center speed
       display.print(gps_speed * calibration_speed, 1);
-
-      if(field<=2){
-        if(config.speed_large_font==0){
-          SetFont_L();  CURSOR(1,Font);  SetFont_M();         display.print("Run ");
-          SetFont_XL();                                       display.print(S10.s_max_speed*calibration_speed,2);          //last 10s max from run
-          SetFont_L();  CURSOR2(1,Font); SetFont_M();         display.print("Avg ");
-          SetFont_XL();                                       display.print(S10.avg_5runs*calibration_speed,2);            //average 10s from 5 runs
-          SetFont_L();
-        } else {
-          SetFont_M();    CURSOR(1,Font);                     display.print("Run ");
-                          CURSOR(2,Font);                     display.print("Avg ");
-          SetFont_XXXL();                                     display.print(S10.s_max_speed*calibration_speed,0);          //last 10s max from run
-            SetFont_XL();            display.print("."); display.print(int((S10.s_max_speed*calibration_speed-int(S10.s_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
-          SetFont_M();    CURSOR2(2,Font); SetFont_XXXL();    display.print(S10.avg_5runs*calibration_speed,0);            //average 10s from 5 runs
-          SetFont_XL();              display.print("."); display.print(int((S10.avg_5runs*calibration_speed  -int(S10.avg_5runs*calibration_speed))*100),0); //int((x-int(x))*100)
-          SetFont_XXL();
-        }
-        SetBarPosition(Font);
-      }
-      /*
-      First 250m after jibe, if Window>99 m : Window and Exit
-      Between 250m and 400m after jibe : Result Alfa (speed or MISS)
-      Between 400m and 1852m after jibe : Actual Run + AVG
-      More then 1852m : NM actual speed and NM Best speed
-      */    
-
-      if(field==3){
-        if(config.speed_large_font==0){
-          if((alfa_window<99)&(Ublox.alfa_distance/1000<255)){                                //Window alleen indien Window<100 en Run>350 meter !!!!&(A500.alfa_speed_max*calibration_speed<1)
-            SetFont_L(); CURSOR(1,Font);  SetFont_M();         display.print("Gate ");
-            SetFont_XL();                                      display.print(alfa_window,0); //last 10s max from run
-            SetFont_L(); CURSOR2(1,Font); SetFont_M();         display.print("Ex ");
-            if(alfa_exit>99)alfa_exit=99;                                                     //begrenzen alfa_exit...
-            SetFont_XL();                                      display.print(alfa_exit,0);     //average 10s from 5 runs
-            SetFont_L();
-          } else {
-            SetFont_L(); CURSOR(1,Font);  SetFont_M();         display.print("Alfa ");
-            SetFont_XL();                                      display.print(A500.display_max_speed*calibration_speed,1);  //best Alfa from session on 500 m !! 
-            if(A500.alfa_speed_max*calibration_speed>1){                                      //laatste alfa was geldig !!!!
-              SetFont_L(); CURSOR2(1,Font); SetFont_M();       display.print("A1 ");
-              SetFont_XL();                                    display.print(A500.alfa_speed_max*calibration_speed,1); //last alfa, back to zero 500 m after jibe !!
-              SetFont_L();
-            } else {
-              SetFont_L();CURSOR2(1,Font);SetFont_XL();        display.print("MISS");
-            }
-            SetFont_XL();
-          }
-        } else {
-          if((alfa_window<99)&(Ublox.alfa_distance/1000<255)){                                //Window alleen indien Window<100 en Run>350 meter !!!!&(A500.alfa_speed_max*calibration_speed<1)
-            SetFont_M();      CURSOR(1,Font);                   display.print("Gate ");
-                              CURSOR(2,Font);                   display.print("Ex     ");
-            SetFont_XXXL();                                     display.print(alfa_window,0); //last 10s max from run
-              if(alfa_exit>99)alfa_exit=99;                                                   //begrenzen alfa_exit...
-            SetFont_M();      CURSOR2(2,Font); SetFont_XXXL();  display.print(alfa_exit,0);   //average 10s from 5 runs
-          } else {
-            SetFont_M();      CURSOR(1,Font);                   display.print("Alfa ");
-            if(A500.alfa_speed_max*calibration_speed>1){                                      //laatste alfa was geldig !!!!
-                              CURSOR(2,Font);                   display.print("A1 ");
-              SetFont_XXXL();                                   display.print(A500.display_max_speed*calibration_speed,1);  //best Alfa from session on 500 m !! 
-            } else {
-              SetFont_M();    CURSOR2(2,Font);SetFont_XXXL();   display.print("MISS");
-            }
-          }
-          SetFont_XXL();
-        }
-        SetBarPosition(Font);
-      }
-      
-      if(field==4){
-        if(config.speed_large_font==0){
-          SetFont_L();  CURSOR(1,Font);  SetFont_M();         display.print("NMa ");
-          SetFont_XL();                                       display.print(M1852.m_max_speed*calibration_speed,1);        //actueel topspeed 10s van deze run
-          SetFont_L();  CURSOR2(1,Font); SetFont_M();         display.print("NM ");
-          SetFont_XL();                                       display.print(M1852.display_max_speed*calibration_speed,1);  //Snelste nautical mile van de sessie
-          SetFont_L();
-        } else {
-          SetFont_M();    CURSOR(1,Font);                     display.print("NMa ");
-                          CURSOR(2,Font);                     display.print("NM   ");
-          SetFont_XXXL();                                     display.print(M1852.m_max_speed*calibration_speed,0);        //actueel topspeed 10s van deze run
-          SetFont_XL();              display.print("."); display.print(int((M1852.m_max_speed*calibration_speed      -int(M1852.m_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
-          SetFont_M();    CURSOR2(2,Font); SetFont_XXXL();    display.print(M1852.display_max_speed*calibration_speed,0);  //Snelste nautical mile van de sessie
-          SetFont_XL();              display.print("."); display.print(int((M1852.display_max_speed*calibration_speed-int(M1852.display_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
-          SetFont_XXL();
-       }
-        SetBarPosition(Font);
-      }  
-      if(field==5){
-        if(config.speed_large_font==0){
-          SetFont_L();  CURSOR(1,Font);  SetFont_M();         display.print("Dist ");
-          SetFont_XL();                                       display.print(Ublox.total_distance/1000000,0);//Total distance in km, als test run_distance
-          if(Ublox.total_distance/1000000>99.9)               display.print(" km");
-          else                                                display.print(" m");
-          SetFont_L();
-        } else {
-          SetFont_M();    CURSOR(2,Font);                     display.print("Dist ");
-          SetFont_XXXL();                                     display.print(Ublox.total_distance/1000000,0);//Total distance in km, als test run_distance
-          if(Ublox.total_distance/1000000>99.9){SetFont_M();  display.print(" km");} 
-          else                                 {SetFont_M();  display.print(" m");}
-          SetFont_XXL();
-        }
-        SetBarPosition(Font);
-      }
-      if(field==6){
-        if(config.speed_large_font==0){
-          SetFont_L();  CURSOR(1,Font);  SetFont_M();         display.print("2S ");
-          SetFont_XL();                                       display.print(S2.display_max_speed*calibration_speed,1);     //best 2s
-          SetFont_L();  CURSOR2(1,Font); SetFont_M();         display.print("10S ");
-          SetFont_XL();                                       display.print(S10.display_max_speed*calibration_speed,1);    //best 10s run
-          SetFont_L();
-        } else {
-          SetFont_M();    CURSOR(1,Font);                     display.print("2S ");
-                          CURSOR(2,Font);                     display.print("10S ");
-          SetFont_XXXL();                                     display.print(S2.display_max_speed*calibration_speed,0);     //last 10s max from run
-            SetFont_XL();            display.print("."); display.print(int((S2.display_max_speed*calibration_speed-int(S2.display_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
-          SetFont_M();    CURSOR2(2,Font); SetFont_XXXL();    display.print(S10.display_max_speed*calibration_speed,0);    //average 10s from 5 runs
-          SetFont_XL();              display.print("."); display.print(int((S10.display_max_speed*calibration_speed-int(S10.display_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
-          SetFont_XXL();
-        }
-        SetBarPosition(Font);
-      }
-      if(field==7){ 
-        if(config.speed_large_font==0){
-          SetFont_L();  CURSOR(1,Font);  SetFont_M();         display.print("0.5hA");
-          SetFont_XL();                                       display.print(S1800.avg_s*calibration_speed,1);              //actual average last 30 min
-          SetFont_L();  CURSOR2(1,Font); SetFont_M();         display.print("0.5hB");
-          SetFont_XL();                                       display.print(S1800.display_max_speed*calibration_speed,1);  //best average over 30 min
-          SetFont_L();
-        } else {
-          SetFont_M();    CURSOR(1,Font);                     display.print("0.5hA");
-                          CURSOR(2,Font);                     display.print("0.5hB");
-          SetFont_XXXL();                                     display.print(S1800.avg_s*calibration_speed,0);            //actual average last 30 min
-          SetFont_XL();              display.print("."); display.print(int((S1800.avg_s*calibration_speed-int(S1800.avg_s*calibration_speed))*100),0); //int((x-int(x))*100)
-          SetFont_M();    CURSOR2(2,Font); SetFont_XXXL();    display.print(S1800.display_max_speed*calibration_speed,0);  //best average over 30 min
-          SetFont_XL();              display.print("."); display.print(int((S1800.display_max_speed*calibration_speed-int(S1800.display_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
-          SetFont_XXL();
-        }
-        SetBarPosition(Font);
-      }
-      if(field==8){
-        if(config.speed_large_font==0){
-          SetFont_L();  CURSOR(1,Font);  SetFont_M();         display.print("1hA ");
-          SetFont_XL();                                       display.print(S3600.avg_s*calibration_speed,1);              //actual average last 60 min
-          SetFont_L();  CURSOR2(1,Font); SetFont_M();         display.print("1hB ");
-          SetFont_XL();                                       display.print(S3600.display_max_speed*calibration_speed,1);  //best average over 60 min
-          SetFont_L();
-        } else {
-          SetFont_M();    CURSOR(1,Font);                     display.print("1hA ");
-                          CURSOR(2,Font);                     display.print("1hB ");
-          SetFont_XXXL();                                     display.print(S3600.avg_s*calibration_speed,0);            //actual average last 60 min
-            SetFont_XL();            display.print("."); display.print(int((S3600.avg_s*calibration_speed-int(S3600.avg_s*calibration_speed))*100),0); //int((x-int(x))*100)
-          SetFont_M();    CURSOR2(2,Font); SetFont_XXXL();    display.print(S3600.display_max_speed*calibration_speed,0);  //best average over 60 min
-          SetFont_XL();              display.print("."); display.print(int((S3600.display_max_speed*calibration_speed-int(S3600.display_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
-          SetFont_XXL();
-        }
-        SetBarPosition(Font);
-      }
-      int log_seconds=(millis()-start_logging_millis)/1000;                                                 //aantal seconden sinds loggen is gestart
-      static int low_speed_seconds;
-      if(S10.avg_s>2000){low_speed_seconds=0;}                                                              //if the speed is higher then 2000 mm/s, reset the counter
-      low_speed_seconds++;
-      if(low_speed_seconds>120){start_logging_millis=millis();}                                             //bar will be reset if the 10s speed drops under 2m/s for more then 120 s !!!!
-      run_rectangle_length=(Ublox.alfa_distance/bar_length);                                                //240 pixels is volledige bar, ublox.alfa_distance zijn mm
-      if(field==7){
-        run_rectangle_length=log_seconds*240/1800;
-        if (log_seconds>1800){start_logging_millis=millis();}                                               //30 minutes = full bar
-      }
-      if(field==8){
-        run_rectangle_length=log_seconds*240/3600;
-        if (log_seconds>3600){start_logging_millis=millis();}
-      }                                                                                                     //60 minutes = full bar
-      if(bar_length){
-         display.fillRect(offset,bar_position,run_rectangle_length,8,GxEPD_BLACK);                          //balk voor run_distance weer te geven...          
-//         display.fillRect(offset,bar_position,displayWidth*0.62,8,GxEPD_BLACK);                          //balk test op 62% lengte 
-      }
     } else {
       SetFont_XL();
       CURSOR_COL(3,offset,Font); display.print("Low GPS signal !");
       Sats_level(offset);
+    }
+
+    if(field<=2){
+      if(config.speed_large_font==0){
+        SetFont_L();  CURSOR(1,Font);  SetFont_M();         display.print("Run ");
+        SetFont_XL();                                       display.print(S10.s_max_speed*calibration_speed,2);          //last 10s max from run
+        SetFont_L();  CURSOR2(1,Font); SetFont_M();         display.print("Avg ");
+        SetFont_XL();                                       display.print(S10.avg_5runs*calibration_speed,2);            //average 10s from 5 runs
+        SetFont_L();
+      } else {
+        SetFont_M();    CURSOR(1,Font);                     display.print("Run ");
+                        CURSOR(2,Font);                     display.print("Avg ");
+        SetFont_XXXL();                                     display.print(S10.s_max_speed*calibration_speed,0);          //last 10s max from run
+        SetFont_XL();              display.print("."); display.print(int((S10.s_max_speed*calibration_speed-int(S10.s_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
+        SetFont_M();    CURSOR2(2,Font); SetFont_XXXL();    display.print(S10.avg_5runs*calibration_speed,0);            //average 10s from 5 runs
+        SetFont_XL();              display.print("."); display.print(int((S10.avg_5runs*calibration_speed  -int(S10.avg_5runs*calibration_speed))*100),0); //int((x-int(x))*100)
+        SetFont_XXL();
+      }
+      SetBarPosition(Font);
+    }
+
+    /*
+    First 250m after jibe, if Window>99 m : Window and Exit
+    Between 250m and 400m after jibe : Result Alfa (speed or MISS)
+    Between 400m and 1852m after jibe : Actual Run + AVG
+    More then 1852m : NM actual speed and NM Best speed
+    */    
+
+    if(field==3){
+      if(config.speed_large_font==0){
+        if((alfa_window<99)&(Ublox.alfa_distance/1000<255)){                                //Window alleen indien Window<100 en Run>350 meter !!!!&(A500.alfa_speed_max*calibration_speed<1)
+          SetFont_L(); CURSOR(1,Font);  SetFont_M();         display.print("Gate ");
+          SetFont_XL();                                      display.print(alfa_window,0); //last 10s max from run
+          SetFont_L(); CURSOR2(1,Font); SetFont_M();         display.print("Ex ");
+          if(alfa_exit>99)alfa_exit=99;                                                     //begrenzen alfa_exit...
+          SetFont_XL();                                    display.print(alfa_exit,0);     //average 10s from 5 runs
+          SetFont_L();
+        } else {
+          SetFont_L(); CURSOR(1,Font);  SetFont_M();         display.print("Alfa ");
+          SetFont_XL();                                      display.print(A500.display_max_speed*calibration_speed,1);  //best Alfa from session on 500 m !! 
+          if(A500.alfa_speed_max*calibration_speed>1){                                      //laatste alfa was geldig !!!!
+            SetFont_L(); CURSOR2(1,Font); SetFont_M();       display.print("A1 ");
+            SetFont_XL();                                    display.print(A500.alfa_speed_max*calibration_speed,1); //last alfa, back to zero 500 m after jibe !!
+            SetFont_L();
+          } else {
+            SetFont_L();CURSOR2(1,Font);SetFont_XL();        display.print("MISS");
+          }
+          SetFont_XL();
+        }
+      } else {
+        if((alfa_window<99)&(Ublox.alfa_distance/1000<255)){                                //Window alleen indien Window<100 en Run>350 meter !!!!&(A500.alfa_speed_max*calibration_speed<1)
+          SetFont_M();      CURSOR(1,Font);                   display.print("Gate ");
+                            CURSOR(2,Font);                   display.print("Ex     ");
+          SetFont_XXXL();                                     display.print(alfa_window,0); //last 10s max from run
+            if(alfa_exit>99)alfa_exit=99;                                                   //begrenzen alfa_exit...
+          SetFont_M();      CURSOR2(2,Font); SetFont_XXXL();  display.print(alfa_exit,0);   //average 10s from 5 runs
+        } else {
+          SetFont_M();      CURSOR(1,Font);                   display.print("Alfa ");
+          if(A500.alfa_speed_max*calibration_speed>1){                                      //laatste alfa was geldig !!!!
+                            CURSOR(2,Font);                   display.print("A1 ");
+            SetFont_XXXL();                                   display.print(A500.display_max_speed*calibration_speed,1);  //best Alfa from session on 500 m !! 
+          } else {
+            SetFont_M();    CURSOR2(2,Font);SetFont_XXXL();   display.print("MISS");
+          }
+        }
+        SetFont_XXL();
+      }
+      SetBarPosition(Font);
+    }
+    if(field==4){
+      if(config.speed_large_font==0){
+        SetFont_L();  CURSOR(1,Font);  SetFont_M();         display.print("NMa ");
+        SetFont_XL();                                       display.print(M1852.m_max_speed*calibration_speed,1);        //actueel topspeed 10s van deze run
+        SetFont_L();  CURSOR2(1,Font); SetFont_M();         display.print("NM ");
+        SetFont_XL();                                       display.print(M1852.display_max_speed*calibration_speed,1);  //Snelste nautical mile van de sessie
+        SetFont_L();
+      } else {
+        SetFont_M();    CURSOR(1,Font);                     display.print("NMa ");
+                        CURSOR(2,Font);                     display.print("NM   ");
+        SetFont_XXXL();                                     display.print(M1852.m_max_speed*calibration_speed,0);        //actueel topspeed 10s van deze run
+        SetFont_XL();              display.print("."); display.print(int((M1852.m_max_speed*calibration_speed      -int(M1852.m_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
+        SetFont_M();    CURSOR2(2,Font); SetFont_XXXL();    display.print(M1852.display_max_speed*calibration_speed,0);  //Snelste nautical mile van de sessie
+        SetFont_XL();              display.print("."); display.print(int((M1852.display_max_speed*calibration_speed-int(M1852.display_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
+        SetFont_XXL();
+      }
+      SetBarPosition(Font);
+    }  
+    if(field==5){
+      if(config.speed_large_font==0){
+        SetFont_L();  CURSOR(1,Font);  SetFont_M();         display.print("Dist ");
+        SetFont_XL();                                       display.print(Ublox.total_distance/1000000,0);//Total distance in km, als test run_distance
+        if(Ublox.total_distance/1000000>99.9)               display.print(" km");
+        else                                                display.print(" m");
+        SetFont_L();  CURSOR2(1,Font); SetFont_M();         display.print("Bat ");
+        SetFont_XL();                                       Bat_level_print(0);
+        SetFont_L();
+      } else {
+        SetFont_M();    CURSOR(1,Font);                     display.print("Dist ");
+                        CURSOR(2,Font);                     display.print("Bat ");
+        SetFont_XXXL();                                     display.print(Ublox.total_distance/1000000,0);//Total distance in km, als test run_distance
+        if(Ublox.total_distance/1000000>99.9){SetFont_M();  display.print(" km");} 
+        else                                 {SetFont_M();  display.print(" m");}
+        SetFont_M();    CURSOR2(2,Font); SetFont_XXXL();    Bat_level_print(0);
+        SetFont_XXL();
+      }
+      SetBarPosition(Font);
+    }
+    if(field==6){
+      if(config.speed_large_font==0){
+        SetFont_L();  CURSOR(1,Font);  SetFont_M();         display.print("2S ");
+        SetFont_XL();                                       display.print(S2.display_max_speed*calibration_speed,1);     //best 2s
+        SetFont_L();  CURSOR2(1,Font); SetFont_M();         display.print("10S ");
+        SetFont_XL();                                       display.print(S10.display_max_speed*calibration_speed,1);    //best 10s run
+        SetFont_L();
+      } else {
+        SetFont_M();    CURSOR(1,Font);                     display.print("2S ");
+                        CURSOR(2,Font);                     display.print("10S ");
+        SetFont_XXXL();                                     display.print(S2.display_max_speed*calibration_speed,0);     //last 10s max from run
+        SetFont_XL();              display.print("."); display.print(int((S2.display_max_speed*calibration_speed-int(S2.display_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
+        SetFont_M();    CURSOR2(2,Font); SetFont_XXXL();    display.print(S10.display_max_speed*calibration_speed,0);    //average 10s from 5 runs
+        SetFont_XL();              display.print("."); display.print(int((S10.display_max_speed*calibration_speed-int(S10.display_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
+        SetFont_XXL();
+      }
+      SetBarPosition(Font);
+    }
+    if(field==7){
+      if(config.speed_large_font==0){
+        SetFont_L();  CURSOR(1,Font);  SetFont_M();         display.print("0.5hA");
+        SetFont_XL();                                       display.print(S1800.avg_s*calibration_speed,1);              //actual average last 30 min
+        SetFont_L();  CURSOR2(1,Font); SetFont_M();         display.print("0.5hB");
+        SetFont_XL();                                       display.print(S1800.display_max_speed*calibration_speed,1);  //best average over 30 min
+        SetFont_L();
+      } else {
+        SetFont_M();    CURSOR(1,Font);                     display.print("0.5hA");
+                        CURSOR(2,Font);                     display.print("0.5hB");
+        SetFont_XXXL();                                     display.print(S1800.avg_s*calibration_speed,0);            //actual average last 30 min
+        SetFont_XL();              display.print("."); display.print(int((S1800.avg_s*calibration_speed-int(S1800.avg_s*calibration_speed))*100),0); //int((x-int(x))*100)
+        SetFont_M();    CURSOR2(2,Font); SetFont_XXXL();    display.print(S1800.display_max_speed*calibration_speed,0);  //best average over 30 min
+        SetFont_XL();              display.print("."); display.print(int((S1800.display_max_speed*calibration_speed-int(S1800.display_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
+        SetFont_XXL();
+      }
+      SetBarPosition(Font);
+    }
+    if(field==8){
+      if(config.speed_large_font==0){
+        SetFont_L();  CURSOR(1,Font);  SetFont_M();         display.print("1hA ");
+        SetFont_XL();                                       display.print(S3600.avg_s*calibration_speed,1);              //actual average last 60 min
+        SetFont_L();  CURSOR2(1,Font); SetFont_M();         display.print("1hB ");
+        SetFont_XL();                                       display.print(S3600.display_max_speed*calibration_speed,1);  //best average over 60 min
+        SetFont_L();
+      } else {
+        SetFont_M();    CURSOR(1,Font);                     display.print("1hA ");
+                        CURSOR(2,Font);                     display.print("1hB ");
+        SetFont_XXXL();                                     display.print(S3600.avg_s*calibration_speed,0);            //actual average last 60 min
+          SetFont_XL();            display.print("."); display.print(int((S3600.avg_s*calibration_speed-int(S3600.avg_s*calibration_speed))*100),0); //int((x-int(x))*100)
+        SetFont_M();    CURSOR2(2,Font); SetFont_XXXL();    display.print(S3600.display_max_speed*calibration_speed,0);  //best average over 60 min
+        SetFont_XL();              display.print("."); display.print(int((S3600.display_max_speed*calibration_speed-int(S3600.display_max_speed*calibration_speed))*100),0); //int((x-int(x))*100)
+        SetFont_XXL();
+      }
+      SetBarPosition(Font);
+    }
+    int log_seconds=(millis()-start_logging_millis)/1000;                                                 //aantal seconden sinds loggen is gestart
+    static int low_speed_seconds;
+    if(S10.avg_s>2000){low_speed_seconds=0;}                                                              //if the speed is higher then 2000 mm/s, reset the counter
+    low_speed_seconds++;
+    if(low_speed_seconds>120){start_logging_millis=millis();}                                             //bar will be reset if the 10s speed drops under 2m/s for more then 120 s !!!!
+    run_rectangle_length=(Ublox.alfa_distance/bar_length);                                                //240 pixels is volledige bar, ublox.alfa_distance zijn mm
+    if(field==7){
+      run_rectangle_length=log_seconds*240/1800;
+      if (log_seconds>1800){start_logging_millis=millis();}                                               //30 minutes = full bar
+    }
+    if(field==8){
+      run_rectangle_length=log_seconds*240/3600;
+      if (log_seconds>3600){start_logging_millis=millis();}
+    }                                                                                                     //60 minutes = full bar
+    if(bar_length){
+       display.fillRect(offset,bar_position,run_rectangle_length,8,GxEPD_BLACK);                          //balk voor run_distance weer te geven...          
+//       display.fillRect(offset,bar_position,displayWidth*0.62,8,GxEPD_BLACK);                          //balk test op 62% lengte 
     }
   }
   if(screen==AVG_10S){
@@ -915,8 +929,8 @@ void Update_screen(int screen){
   }
   if(screen==SPEED2){
     update_delay=100;
-    if(GPS_Signal_OK==false){
-//    if(GPS_Signal_OK==true){
+//    if(GPS_Signal_OK==false){       /////////////////////////// for test purposes ////////////////////////
+    if(GPS_Signal_OK==true){
       SetFont_Speed_I();
       display.setTextSize(2); 
       if ((S2.s_max_speed*calibration_speed>S2.avg_speed[5]*calibration_speed)&(S2.s_max_speed*calibration_speed>config.start_logging_speed*1000)){// change color when 2s speed is in top5
@@ -1025,7 +1039,7 @@ void Update_screen(int screen){
       S10avgNEW=(S10.avg_speed[9]+S10.avg_speed[8]+S10.avg_speed[7]+S10.avg_speed[6]+S10.avg_speed[5])/5;
     }
     SetCols(1);
-    SetFont_L();
+    SetFont_LS();
     CURSOR_COLC(1,col1,Font); display.print("AV");
     CURSOR_COLC(2,col1,Font); display.print("R1");
     CURSOR_COLC(3,col1,Font); display.print("R2");
@@ -1033,7 +1047,7 @@ void Update_screen(int screen){
     CURSOR_COLC(5,col1,Font); display.print("R4");
     CURSOR_COLC(6,col1,Font); display.print("R5"); 
 
-    CURSOR_COLC(1,col2,Font); display.print(":");display.print(S10.display_last_run*calibration_speed,2);
+    CURSOR_COLC(1,col2,Font); display.print(":");display.print(S10avgNEW * calibration_speed, 2);
     CURSOR_COLC(2,col2,Font); display.print(":");display.print(S10.avg_speed[9]*calibration_speed,2);
     CURSOR_COLC(3,col2,Font); display.print(":");display.print(S10.avg_speed[8]*calibration_speed,2);
     CURSOR_COLC(4,col2,Font); display.print(":");display.print(S10.avg_speed[7]*calibration_speed,2); 
@@ -1044,7 +1058,7 @@ void Update_screen(int screen){
     CURSOR_COLC(2,col3,Font); display.print("Prv");
     CURSOR_COLC(3,col3,Font); display.print("Dist");
     CURSOR_COLC(4,col3,Font); display.print("Alp"); 
-    CURSOR_COLC(5,col3,Font); display.print("500m");
+    CURSOR_COLC(5,col3,Font); display.print("500");
     CURSOR_COLC(6,col3,Font); display.print("Nm"); 
 
     CURSOR_COLC(1,col4,Font); display.print(":");display.print(S2.avg_speed[9]*calibration_speed);
@@ -1085,11 +1099,11 @@ void Update_screen(int screen){
     
     SetFont_S();
     CURSOR(1,Font); display.print("Graph: Speed runs(10sec)");
-    CURSOR(2,Font); display.print("R1-R5:");display.print(S10.display_speed[9]*calibration_speed,0);
-                    display.print(" ");     display.print(S10.display_speed[8]*calibration_speed,0);
-                    display.print(" ");     display.print(S10.display_speed[7]*calibration_speed,0);
-                    display.print(" ");     display.print(S10.display_speed[6]*calibration_speed,0);
-                    display.print(" ");     display.print(S10.display_speed[5]*calibration_speed,0);
+    CURSOR(2,Font); display.print("R1-R5:");display.print(S10.display_speed[9]*calibration_speed,1);
+                    display.print(" ");     display.print(S10.display_speed[8]*calibration_speed,1);
+                    display.print(" ");     display.print(S10.display_speed[7]*calibration_speed,1);
+                    display.print(" ");     display.print(S10.display_speed[6]*calibration_speed,1);
+                    display.print(" ");     display.print(S10.display_speed[5]*calibration_speed,1);
     r=run_count%MaxNumberBar+1;//laatste bar = 0 ?
     for(int i=0;i<9;i++){          
       display.fillRect(offset+posX,posY-(i*10),GraphWidth, 1,GxEPD_BLACK);     //printen hor.lijnen grafiek, van 5 tot 215

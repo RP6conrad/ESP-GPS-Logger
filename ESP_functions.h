@@ -85,8 +85,9 @@ RTC_DATA_ATTR float RTC_R3_10s;
 RTC_DATA_ATTR float RTC_R4_10s;
 RTC_DATA_ATTR float RTC_R5_10s;
 RTC_DATA_ATTR char RTC_Sleep_txt[32]="Your ID";
-RTC_DATA_ATTR int RTC_Board_Logo;
+RTC_DATA_ATTR bool RTC_bat_choice;
 RTC_DATA_ATTR int RTC_Sail_Logo;
+RTC_DATA_ATTR int RTC_Board_Logo;
 RTC_DATA_ATTR int RTC_SLEEP_screen=1;
 RTC_DATA_ATTR int RTC_OFF_screen=1;
 RTC_DATA_ATTR int RTC_counter=0;
@@ -142,10 +143,10 @@ Button_push Long_push39 (WAKE_UP_GPIO,1500,10,9);//was 39
 GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ 19, /*RST=*/4);
 GxEPD_Class display(io, /*RST=*/4, /*BUSY=*/34);
 #else
-GxIO_Class io(SPI, /*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16); // arbitrary selection of 17, 16
-GxEPD_Class display(io, /*RST=*/ 16, /*BUSY=*/ 4); // arbitrary selection of (16), 4
-//GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ ELINK_DC, /*RST=*/ ELINK_RESET);
-//GxEPD_Class display(io, /*RST=*/ ELINK_RESET, /*BUSY=*/ ELINK_BUSY);
+//GxIO_Class io(SPI, /*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16); // arbitrary selection of 17, 16
+//GxEPD_Class display(io, /*RST=*/ 16, /*BUSY=*/ 4); // arbitrary selection of (16), 4
+GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ ELINK_DC, /*RST=*/ ELINK_RESET);
+GxEPD_Class display(io, /*RST=*/ ELINK_RESET, /*BUSY=*/ ELINK_BUSY);
 #endif
 
 SPIClass sdSPI(VSPI);//was VSPI

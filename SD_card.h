@@ -40,6 +40,7 @@ extern int nav_pvt_message_nr;
 extern int nav_sat_message;
 extern int RTC_Board_Logo;
 extern int RTC_Sail_Logo;
+extern bool RTC_bat_choice;
 extern int RTC_SLEEP_screen;
 extern int RTC_OFF_screen;
 struct Config {
@@ -52,9 +53,9 @@ struct Config {
   int speed_large_font=1;//fonts on the first line are bigger, actual speed font is smaller
   int dynamic_model=0;//choice for dynamic model "Sea",if 0 model "portable" is used !!
   float timezone=1;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)
-  int Stat_screens=1234567;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active
+  int Stat_screens=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active
   int Stat_screens_time=4;//time between switching stat_screens
-  int GPIO12_screens=1234567;//choice for stats field when gpio12 is activated (pull-up high, low = active)
+  int GPIO12_screens=54;//choice for stats field when gpio12 is activated (pull-up high, low = active)
   int Stat_screens_persist=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active / for resave the config
   int GPIO12_screens_persist=54;//choice for stats field when gpio12 is activated (pull-up high, low = active) / for resave the config
   int Board_Logo=1;
@@ -70,6 +71,7 @@ struct Config {
   int start_logging_speed=1;
   int bar_length=1852;//choice for bar indicator for length of run in m (nautical mile)
   int archive_days=10; //how many days files will be moved to the "Archive" dir
+  bool bat_choice=1;//choice for voltage in % or voltage
   bool logTXT=1;// switchinf off .txt files
   bool logUBX=1;//log to .ubx
   bool logUBX_nav_sat=0;// log nav sat msg to .ubx

@@ -397,6 +397,7 @@ void handleConfigUpload() {
     doc["Board_Logo"] = server.arg("Board_Logo").toInt();
     doc["Sail_Logo"] = server.arg("Sail_Logo").toInt();
     doc["sleep_off_screen"] = server.arg("sleep_off_screen").toInt();
+    doc["bat_choice"] = server.arg("bat_choice").toInt(); 
     doc["logTXT"] = server.arg("logTXT").toInt(); 
     doc["logSBP"] = server.arg("logSBP").toInt(); 
     doc["logUBX"] = server.arg("logUBX").toInt();

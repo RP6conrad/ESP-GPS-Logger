@@ -223,6 +223,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.Board_Logo = doc["Board_Logo"]|1;
   config.Sail_Logo = doc["Sail_Logo"]|1;
   config.sleep_off_screen = doc["sleep_off_screen"]|11;
+  config.bat_choice=doc["bat_choice"]|1;
   config.logTXT=doc["logTXT"]|1;
   config.logUBX=doc["logUBX"]|1;
   if(config.sample_rate<10){
@@ -237,19 +238,19 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.file_date_time=doc["file_date_time"]|1;
   config.dynamic_model = doc["dynamic_model"]|0;//sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
   config.timezone = doc["timezone"]|2.0;
-  strlcpy(config.UBXfile,                  // <- destination
-          doc["UBXfile"] | "/ubxGPS",  // <- source
-          sizeof(config.UBXfile));         // <- destination's capacity 
-  strlcpy(config.Sleep_info,                  // <- destination
-          doc["Sleep_info"] | "My ID",  // <- source
-          sizeof(config.Sleep_info));         // <- destination's capacity
+  strlcpy(config.UBXfile,                             // <- destination
+          doc["UBXfile"] | "/ubxGPS",                 // <- source
+          sizeof(config.UBXfile));                    // <- destination's capacity 
+  strlcpy(config.Sleep_info,                          // <- destination
+          doc["Sleep_info"] | "My ID",                // <- source
+          sizeof(config.Sleep_info));                 // <- destination's capacity
           strcpy(RTC_Sleep_txt,config.Sleep_info);    //copy into RTC mem     
-  strlcpy(config.ssid,                  // <- destination
-          doc["ssid"] | "ssidNOK",  // <- source
-          sizeof(config.ssid));         // <- destination's capacity
-  strlcpy(config.password,                  // <- destination
-          doc["password"] | "/BN220C000.ubx",  // <- source
-          sizeof(config.password));         // <- destination's capacity          
+  strlcpy(config.ssid,                                // <- destination
+          doc["ssid"] | "ssidNOK",                    // <- source
+          sizeof(config.ssid));                       // <- destination's capacity
+  strlcpy(config.password,                            // <- destination
+          doc["password"] | "password",               // <- source
+          sizeof(config.password));                   // <- destination's capacity          
    // Close the file (Curiously, File's destructor doesn't close the file)
   file.close();
   if (error) {
@@ -262,25 +263,26 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
               Serial.println(config.password);
               Serial.println(config.Sail_Logo);
               }
-  RTC_Board_Logo=config.Board_Logo;//copy RTC memory !!
-  RTC_Sail_Logo=config.Sail_Logo;//copy to RTC memory !!
+  RTC_Board_Logo=config.Board_Logo;                   //copy RTC memory !!
+  RTC_Sail_Logo=config.Sail_Logo;                     //copy to RTC memory !!
+  RTC_bat_choice=config.bat_choice;
   calibration_bat=config.cal_bat;
   calibration_speed=config.cal_speed/1000;//3.6=km/h, 1.94384449 = knots, speed is now in mm/s
   //time_out_nav_pvt=(1000/config.sample_rate+75);//max time out = 175 ms
   RTC_SLEEP_screen=config.sleep_off_screen%10;
   RTC_OFF_screen=config.sleep_off_screen/10%10;
-  //int Logo_choice=config.Logo_choice;//preserve value config.Logo_choice for config.txt update !!
-  int stat_screen=config.Stat_screens;//preserve value config
-  int GPIO_12_screens=config.GPIO12_screens;//preserve value config 
-  int speed_screens=config.field;//preserve speed_screen setting
-  if(config.file_date_time==0) config.logTXT=1;//because txt file is needed for generating new file count !!
+  //int Logo_choice=config.Logo_choice;               //preserve value config.Logo_choice for config.txt update !!
+  int stat_screen=config.Stat_screens;                //preserve value config
+  int GPIO_12_screens=config.GPIO12_screens;          //preserve value config 
+  int speed_screens=config.field;                     //preserve speed_screen setting
+  if(config.file_date_time==0) config.logTXT=1;       //because txt file is needed for generating new file count !!
   for (int i=0;i<9;i++){
-        config.stat_screen[i]=stat_screen%10;//STATSx heeft geen offset !!! 641
+        config.stat_screen[i]=stat_screen%10;         //STATSx heeft geen offset !!! 641
         stat_screen=stat_screen/10;
         if(stat_screen>0){
             config.screen_count=i+1;
             }
-        config.gpio12_screen[i]=GPIO_12_screens%10;//
+        config.gpio12_screen[i]=GPIO_12_screens%10;   //
         GPIO_12_screens=GPIO_12_screens/10;
         if(GPIO_12_screens>0){
             config.gpio12_count=i+1;

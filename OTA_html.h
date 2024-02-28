@@ -439,6 +439,11 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
   webpage += "<input size='8' type='number' required name='sleep_off_screen' min='0' max='1000' value="+String(config.sleep_off_screen)+" step='1'>\n";
   webpage += "</select>\n</td><td>Choice for switch_off (first digit 0 or 1) and sleep_screen (second digit 0 or 1): </td>\n</tr>\n";
+  //bat_choice
+  webpage += "<tr><td>bat_choice</td><td>\n<select id='bat_choice' name='bat_choice'>\n";
+  if(config.bat_choice == 1) webpage += "<option value='1' selected>Batery value in percentage</option>\n"; else webpage += "<option value='1'>Batery value in percentage</option>\n";
+  if(config.bat_choice == 0) webpage += "<option value='0' selected>Batery value in voltage</option>\n"; else webpage += "<option value='0'>Batery value in voltage</option>\n";
+  webpage += "</select>\n</td><td>bat_choice: Screen info on battery will be presented in either percentage of voltage.</td>\n</tr>\n"; 
   //logTXT
   webpage += "<tr><td>logTXT</td><td>\n<select id='logTXT' name='logTXT'>\n";
   if(config.logTXT == 1) webpage += "<option value='1' selected>LOG TXT ON</option>\n"; else webpage += "<option value='1'>LOG TXT ON</option>\n";

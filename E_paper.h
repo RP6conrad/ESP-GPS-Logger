@@ -33,7 +33,9 @@ Flip: horizontally
 #include "Fonts/FreeMonoBold15pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold6pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold9pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold11pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold12pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold14pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold15pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold18pt7b.h"//
 #include "Fonts/FreeSansBold24pt7b.h"//
