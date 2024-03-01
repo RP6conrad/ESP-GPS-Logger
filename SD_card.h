@@ -43,6 +43,7 @@ extern int nav_pvt_message;
 extern int nav_sat_message;
 extern int RTC_Board_Logo;
 extern int RTC_Sail_Logo;
+//extern bool RTC_bat_choice;
 extern int RTC_SLEEP_screen;
 extern int RTC_OFF_screen;
 struct Config {
@@ -73,6 +74,7 @@ struct Config {
   int start_logging_speed=1;
   int bar_length=1852;//choice for bar indicator for length of run in m (nautical mile)
   int archive_days=10; //how many days files will be moved to the "Archive" dir
+  bool bat_choice=1;//choice for voltage in % or voltage
   bool logTXT=1;// switchinf off .txt files
   bool logUBX=1;//log to .ubx
   bool logUBX_nav_sat=0;// log nav sat msg to .ubx
