@@ -1,6 +1,7 @@
 #include "SD_card.h"
 #include <SD.h>
 #include <LITTLEFS.h>
+//#include <LittleFS.h>
 #include "Definitions.h"
 #include "gpx.h"
 #include "sbp.h"
@@ -151,7 +152,7 @@ void Log_to_SD(void) {
     interval = ubxMessage.navPvt.iTOW - old_iTOW;
     old_iTOW = ubxMessage.navPvt.iTOW;
     /*
-                if((interval>time_out_nav_pvt)&(sdOK==true)&(nav_pvt_message_nr>10)){//check for timeout navPvt message !!
+                if((interval>time_out_nav_pvt)&(sdOK==true)&(nav_pvt_message>10)){//check for timeout navPvt message !!
                      next_gpy_full_frame=1;
                      dataStr[0] = 0;
                      dtostrf(ubxMessage.navPvt.hour, 2, 0, Buffer);AddString(); 
@@ -235,6 +236,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.cal_bat = doc["cal_bat"] | 1.75;
   config.cal_speed = doc["cal_speed"] | 3.6;
   config.sample_rate = doc["sample_rate"] | 1;
+  config.cpu_freq = doc["cpu_freq"] | 80;
   config.gnss = doc["gnss"] | 2;
   config.field = doc["speed_field"] | 1;
   config.speed_large_font = doc["speed_large_font"] | 0;
@@ -350,7 +352,7 @@ void Model_info(int model) {
     if (model == 1) errorfile.print("Sea");
     else errorfile.print("Portable");
     strcat(message, " Msg_nr: ");
-    dtostrf(nav_pvt_message_nr, 1, 0, tekst);
+    dtostrf(nav_pvt_message, 1, 0, tekst);
     strcat(message, tekst);
     errorfile.println(message);
   }
@@ -369,6 +371,8 @@ void Session_info(GPS_data G) {
   sprintf(tekst, "Total distance : %d m\n", (int)G.total_distance / 1000);
   strcat(message, tekst);
   sprintf(tekst, "Sample rate : %d Hz\n", config.sample_rate);
+  strcat(message, tekst);
+  sprintf(tekst, "CPU freq logging : %d MHz\n", config.cpu_freq);
   strcat(message, tekst);
   sprintf(tekst, "Speed calibration: %f \n", config.cal_speed);
   strcat(message, tekst);

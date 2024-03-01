@@ -14,7 +14,7 @@
 extern  int index_GPS,run_count;
 extern  int index_sec;//index van laatste sample 
 extern uint16_t _secSpeed[BUFFER_SIZE];
-extern int nav_pvt_message_nr;
+//extern int nav_pvt_message_nr;
 extern float alfa_exit;
 //extern GPS_SAT_info Ublox_Sat;//create an object storing GPS_SAT info !
 // Description of the GPS data processing class

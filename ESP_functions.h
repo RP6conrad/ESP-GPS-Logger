@@ -1,7 +1,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 5.82";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 5.83";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -42,7 +42,7 @@ int nav_pvt_message=0;
 int old_message=0;
 int nav_sat_message=0;
 int next_gpy_full_frame=0;
-int nav_pvt_message_nr=0;
+//int nav_pvt_message_nr=0;
 int msgType;
 int GPIO12_screen=0;//keuze welk scherm
 int low_bat_count;
@@ -346,7 +346,7 @@ static void setTimeZone(long offset, int daylight)
     tzset();
 }
 void IRAM_ATTR isr() {
-	wifi_search=150;
+	wifi_search=150;//to prevent action @ boot
 }
 /*Eenmaal flankdetectie indien GPIO langer dan push_time gedrukt
 * Ook variabele die dan long_pulse_time hoog blijft

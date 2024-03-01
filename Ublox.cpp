@@ -1,6 +1,7 @@
 #include "Ublox.h"
 #include "Definitions.h"
 int Time_Set_OK;
+//extern File errorfile;
 UBXMessage ubxMessage = {000000000000};//definition here, declaration in ublox.h !!
 struct tm tmstruct ;
 
@@ -561,9 +562,11 @@ int processGPS() {
         if ( c != checksum[0] ) {
           // Checksum doesn't match, reset to beginning state and try again.
            Serial.println("CkA NIO");
-          if ((Time_Set_OK==true)&(nav_pvt_message_nr>10)){
-              logERR("ChecksumA_NIO\n");
-              }
+         if ((Time_Set_OK==true)&(nav_pvt_message>10)){
+              char tekst[32] = "";
+              sprintf(tekst, "ChecksumA_NIO @ %d\n", (nav_pvt_message-11));
+              logERR(tekst);
+            }
           fpos = 0; 
         }
       }
@@ -583,9 +586,11 @@ int processGPS() {
           */ 
           return currentMsgType; 
         }
-        else{ if ((Time_Set_OK==true)&(nav_pvt_message_nr>10)){
+        else{ if ((Time_Set_OK==true)&(nav_pvt_message>10)){
               Serial.println("CkB NIO");
-              logERR("ChecksumB_NIO\n");
+              char tekst[32] = "";
+              sprintf(tekst, "ChecksumB_NIO @ %d\n", (nav_pvt_message-11));
+              logERR(tekst);
               }
             }
       }    

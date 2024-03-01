@@ -192,7 +192,7 @@ double GPS_speed::Update_distance(int actual_run){
         avg_speed[0]=m_max_speed; 
         m_Distance[0]=m_distance;
         nr_samples[0]=m_sample;
-        message_nr[0]=nav_pvt_message_nr;
+        message_nr[0]=nav_pvt_message;
         }
    if(m_max_speed>avg_speed[9])display_max_speed=m_max_speed;//update on the fly, dat klopt hier niet !!!
    else display_max_speed=avg_speed[9];      
@@ -337,7 +337,7 @@ float Alfa_speed::Update_Alfa(GPS_speed M){
           time_sec[0]=tmstruct.tm_sec;
           this_run[0]=alfa_counter;//was alfa_count
           avg_speed[0]=alfa_speed_max; 
-          message_nr[0]=nav_pvt_message_nr;
+          message_nr[0]=nav_pvt_message;
           alfa_distance[0]=M.m_distance_alfa/config.sample_rate;
           }
     }
@@ -463,8 +463,16 @@ float Dis_point_line(float long_act,float lat_act,float long_1,float lat_1,float
   return alfa_distance;
 }
 int setupGPS(void) {
+  int Cpu_freq = getCpuFrequencyMhz();
+  Serial.print("CPU freq 240 ?= "); Serial.println(Cpu_freq);
+  //if((config.sample_rate>5)&(config.logUBX)) Cpu_freq = 80;
+  setCpuFrequencyMhz(config.cpu_freq);
+  config.cpu_freq = getCpuFrequencyMhz();
+  int Xtal_freq = getXtalFrequencyMhz();
+  Serial.print("CPU freq  ?= "); Serial.println(config.cpu_freq);
+  Serial.print("XTAL freq  ?= "); Serial.println(Xtal_freq);
   Ublox_on();//beitian bn220 power supply over output 25,26,27
-  Serial2.setRxBufferSize(1024); // increasing buffer size ?
+  Serial2.setRxBufferSize(2048); // increasing buffer size ?
   if((config.ublox_type==M8_38400BD)|(config.ublox_type==M9_38400BD)|  (config.ublox_type==M10_38400BD)){
     Serial2.begin(38400, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2  
     }

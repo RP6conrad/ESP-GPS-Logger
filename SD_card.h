@@ -39,7 +39,7 @@ extern GPS_time s10;
 extern Alfa_speed A250;
 extern GPS_data Ublox; // create an object storing GPS_data, definition in RTOS
 extern GPS_SAT_info Ublox_Sat;//create an object storing GPS_SAT info !
-extern int nav_pvt_message_nr; 
+extern int nav_pvt_message; 
 extern int nav_sat_message;
 extern int RTC_Board_Logo;
 extern int RTC_Sail_Logo;
@@ -86,6 +86,7 @@ struct Config {
   char password[32]="password";//your password
   int config_fail=0;
   int ublox_type=0;
+  int cpu_freq = 40;
   } ;
 extern Config config;
 void AddString();

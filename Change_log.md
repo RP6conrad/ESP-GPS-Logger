@@ -1,3 +1,13 @@
+  ### Changes SW 5.83
+* Cpu freq when SetupGPS() 240 MHz -> 40 mHz, Current with M10 87 mA -> 57 mA
+* Cpu freq configurable 40, 80, 160 or 240 MHz
+* Warning in webpage "Files" if CPU-freq is not optimal
+* Checksum fail UBX message in error log
+* Voltage battery in infobar
+* First test : 5 Hz -> need 80 MHz, 10 Hz -> need 80 Mhz
+* Add "Giant font ON" in speed screens
+* Moved E_paper task to core 0
+* RxBuffer Serial2 1024 -> 2048
   ### Changes SW 5.82
 * Warning sample-rate setting moved to webserver index page (files)
 * Moved Button_push class E_Paper -> ESP_functions.h

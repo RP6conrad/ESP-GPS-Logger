@@ -379,6 +379,13 @@ void html_config(String& webpage){
     Drop_down_menu(config.sample_rate,20,"20 Hz",webpage);
     }
   webpage += "</select>\n</td><td>sample_rate: can be 1,2,4,5,8,10 (M8,M9,M10) 15Hz,20Hz (only M9!). The higher, the more accurate, but also the larger the files become!<br> One UBX NavPVT message is 100byte, so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!<br>For the M10, max. sample-rate depends on GNSS settings ! 4 GNSS : max  4 Hz, 3 GNSS : max 5 Hz, 2 GNSS : max 10 Hz !</td>\n</tr>\n";
+  //cpu_freq
+  webpage += "<tr>\n<td>CPU freq(MHz)</td><td>\n<select id='CPU_freq' name='CPU_freq'>";
+  Drop_down_menu(config.cpu_freq,40,"40 MHz",webpage);
+  Drop_down_menu(config.cpu_freq,80,"80 MHz",webpage);
+  Drop_down_menu(config.cpu_freq,160,"160 MHz",webpage);
+  Drop_down_menu(config.cpu_freq,240,"240 MHz",webpage);
+  webpage += "</select>\n</td><td>CPU freq: can be 40 MHz (2 Hz), 80 MHz (5 Hz),160 MHz(10hz) or 240 MHz(20Hz). Longest battery live @ 40 Mhz ! 20 Hz (M9) needs possible 160 MHz. </td>\n</tr>\n";
   //gnss
   webpage += "<tr><td>gnss</td><td>\n<select id='gnss' name='gnss'>\n";
   if((config.ublox_type == M8_9600BD)|(config.ublox_type == M8_38400BD)){
@@ -399,12 +406,18 @@ void html_config(String& webpage){
   Drop_down_menu(config.logUBX_nav_sat,1,"LOG UBX NAV SAT ON",webpage);
   Drop_down_menu(config.logUBX_nav_sat,0,"LOG UBX NAV SAT OFF",webpage);
   webpage += "</select>\n</td><td>logUBX_nav_sat: To save the GPS NAV SAT data in ubx format. For every 10 nav_pvt messages, 1 nav_sat message is saved. This can be used to evaluate the signal quality of your gps (ucenter). Only active if logUBX is ON and rate<10 Hz !!.</td>\n</tr>\n";  
+   //Archive_days
+  webpage += "<tr>\n<td>archive_days</td><td>\n";
+  webpage += "<input size='8' type='number' required name='archive_days' min='0' max='1000' value="+String(config.archive_days)+" step='1'>\n";
+  webpage += "</select>\n</td><td>If the files on the sd are older then archive_days, they can be moved to the Archive directory with \"Archive Files\"</td>\n</tr>\n";
+  #ifdef T5_E_PAPER
   //speed_field
   webpage += "<tr>\n<td>speed_field</td><td>\n";
   webpage += "<input size='8' type='number' required name='speed_field' min='1' max='99999' value="+String(config.field)+" step='1'>\n";
   webpage += "</select>\n</td><td>speed_field: The preferred value in the first line of the speed screen : 1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= Auto switching between Alfa & 0.5h, 8= Auto switching between Alfa & 1h, 9= Alfa, 1h, and good run. If more then 1 digit, toggle between separat digits : 841 toggle between 1,4 and 8 !</td>\n</tr>\n";
   //speed_large_font
   webpage += "<tr><td>speed_large_font</td><td>\n<select id='speed_large_font' name='speed_large_font'>\n";
+  Drop_down_menu(config.speed_large_font,3,"Giant_Font ON",webpage);
   Drop_down_menu(config.speed_large_font,2,"Simon_Font ON",webpage);
   Drop_down_menu(config.speed_large_font,1,"Large_Font ON",webpage);
   Drop_down_menu(config.speed_large_font,0,"Large_Font OFF",webpage);
@@ -429,10 +442,6 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>start_logging_speed</td><td>\n";
   webpage += "<input size='8' type='number' required name='start_logging_speed' min='0' max='10' value="+String(config.start_logging_speed)+" step='1'>\n";
   webpage += "</select>\n</td><td>If the actual speed(in m/s) exceed this start_logging_speed, then the log is started</td>\n</tr>\n"; 
-  //Archive_days
-  webpage += "<tr>\n<td>archive_days</td><td>\n";
-  webpage += "<input size='8' type='number' required name='archive_days' min='0' max='1000' value="+String(config.archive_days)+" step='1'>\n";
-  webpage += "</select>\n</td><td>If the files on the sd are older then archive_days, they can be moved to the Archive directory with \"Archive Files\"</td>\n</tr>\n";
   //GPIO12_screens
   webpage += "<tr>\n<td>GPIO12_screens</td><td>\n";
   webpage += "<input size='8' type='number' required name='GPIO12_screens' min='0' max='1000' value="+String(config.GPIO12_screens_persist)+" step='1'>\n";
@@ -475,6 +484,7 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
   webpage += "<input size='8' type='number' required name='sleep_off_screen' min='0' max='1000' value="+String(config.sleep_off_screen)+" step='1'>\n";
   webpage += "</select>\n</td><td>Choice for switch_off (first digit 0 or 1) and sleep_screen (second digit 0 or 1): </td>\n</tr>\n";
+  #endif
   //logTXT
   webpage += "<tr><td>logTXT</td><td>\n<select id='logTXT' name='logTXT'>\n";
   if(config.logTXT == 1) webpage += "<option value='1' selected>LOG TXT ON</option>\n"; else webpage += "<option value='1'>LOG TXT ON</option>\n";

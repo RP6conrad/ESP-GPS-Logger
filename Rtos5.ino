@@ -29,8 +29,9 @@
 #include <esp32-hal.h>
 #include <time.h>
 #include <EEPROM.h>
-#include <LITTLEFS.h>
 #include "Definitions.h"
+//#include <LITTLEFS.h>
+#include <LittleFS.h>
 #include "ESP_functions.h"
 
 void setup() {
@@ -116,10 +117,9 @@ void setup() {
  
   // Wait for connection during 10s in station mode
  // bool ota_notrunning=true;
-
   attachInterrupt(WAKE_UP_GPIO, isr, FALLING);
   while ((WiFi.status() != WL_CONNECTED)&(SoftAP_connection==false)) {
-    if(Long_push39.Button_pushed()) Shut_down();
+    if((Long_push39.Button_pushed())&(millis()>5000)) Shut_down();//to prevent Shut_down() @ boot
     esp_task_wdt_reset();
     //server.handleClient(); // wait for client handle, and update BAT Status, this section should be moved to the loop... 
     Update_bat();         //client counter wait until download is finished to prevent stoping the server during download
@@ -155,24 +155,27 @@ void setup() {
       GPS_OK = setupGPS();
       Update_screen(GPS_INIT_SCREEN);
       }
-  //analog_mean=RTC_voltage_bat/calibration_bat*1000;//RTC_voltage_bat staat in RTC mem !!!
   delay(100);
    //Create RTOS task, so logging and e-paper update are separated (update e-paper is blocking, 800 ms !!)
-  xTaskCreate(
+  //xTaskCreate(
+  xTaskCreatePinnedToCore(  
                     taskOne,          /* Task function. */
                     "TaskOne",        /* String with name of task. */
                     10000,            /* Stack size in bytes. */
                     NULL,             /* Parameter passed as input of the task */
                     1,                /* Priority of the task. */
-                    &t1);            /* Task handle. */
+                    &t1,
+                    1);            /* Task handle. */
  
-  xTaskCreate(
+ // xTaskCreate(
+  xTaskCreatePinnedToCore( 
                     taskTwo,          /* Task function. */
                     "TaskTwo",        /* String with name of task. */
                     10000,            /* Stack size in bytes was 10000, but stack overflow on task 2 ?????? now 20000. */
                     NULL,             /* Parameter passed as input of the task */
                     1,                /* Priority of the task. */
-                    &t2);            /* Task handle. */
+                    &t2,
+                    0);            /* Task handle. */
 }
  
 void loop() { 
@@ -209,7 +212,11 @@ void taskOne( void * parameter )
    if (Short_push39.Button_pushed()){
       if(config.speed_count==0){config.field_actual=Short_push39.button_count;}
       else{
-        if(Short_push39.button_count>config.speed_count){Short_push39.button_count=0;}
+        if(Short_push39.button_count>config.speed_count){
+          Short_push39.button_count=0;
+          //config.speed_large_font++;
+          //if(config.speed_large_font>3)config.speed_large_font=0;//testing speed screens ....
+          }
         config.field_actual=config.speed_screen[Short_push39.button_count];
         //Serial.print("config.field_actual ");Serial.println(config.field_actual);
         }
@@ -368,6 +375,9 @@ void taskTwo( void * parameter)
     }
     else if(low_bat_count>10){
         RTC_OFF_screen=1;//Simon screen with info text !!!
+        char tekst[32] = "";
+        sprintf(tekst, "Shutdown low bat  @ %f V\n",MINIMUM_VOLTAGE);
+        logERR(tekst);
         Off_screen(RTC_OFF_screen);
         Shut_down();
     }

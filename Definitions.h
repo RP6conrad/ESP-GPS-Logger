@@ -3,6 +3,7 @@
 
 //#define STATIC_DEBUG        //indien gps test zonder snelheid en met wifi actief
 //#define DLS                  //set date on march 26 1:55, to test daylightsaving
+#define T5_E_PAPER           //for compiling without display funtions....
 #define GPIO12_ACTIF        //if GPIO12 is used as wake up, standard GPIO12 function is not activated !!
 
 #define TIME_DELAY_FIRST_FIX 10 //10 navpvt messages alvorens start loggen

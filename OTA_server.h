@@ -8,6 +8,7 @@ https://github.com/italocjs/ESP32_OTA_APMODE/blob/main/Main.cpp
 #include <Update.h>
 #include <EEPROM.h>
 #include <LITTLEFS.h>
+//#include <LittleFS.h>
 #include "Definitions.h"
 #include "OTA_html.h"
 bool downloading_file = false;
@@ -280,20 +281,22 @@ void SD_dir(int archive) {
     String voltage_lipo = "&emsp;Bat voltage = " + String(RTC_voltage_bat, 2) + " Volt";
     String firmware = "Firmware "+ String(SW_version);
     String gps_warning = "<h3>"+ font_color_start+"Sample-rate too high for the actual gnss setting, possible lost points in the log file !!"+font_color_end + "</h3>";
+    String CPU_freq =  "<h3>"+ font_color_start+"For 5 Hz sample_rate, CPU freq of 80 MHz is sufficient. For 10 Hz, CPU freq of 160 MHz gives the maximal performance."+font_color_end + "</h3>";
     bool GPS_warning=false;
+    bool CPU_freq_warning = false;
     if(bat_perc<VOLTAGE_LOW) voltage_percent = "&emsp;"+font_color_start+"Bat = " + String(bat_perc,0)+" % &emsp;"+font_color_end;
     else voltage_percent = "&emsp;Bat % = " + String(bat_perc,0)+" % &emsp;";
     if ((config.ublox_type == M10_9600BD) | (config.ublox_type == M10_38400BD) | (config.ublox_type == AUTO_DETECT)) {  //limit sample rate for 3/4 GNSS M10, prevent lost points
       if (((config.gnss == 3) & (config.sample_rate> 5)) | ((config.gnss== 4) & (config.sample_rate > 8)) | ((config.gnss== 5) & (config.sample_rate > 4))) {GPS_warning=true;}
-      //  gps_warning="<h3>"+ font_color_start+"Sample-rate too high for the actual gnss setting, possible lost points in the log file !!"+font_color_end + "</h3>";
-      //    webpage += F("<tr><th><p style=\"color:red;\"/p><b>Sample-rate too high for the actual gnss setting, possible lost points in the log file !!</b></th></tr></div>");
-        }
+       }
+    if(((config.sample_rate==5)&!(config.cpu_freq==80))|((config.sample_rate==10)&!(config.cpu_freq==160)))CPU_freq_warning=true;
     if (root) {
       root.rewindDirectory();
       SendHTML_Header();
       webpage += F("<table id='esplogger'>");
       webpage += "<h3>" + free_space + voltage_lipo + voltage_percent + firmware + "</h3>";
       if(GPS_warning) webpage += gps_warning;
+      if(CPU_freq_warning) webpage += CPU_freq;
       webpage += F("<tr><th>Name</th><th>Size</th><th>Timestamp</th><th>Download</th><th>Delete</th></tr>");
       printDirectory("/", archive);
       webpage += F("\n</table>");
@@ -454,11 +457,13 @@ void handleConfigUpload() {
     doc["file_date_time"] = server.arg("file_date_time").toInt();
     doc["dynamic_model"] = server.arg("dynamic_model").toInt();
     doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt();
+    doc["cpu_freq"] = server.arg("CPU_freq").toInt();
     doc["timezone"] = serialized(server.arg("timezone"));
     doc["UBXfile"] = server.arg("UBXfile");
     doc["Sleep_info"] = server.arg("Sleep_info");
     doc["ssid"] = server.arg("ssid");
     doc["password"] = server.arg("password");
+
 
     int ublox_type = server.arg("GPS_Type").toInt();
     if (ublox_type == 0xFF) {  //not in config.txt but saved in EEPROM !!!)
