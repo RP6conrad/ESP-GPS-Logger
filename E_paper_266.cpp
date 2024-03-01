@@ -37,7 +37,7 @@ int SpeedUnitTop;
 int bar_position;
 int FromRight;
 
-extern bool test_screen;
+bool test_screen=0;
 int FieldLoop=0;
 int FontLoop=0;
 
@@ -1251,34 +1251,7 @@ void Update_screen(int screen){
   old_screen=screen;
   count++;    
 }
-/*Eenmaal flankdetectie indien GPIO langer dan push_time gedrukt
-* Ook variabele die dan long_pulse_time hoog blijft
-* Ook variabele die optelt tot maw elke keer push
-*/
-Button_push::Button_push(int GPIO_pin,int push_time,int long_pulse_time,int max_count){
-  pinMode(GPIO_pin,INPUT_PULLUP);
-  Input_pin=GPIO_pin;
-  time_out_millis=push_time;
-  max_pulse_time=long_pulse_time;
-  max_button_count=max_count;
-}
-boolean Button_push::Button_pushed(void){
-  return_value=false;
-  button_status=digitalRead(Input_pin);
-  if(digitalRead(Input_pin)==1) push_millis=millis();
-  if(((millis()-push_millis)>time_out_millis)&(old_button_status==0)){
-    button_count++;
-    if(button_count>max_button_count)button_count=0;
-    old_button_status=1;
-    millis_10s=millis();
-    //Serial.print ("Class button_count ");Serial.print(button_count);
-    return_value=true;
-  } else return_value=false; 
-  if((millis()-millis_10s)<(1000*max_pulse_time)) long_pulse=true;
-  else long_pulse=false; 
-  if(digitalRead(Input_pin)==1) old_button_status=0;
-  return return_value;
-}
+
 #undef ROW_1M
 #undef TOP_LEFT_INFO
 #undef ROW_3M

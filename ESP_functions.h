@@ -12,6 +12,9 @@ const char E_paper_version[16]="E-paper 213BN";
 #if defined(_GxGDEM0213B74_H_) 
 const char E_paper_version[16]="E-paper 213B74";
 #endif
+#if defined(_GxDEPG0266BN_H_) 
+const char E_paper_version[16]="E-paper 266BN";
+#endif
 char Ublox_type[20]="Ublox unknown...";
 
 int sdTrouble=0;
@@ -91,6 +94,7 @@ RTC_DATA_ATTR int RTC_counter=0;
 RTC_DATA_ATTR float calibration_bat=1.75;//bij ontwaken uit deepsleep niet noodzakelijk config file lezen
 RTC_DATA_ATTR float RTC_voltage_bat=3.6;
 RTC_DATA_ATTR float RTC_old_voltage_bat=3.6;
+RTC_DATA_ATTR int RTC_bat_choice = 0;
 /*Eenmaal flankdetectie indien GPIO langer dan push_time gedrukt
 * Ook variabele die dan long_pulse_time hoog blijft
 * Ook variabele die optelt tot maw elke keer push
