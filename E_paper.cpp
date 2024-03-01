@@ -849,7 +849,7 @@ void Update_screen(int screen) {
       if(config.speed_large_font == 1) {                               
         if ((alfa_window < 99) & (Ublox.alfa_distance / 1000 < 255)) {  //Window alleen indien Window<100 en Run>350 meter !!!!&(A500.alfa_speed_max*calibration_speed<1)
           if (alfa_exit > 99) alfa_exit = 99;  //begrenzen alfa_exit...
-          Speed_font1("Gate"," Ex",alfa_window,alfa_exit,gps_speed * calibration_speed,1);
+          Speed_font1("Gate","Ex",alfa_window,alfa_exit,gps_speed * calibration_speed,1);
         } else {
           if (A500.alfa_speed_max * calibration_speed > 1) {            //laatste alfa was geldig !!!!
             Speed_font1("Alfa= ","",A500.alfa_speed_max * calibration_speed,0,gps_speed * calibration_speed,2);

@@ -17,7 +17,7 @@
 #include "soc/timer_group_reg.h"
 #include "Arduino.h"
 #include "Ublox.h"
-#include "E_paper.h"
+#include "E_paper_266.h"
 #include "SD_card.h"
 #include "GPS_data.h"
 #include "ESP32FtpServerJH.h"
