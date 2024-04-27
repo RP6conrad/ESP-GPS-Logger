@@ -464,6 +464,10 @@ void html_config(String& webpage){
   Drop_down_menu(config.Board_Logo,13,"Bic",webpage);
   Drop_down_menu(config.Board_Logo,14,"Carbon Art",webpage);
   Drop_down_menu(config.Board_Logo,15,"Future Fly",webpage);
+  Drop_down_menu(config.Board_Logo,16,"One Hundred",webpage);
+  Drop_down_menu(config.Board_Logo,17,"FMX",webpage);
+  Drop_down_menu(config.Board_Logo,18,"Phantom",webpage);
+  Drop_down_menu(config.Board_Logo,19,"F4 Foil",webpage);
   webpage += "</select>\n</td><td>Board_Logo :  See the logos on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a></td>\n</tr>\n";
   //Sail_Logo Drop down menu
   webpage += "<tr>\n<td>Sail_Logo</td><td>\n<select id='Sail_Logo' name='Sail_Logo'>";
@@ -479,12 +483,21 @@ void html_config(String& webpage){
   Drop_down_menu(config.Sail_Logo,9,"Naish",webpage);
   Drop_down_menu(config.Sail_Logo,10,"Severne",webpage);
   Drop_down_menu(config.Sail_Logo,11,"S2 Maui",webpage);
+  Drop_down_menu(config.Sail_Logo,12,"North Sails",webpage);
+  Drop_down_menu(config.Sail_Logo,13,"Challenger Sails",webpage);
+  Drop_down_menu(config.Sail_Logo,14,"Phantom",webpage);
+  Drop_down_menu(config.Sail_Logo,15,"Patrik",webpage);
   webpage += "</select>\n</td><td>Sail_Logo :  See the logos on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a></td>\n</tr>\n";
   //sleep_off_screen
   webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
   webpage += "<input size='8' type='number' required name='sleep_off_screen' min='0' max='1000' value="+String(config.sleep_off_screen)+" step='1'>\n";
   webpage += "</select>\n</td><td>Choice for switch_off (first digit 0 or 1) and sleep_screen (second digit 0 or 1): </td>\n</tr>\n";
   #endif
+  //bat_choice
+  webpage += "<tr><td>bat_choice</td><td>\n<select id='bat_choice' name='bat_choice'>\n";
+  if(config.bat_choice == 1) webpage += "<option value='1' selected>Batery value in percentage</option>\n"; else webpage += "<option value='1'>Batery value in percentage</option>\n";
+  if(config.bat_choice == 0) webpage += "<option value='0' selected>Batery value in voltage</option>\n"; else webpage += "<option value='0'>Batery value in voltage</option>\n";
+  webpage += "</select>\n</td><td>bat_choice: Screen info on battery will be presented in either percentage of voltage.</td>\n</tr>\n"; 
   //logTXT
   webpage += "<tr><td>logTXT</td><td>\n<select id='logTXT' name='logTXT'>\n";
   if(config.logTXT == 1) webpage += "<option value='1' selected>LOG TXT ON</option>\n"; else webpage += "<option value='1'>LOG TXT ON</option>\n";

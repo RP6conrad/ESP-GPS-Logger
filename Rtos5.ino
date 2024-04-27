@@ -394,12 +394,8 @@ void taskTwo( void * parameter)
           }
     
     else {
-          if(config.speed_large_font==2){
-            Update_screen(SPEED2);
-          } else {
-            Update_screen(SPEED);
-          }
+          Update_screen(SPEED);
           stat_count=0;
-          }
+    }
   }
 }
