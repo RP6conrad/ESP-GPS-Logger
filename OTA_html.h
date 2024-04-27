@@ -464,6 +464,10 @@ void html_config(String& webpage){
   Drop_down_menu(config.Board_Logo,13,"Bic",webpage);
   Drop_down_menu(config.Board_Logo,14,"Carbon Art",webpage);
   Drop_down_menu(config.Board_Logo,15,"Future Fly",webpage);
+  Drop_down_menu(config.Board_Logo,16,"One Hundred",webpage);
+  Drop_down_menu(config.Board_Logo,17,"FMX",webpage);
+  Drop_down_menu(config.Board_Logo,18,"Phantom",webpage);
+  Drop_down_menu(config.Board_Logo,19,"F4 Foil",webpage);
   webpage += "</select>\n</td><td>Board_Logo :  See the logos on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a></td>\n</tr>\n";
   //Sail_Logo Drop down menu
   webpage += "<tr>\n<td>Sail_Logo</td><td>\n<select id='Sail_Logo' name='Sail_Logo'>";
@@ -479,6 +483,10 @@ void html_config(String& webpage){
   Drop_down_menu(config.Sail_Logo,9,"Naish",webpage);
   Drop_down_menu(config.Sail_Logo,10,"Severne",webpage);
   Drop_down_menu(config.Sail_Logo,11,"S2 Maui",webpage);
+  Drop_down_menu(config.Sail_Logo,12,"North Sails",webpage);
+  Drop_down_menu(config.Sail_Logo,13,"Challenger Sails",webpage);
+  Drop_down_menu(config.Sail_Logo,14,"Phantom",webpage);
+  Drop_down_menu(config.Sail_Logo,15,"Patrik",webpage);
   webpage += "</select>\n</td><td>Sail_Logo :  See the logos on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a></td>\n</tr>\n";
   //sleep_off_screen
   webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
