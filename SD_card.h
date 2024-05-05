@@ -21,7 +21,7 @@ extern int start_logging_millis;
 extern bool sdOK,button,LITTLEFS_OK;
 extern bool GPS_logging;
 extern float Mean_heading,heading_SD;
-extern float calibration_bat;
+extern float RTC_calibration_bat;
 extern float calibration_speed;
 //extern int time_out_nav_pvt;
 extern int next_gpy_full_frame;
@@ -29,6 +29,7 @@ extern byte mac[6];
 extern const char SW_version[16];
 extern char Ublox_type[20];
 extern char RTC_Sleep_txt[32];
+extern char TimeZone[64];
 extern GPS_speed M100;
 extern GPS_speed M250;
 extern GPS_speed M1852;
@@ -43,8 +44,10 @@ extern int nav_pvt_message;
 extern int nav_sat_message;
 extern int RTC_Board_Logo;
 extern int RTC_Sail_Logo;
+extern bool RTC_bat_choice;
 extern int RTC_SLEEP_screen;
 extern int RTC_OFF_screen;
+
 struct Config {
   float cal_bat=1.74;//calibration for read out bat voltage
   float cal_speed=3.6;//conversion m/s to km/h, for knots use 1.944
@@ -55,6 +58,7 @@ struct Config {
   int speed_large_font=1;//fonts on the first line are bigger, actual speed font is smaller
   int dynamic_model=0;//choice for dynamic model "Sea",if 0 model "portable" is used !!
   float timezone=1;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)
+  bool timezone_DST=1;//auto switch to summertime (daylightsaving)
   int Stat_screens=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active
   int Stat_screens_time=4;//time between switching stat_screens
   int GPIO12_screens=54;//choice for stats field when gpio12 is activated (pull-up high, low = active)
@@ -73,6 +77,7 @@ struct Config {
   int start_logging_speed=1;
   int bar_length=1852;//choice for bar indicator for length of run in m (nautical mile)
   int archive_days=10; //how many days files will be moved to the "Archive" dir
+  bool bat_choice=1;//choice for voltage in % or voltage
   bool logTXT=1;// switchinf off .txt files
   bool logUBX=1;//log to .ubx
   bool logUBX_nav_sat=0;// log nav sat msg to .ubx
@@ -82,8 +87,10 @@ struct Config {
   int file_date_time=2;//type of filenaming, with MAC adress or datetime
   char UBXfile[32]="My_ESP_GPS";//your preferred filename
   char Sleep_info[32]="Your ID";//your preferred sleep text
-  char ssid[32]="SSID";//your SSID
+  char ssid[32]="My_SSID";//your SSID
   char password[32]="password";//your password
+  char ssid2[32]="ESP_GPS";//your SSID
+  char password2[32]="password2";//your password
   int config_fail=0;
   int ublox_type=0;
   int cpu_freq = 40;
@@ -102,6 +109,7 @@ void Session_info(GPS_data G);
 void Session_results_M(GPS_speed M);
 void Session_results_S(GPS_time S);
 void Session_results_Alfa(Alfa_speed A,GPS_speed M);
+void TimeZone_env (float timezone);
 /*
 void log_header_SBP(void);
 void log_SBP(void);

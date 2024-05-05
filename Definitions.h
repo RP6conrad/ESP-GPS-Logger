@@ -38,13 +38,16 @@
 #define UBLOX_GPIO3 GPIO_NUM_27
 /*Other definitions...**********************************************************************/
 #define CALIBRATION_BAT_V 1.7 //voor proto 1
-#define VOLTAGE_100 4.2     //reading 100% bat
+#define VOLTAGE_100 4.15     //reading 100% bat, after end charging voltage drops to 4.15 V
 #define VOLTAGE_0 3.4       //reading 0% bat
 #define VOLTAGE_LOW 25      //reading 25% bat
 #define MINIMUM_VOLTAGE 3.1       // if lower then minimum_voltage, back to sleep.....
 #define MINIMUM_VOLTAGE_CHANGE  0.01  //refresh screen if change > 0.01
+#define STARTVALUE_HIGHEST_READ 2200  //12 bit ADC, 4.2 V over voltagedivider
+#define MAXVALUE_HIGHEST_READ 2700
+#define FULLY_CHARGED_LIPO_VOLTAGE 4200.0 // to calculate calibration factor :  4200.0/ADC value bij highest reading while charging
 #define uS_TO_S_FACTOR 1000000UL /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP  1800UL   //21600UL        /* Time ESP32 will go to sleep (no for 30min, only refresh screen if delta bat > 0.05 V) */
+#define TIME_TO_SLEEP  1800UL   //1800UL        /* Time ESP32 will go to sleep (no for 30min, only refresh screen if delta bat > 0.05 V) */
 #define WDT_TIMEOUT 60             //60 seconds WDT, opgelet zoeken naar ssid time-out<dan 10s !!!
 #define MAX_COUNT_WDT_TASK0 10   // 600 seconds max downloadtime for files !!!
 #define MIN_numSV_FIRST_FIX 5     //alvorens start loggen, changed from 4 to 5 7.1/2023
@@ -52,7 +55,7 @@
 #define MIN_numSV_GPS_SPEED_OK 4  //min aantal satellieten voor berekenen snelheid, anders 
 #define MAX_Sacc_GPS_SPEED_OK 1   //max waarde Sacc voor berekenen snelheid, anders 0
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
-#define EEPROM_SIZE 1             //use 1 byte in eeprom for saving type of ublox
+#define EEPROM_SIZE 32            //use 8 bytes in eeprom for saving type of ublox
 #define TIME_OUT_NAV_PVT 10000    //10s time out ubx nav-pvt msg before screen "TROUBLE" 
 #define FORMAT_LITTLEFS_IF_FAILED true
 #endif
