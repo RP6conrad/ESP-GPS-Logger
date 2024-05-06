@@ -56,15 +56,17 @@ struct Config {
   int speed_large_font=1;//fonts on the first line are bigger, actual speed font is smaller
   int dynamic_model=0;//choice for dynamic model "Sea",if 0 model "portable" is used !!
   float timezone=1;//choice for timedifference in hours with UTC, for Belgium 1 or 2 (summertime)
-  int Stat_screens=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active
+  int Stat_screens=678;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active
   int Stat_screens_time=4;//time between switching stat_screens
   int GPIO12_screens=54;//choice for stats field when gpio12 is activated (pull-up high, low = active)
-  int Stat_screens_persist=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active / for resave the config
+  int Stat_screens_persist=678;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active / for resave the config
   int GPIO12_screens_persist=54;//choice for stats field when gpio12 is activated (pull-up high, low = active) / for resave the config
   int Board_Logo=1;
   int Sail_Logo=1;
   int stat_screen[10];//which stat_screen you want to see ?
   int gpio12_screen[10];//which stat_screen when gpio 12 toggles ?
+  int Stat_speed_target2=1;//which speed info in the first column of the stat screen
+  int Stat_speed_target3=2;//which speed info in the first column of the stat screen
   int speed_screen[10];//which speed fields are selected ?
   int screen_count=0;
   int gpio12_count=0;

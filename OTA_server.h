@@ -445,6 +445,8 @@ void handleConfigUpload() {
     doc["start_logging_speed"] = server.arg("start_logging_speed").toInt();
     doc["archive_days"] = server.arg("archive_days").toInt();
     doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt();
+    doc["Stat_speed_target2"] = server.arg("Stat_speed_target2").toInt();
+    doc["Stat_speed_target3"] = server.arg("Stat_speed_target3").toInt();
     doc["Board_Logo"] = server.arg("Board_Logo").toInt();
     doc["Sail_Logo"] = server.arg("Sail_Logo").toInt();
     doc["sleep_off_screen"] = server.arg("sleep_off_screen").toInt();
