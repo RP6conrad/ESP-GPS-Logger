@@ -37,7 +37,7 @@ int i,y;
 int year,month,day,hour,minute,sec,sat;
 if(part==GPX_HEADER){ 
   y=0;
-  i= sprintf(bufferTx,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");y=y+1;
+  i= sprintf(bufferTx,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");y=y+i;
   i= sprintf(&bufferTx[y],"<gpx version=\"1.0\" creator=\"ESP-GPS %s\" ",SW_version);y=y+i;
   i= sprintf(&bufferTx[y],"xmlns=\"http://www.topografix.com/GPX/1/0\" ");y=y+i;
   i= sprintf(&bufferTx[y],"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" ");y=y+i;

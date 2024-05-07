@@ -305,17 +305,7 @@ void Init_ubloxM10(void){
         }  
       }
       Ublox_serial2(wait);
-    } 
-  /*    
-  if(config.sample_rate>5){                //to prevent lost points@10 Hz !!!
-                   //max nr of sats in nav solution 18
-    Serial.println("Set ublox UBLOX_M10_CFG_NAVSPG_INFIL_MAXSVS ");  
-    for(int i = 0; i < sizeof(UBLOX_M10_CFG_NAVSPG_INFIL_MAXSVS); i++) {                    
-      Serial2.write( pgm_read_byte(UBLOX_M10_CFG_NAVSPG_INFIL_MAXSVS+i) );
-      }  
-      Ublox_serial2(wait);    
-  } 
-  */       
+    }       
   Serial.println("Check UBX_MON_VER ");  //does this work for the M10 ??   
    for(int i = 0; i < sizeof(UBX_MON_VER); i++) {                        
         Serial2.write( pgm_read_byte(UBX_MON_VER+i) );        
@@ -373,27 +363,28 @@ int Set_GPS_Time(float time_offset){
         my_time.tm_mday = ubxMessage.navPvt.day;
         my_time.tm_mon = ubxMessage.navPvt.month-1;  //mktime needs months 0 - 11  
         my_time.tm_year = ubxMessage.navPvt.year - 1900; // mktime needs years since 1900, so deduct 1900
+        //my_time.tm_isdst = 1;//daylight timesaving active
+        //# define DLS
         #if defined(DLS)
         //summertime is on march 26 2023 2 AM, see https://www.di-mgt.com.au/wclock/help/wclo_tzexplain.html     
-        my_time.tm_hour = 1;
-        my_time.tm_min = 55;
+        my_time.tm_hour = 2;
+        my_time.tm_min = 58;
         my_time.tm_mday =26;
         my_time.tm_mon = 2;  //mktime needs months 0 - 11  
         my_time.tm_year = 2023 - 1900; 
-        setenv("TZ","CET0CEST,M3.5.0/2,M10.5.0/3", 1);//timezone UTC = CET, Daylightsaving ON : TZ=CET-1CEST,M3.5.0/2,M10.5.0/3
-        tzset();     //this works for CET, but TZ string is different for every Land / continent....
         #endif
-        setenv("TZ","UTC",0);
-        tzset();   
+        setenv("TZ","GMT0",1);//neede if time is set again (gps sets time double)
+        tzset();
         unix_timestamp =  mktime(&my_time);//mktime returns local time, so TZ is important !!!
-        struct timeval tv = { .tv_sec = (time_t)(unix_timestamp+time_offset*3600), .tv_usec = 0 };  //clean utc time !!     
+        struct timeval tv = { .tv_sec = (time_t)(unix_timestamp), .tv_usec = 0 };  //clean utc time !!     
         settimeofday(&tv, NULL);
+        setenv("TZ",TimeZone,1);
+        tzset();     //this works for CET, but TZ string is different for every Land / continent....
         delay(10);//
         if(!getLocalTime(&tmstruct)){
             Serial.println("Can't get time1...");
             return false;
             }
-        //localtime_r(&unix_timestamp, &tmstruct);
         if((tmstruct.tm_year+1900)<2023){
           Serial.printf("\nNow is : %d-%02d-%02d %02d:%02d:%02d\n",(tmstruct.tm_year)+1900,( tmstruct.tm_mon)+1, tmstruct.tm_mday,tmstruct.tm_hour , tmstruct.tm_min, tmstruct.tm_sec);
           //Serial.println("GPS Reported year not plausible (<2023) !");
