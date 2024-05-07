@@ -85,14 +85,15 @@ Flip: horizontally
 #define STATS7 7    //bar graph screen 10s run
 #define STATS8 8    //simon stat screen for 2nd speed target
 #define STATS9 9    //simon stat screen for 3rd speed target
-#define AVG_10S 10
-#define SPEED 11
-#define WIFI_ON 12
-#define WIFI_STATION 13
-#define WIFI_SOFT_AP 14
-#define SPEED2 15
-#define TROUBLE 16
-#define GPS_INIT_SCREEN 17
+#define STATS10 10  //Motion BEST stat screen
+#define AVG_10S 11
+#define SPEED 12
+#define WIFI_ON 13
+#define WIFI_STATION 14
+#define WIFI_SOFT_AP 15
+#define SPEED2 16
+#define TROUBLE 17
+#define GPS_INIT_SCREEN 18
 
 
 extern GxEPD_Class display;

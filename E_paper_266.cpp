@@ -1354,8 +1354,9 @@ void Update_screen(int screen){
       display.fillRect(0,y_pos+2,col3-10,2,GxEPD_BLACK);//lijn voor actuele run weer te geven...
 */    }
   }
-  if(screen==STATS9){ //Simon stat screen for 3rd speed target
-    Serial.println("STATS9_Simon_screen");
+
+  if(screen==STATS10){ //Simon stat screen for 3rd speed target
+    Serial.println("STATS10_Simon_screen");
     update_delay=(config.Stat_screens_time-2)*1500;
     int line;
     double S2avgNEW;
@@ -1477,6 +1478,47 @@ void Update_screen(int screen){
       display.fillRect(0,y_pos+2,col3-10,2,GxEPD_BLACK);//lijn voor actuele run weer te geven...
 */    }
   }
+  if(screen==STATS9){ //Motion BEST stat screen
+    Serial.println("STATS9_Motion_Best_screen");
+    update_delay=(config.Stat_screens_time-2)*1500;
+    int line;
+
+    double S10avgNEW;
+      if (S10.s_max_speed>S10.avg_speed[5]) S10avgNEW=(S10.avg_speed[9]+S10.avg_speed[8]+S10.avg_speed[7]+S10.avg_speed[6]+S10.s_max_speed)/5;
+      else  S10avgNEW=(S10.avg_speed[9]+S10.avg_speed[8]+S10.avg_speed[7]+S10.avg_speed[6]+S10.avg_speed[5])/5;
+
+    SetCols(1);
+    SetFont_LS();
+    CURSOR_COLC(1,col1,Font); SetFont_M(); display.print("Max");  SetFont_LS();
+    CURSOR_COLC(2,col1,Font); SetFont_M(); display.print("1S");   SetFont_LS();
+    CURSOR_COLC(3,col1,Font); SetFont_M(); display.print("2S");   SetFont_LS();
+    CURSOR_COLC(4,col1,Font); SetFont_M(); display.print("10S");  SetFont_LS();
+    CURSOR_COLC(5,col1,Font); SetFont_M(); display.print("5x10"); SetFont_LS();
+    CURSOR_COLC(6,col1,Font); SetFont_M(); display.print("1H");   SetFont_LS();
+
+    CURSOR_COLC(1,col2+Font,Font); //display.print(Smax.avg_speed[9]      *calibration_speed,2);
+    CURSOR_COLC(2,col2+Font,Font); //display.print(S1.avg_speed[9]        *calibration_speed,2);
+    CURSOR_COLC(3,col2+Font,Font); display.print(S2.avg_speed[9]        *calibration_speed,2);
+    CURSOR_COLC(4,col2+Font,Font); display.print(S10.avg_speed[9]       *calibration_speed,2); 
+    CURSOR_COLC(5,col2+Font,Font); display.print(S10avgNEW              *calibration_speed,2);
+    CURSOR_COLC(6,col2+Font,Font); display.print(S3600.display_max_speed*calibration_speed,2); 
+
+    CURSOR_COLC(1,col3,Font); SetFont_M(); display.print("100m"); SetFont_LS();
+    CURSOR_COLC(2,col3,Font); SetFont_M(); display.print("250m"); SetFont_LS();
+    CURSOR_COLC(3,col3,Font); SetFont_M(); display.print("500m"); SetFont_LS();
+    CURSOR_COLC(4,col3,Font); SetFont_M(); display.print("1852"); SetFont_LS();
+    CURSOR_COLC(5,col3,Font); SetFont_M(); display.print("A500"); SetFont_LS();
+    CURSOR_COLC(6,col3,Font); SetFont_M(); display.print("Dist"); SetFont_LS();
+
+    CURSOR_COLC(1,col4,Font); display.print(M100.display_max_speed*calibration_speed,2);
+    CURSOR_COLC(2,col4,Font); display.print(M250.display_max_speed*calibration_speed,2);
+    CURSOR_COLC(3,col4,Font); display.print(M500.display_max_speed*calibration_speed,2);
+    CURSOR_COLC(4,col4,Font); display.print(M1852.display_max_speed*calibration_speed,2);
+    CURSOR_COLC(5,col4,Font); display.print(A500.avg_speed[9]*calibration_speed,2); 
+    CURSOR_COLC(6,col4,Font); display.print(Ublox.total_distance/1000000);
+     
+ }
+
 
   if(screen>BOOT_SCREEN&&screen<SPEED) {
     display.setFont(&FreeSansBold6pt7b);
