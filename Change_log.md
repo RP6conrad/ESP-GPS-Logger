@@ -1,7 +1,16 @@
+* new run start only if speed>4m/s
+* Support for daylight saving in several timezones, configurable. 
+* Support for 2 SSID (can be used with smartphone hotspot)
+* Bugfix in gpx file : first line start with <<, should be <
+* Bugfix auto-detect gps
+* Auto calibrate -> when charging in deepsleep, with every wake up(1800 s), ADC bat voltage is measured
+* and highest value is stored in eeprom. With full charging, this should be the end voltage of the charge IC TP4056 (4.2 V)
+* cal_bat in config.txt is only for info !!
+* see https://lygte-info.dk/review/Review%20Charger%20TP4056%20UK.html
+* Added bitmaps for FMX, ChallengerSails, Phantom, F4  (contribution Simon)
   ### Changes SW 5.83
 * Cpu freq when SetupGPS() 240 MHz -> 40 mHz, Current with M10 87 mA -> 57 mA
-* Cpu freq configurable 40, 80, 160 or 240 MHz
-* Warning in webpage "Files" if CPU-freq is not optimal
+* Cpg in webpage "Files" if CPU-freq is not optimal
 * Checksum fail UBX message in error log
 * Voltage battery in infobar
 * First test : 5 Hz -> need 80 MHz, 10 Hz -> need 80 Mhz

@@ -393,10 +393,10 @@ int New_run_detection(float actual_heading, float S2_speed){
    heading_SD=heading;
    Mean_heading=Mean_heading*(mean_heading_time*config.sample_rate-1)/(mean_heading_time*config.sample_rate)+heading/(mean_heading_time*config.sample_rate);
    /*detection stand still, more then 2s with velocity<1m/s**************************************************************************************************/
-   if(S2_speed>speed_detection_min)velocity_5=1;    //min gemiddelde over 2 s = 1m/s           
-   if((S2_speed<standstill_detection_max)&(velocity_5==1))velocity_0=1;
+   if(S2_speed>speed_detection_min)velocity_5=1;    //snelheid was hoger dan 4m/s        
+   if((S2_speed<standstill_detection_max)&(velocity_5==1))velocity_0=1;//snelheid is kleiner dan 1m/s
    else velocity_0=0;
-   /*Nieuwe run gedetecteerd omwille stilstand    *****************************************************************************************************************/
+   /*Nieuwe run gedetecteerd omwille stilstand **********************************************************************************************************************/
    if(velocity_0==1){
      velocity_5=0;
      delay_counter=0;

@@ -1,7 +1,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 5.83sd8";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 5.84_sd";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -16,7 +16,7 @@ const char E_paper_version[16]="E-paper 213B74";
 const char E_paper_version[16]="E-paper 266BN";
 #endif
 char Ublox_type[20]="Ublox unknown...";
-
+char TimeZone[64] ="GMT0";
 int sdTrouble=0;
 bool sdOK = false;
 bool button = false;
@@ -50,12 +50,14 @@ int msgType;
 int GPIO12_screen=0;//keuze welk scherm
 int low_bat_count;
 int gps_speed;
+int S10_previous_run;
 float alfa_window;
 float analog_mean=2000;
 float Mean_heading,heading_SD;
 int wdt_task0,wdt_task1;
 int max_count_wdt_task0;
 int freeSpace;
+String actual_ssid="_ssid_";
  /* variables to hold instances of tasks*/
 TaskHandle_t t1 = NULL;
 TaskHandle_t t2 = NULL;
@@ -91,10 +93,11 @@ RTC_DATA_ATTR int RTC_SLEEP_screen=0;
 RTC_DATA_ATTR int RTC_OFF_screen=0;
 RTC_DATA_ATTR int RTC_counter=0;
 //Simon
-RTC_DATA_ATTR float calibration_bat=1.75;//bij ontwaken uit deepsleep niet noodzakelijk config file lezen
+RTC_DATA_ATTR float RTC_calibration_bat=1.75;//bij ontwaken uit deepsleep niet noodzakelijk config file lezen
 RTC_DATA_ATTR float RTC_voltage_bat=3.6;
 RTC_DATA_ATTR float RTC_old_voltage_bat=3.6;
-RTC_DATA_ATTR int RTC_bat_choice = 0;
+RTC_DATA_ATTR bool RTC_bat_choice = 0;
+RTC_DATA_ATTR int RTC_highest_read = STARTVALUE_HIGHEST_READ;
 /*Eenmaal flankdetectie indien GPIO langer dan push_time gedrukt
 * Ook variabele die dan long_pulse_time hoog blijft
 * Ook variabele die optelt tot maw elke keer push
@@ -158,16 +161,9 @@ Method to print the reason by which ESP32 has been awaken from sleep
 */
 void print_wakeup_reason(){
   analog_bat = analogRead(PIN_BAT);
-  RTC_voltage_bat=analog_bat*calibration_bat/1000;
+  RTC_voltage_bat=analog_bat*RTC_calibration_bat/1000;
   Serial.print("Battery voltage = ");
   Serial.println(RTC_voltage_bat);
-  if(RTC_voltage_bat<MINIMUM_VOLTAGE){
-    Boot_screen();
-    delay(1000);
-    Sleep_screen(RTC_SLEEP_screen);
-    esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0);
-    go_to_sleep(4000);
-  }
   esp_sleep_wakeup_cause_t wakeup_reason;
   wakeup_reason = esp_sleep_get_wakeup_cause();
 
@@ -189,15 +185,30 @@ void print_wakeup_reason(){
                                  break;
     case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); 
                                  break;
-    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer");
+    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer");                           
                                   analog_mean = analogRead(PIN_BAT);
                                   for(int i=0;i<10;i++){
                                         Update_bat();
-                                        }
+                                        }                                 
+                                  if((int)analog_mean>RTC_highest_read){ 
+                                    RTC_highest_read=(int)analog_mean; 
+                                    EEPROM.put(1,RTC_highest_read) ;
+                                    EEPROM.commit();
+                                    RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
+                                    Serial.print("New RTC_highest_read = ");
+                                    Serial.println(RTC_highest_read);
+                                    }   
                                   esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0); //was 39  1 = High, 0 = Low
                                   if(abs(RTC_voltage_bat-RTC_old_voltage_bat)>MINIMUM_VOLTAGE_CHANGE){
                                     Sleep_screen(RTC_SLEEP_screen);
                                     RTC_old_voltage_bat=RTC_voltage_bat;
+                                    }
+                                  if(RTC_voltage_bat<MINIMUM_VOLTAGE){
+                                      Boot_screen();
+                                      delay(1000);
+                                      Sleep_screen(RTC_SLEEP_screen);
+                                      esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0);
+                                      go_to_sleep(4000);
                                     }
                                   go_to_sleep(TIME_TO_SLEEP); //was 4000
                                   break;                               
@@ -272,7 +283,7 @@ void Shut_down(void){
 void Update_bat(void){
     analog_bat = analogRead(PIN_BAT);
     analog_mean=analog_bat*0.1+analog_mean*0.9;
-    RTC_voltage_bat=analog_mean*calibration_bat/1000;
+    RTC_voltage_bat=analog_mean*RTC_calibration_bat/1000;
 }
 void printLocalTime(){
   struct tm timeinfo;
@@ -326,29 +337,7 @@ void OnWiFiEvent(WiFiEvent_t event){
     default: break;
   }
 }
-static void setTimeZone(long offset, int daylight)
-{
-    char cst[17] = {0};
-    char cdt[17] = "DST";
-    char tz[33] = {0};
-    if(offset % 3600){
-        sprintf(cst, "UTC%ld:%02ld:%02ld", offset / 3600, abs((offset % 3600) / 60), abs(offset % 60));
-    } else {
-        sprintf(cst, "UTC%ld", offset / 3600);
-    }
-    if(daylight != 3600){
-        long tz_dst = offset - daylight;
-        if(tz_dst % 3600){
-            sprintf(cdt, "DST%ld:%02ld:%02ld", tz_dst / 3600, abs((tz_dst % 3600) / 60), abs(tz_dst % 60));
-        } else {
-            sprintf(cdt, "DST%ld", tz_dst / 3600);
-        }
-    }
-    sprintf(tz, "%s%s", cst, cdt);
-    Serial.println(tz);
-    setenv("TZ", tz, 1);
-    tzset();
-}
+
 void IRAM_ATTR isr() {
 	wifi_search=150;//to prevent action @ boot
 }

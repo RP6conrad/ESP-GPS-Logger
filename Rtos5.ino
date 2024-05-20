@@ -3,6 +3,7 @@
 #include <sd_diskio.h>
 #include <ETH.h>
 #include <WiFi.h>
+#include <WiFiMulti.h>
 #include <WiFiAP.h>
 #include <WiFiClient.h>
 #include <WiFiGeneric.h>
@@ -17,7 +18,7 @@
 #include "soc/timer_group_reg.h"
 #include "Arduino.h"
 #include "Ublox.h"
-#include "E_paper_266.h"
+#include "E_paper.h"
 #include "SD_card.h"
 #include "GPS_data.h"
 #include "ESP32FtpServerJH.h"
@@ -42,6 +43,16 @@ void setup() {
   Serial.println("setup Serial");
   Serial.println("Serial Txd is on pin: "+String(TX));
   Serial.println("Serial Rxd is on pin: "+String(RX));
+  EEPROM.get(1,RTC_highest_read);
+  if((RTC_highest_read<STARTVALUE_HIGHEST_READ)|(RTC_highest_read>MAXVALUE_HIGHEST_READ)){
+    EEPROM.put(1,STARTVALUE_HIGHEST_READ) ;
+    EEPROM.commit();
+    RTC_highest_read=STARTVALUE_HIGHEST_READ;
+    Serial.println("Eeprom highest read set to starting value !!");
+    }
+  RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
+  Serial.print("RTC_calibration_bat EEPROM = ");
+  Serial.println(RTC_calibration_bat);
   Serial.println("Configuring WDT...");
   esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
   esp_task_wdt_add(NULL); //add current thread to WDT watch
@@ -51,8 +62,8 @@ void setup() {
  //sometimes after OTA hangs here ???
   pinMode(UBLOX_POWER1, OUTPUT);//Power beitian //default drive strength 2, only 2.7V @ ublox gps
   pinMode(UBLOX_POWER2, OUTPUT);//Power beitian
-  pinMode(UBLOX_POWER3, OUTPUT);//Power beitian
-  rtc_gpio_set_drive_capability(UBLOX_RTC_GPIO1,GPIO_DRIVE_CAP_3);//see https://www.esp32.com/viewtopic.php?t=5840
+  pinMode(UBLOX_POWER3, OUTPUT);//Power beitiansee
+  rtc_gpio_set_drive_capability(UBLOX_RTC_GPIO1,GPIO_DRIVE_CAP_3);// https://www.esp32.com/viewtopic.php?t=5840
   rtc_gpio_set_drive_capability(UBLOX_RTC_GPIO2,GPIO_DRIVE_CAP_3);//3.0V @ ublox gps current 50 mA
   gpio_set_drive_capability(UBLOX_GPIO3,GPIO_DRIVE_CAP_3);//rtc_gpio_ necessary, if not no output on RTC_pins 25 en 26, 13/3/2022
   
@@ -105,28 +116,32 @@ void setup() {
 
   const char* ssid = config.ssid; //WiFi SSID
   const char* password = config.password; //WiFi Password
+  const char* ssid2 = config.ssid2; //WiFi SSID
+  const char* password2 = config.password2; //WiFi Password
   const char *soft_ap_ssid = "ESP32AP"; //accespoint ssid
   const char *soft_ap_password = "password"; //accespoint password
-    
+  WiFiMulti wifiMulti;
+  wifiMulti.addAP(ssid,password);
+  wifiMulti.addAP(ssid2,password2);  
   WiFi.onEvent(OnWiFiEvent);
-  WiFi.mode(WIFI_AP_STA);
+  WiFi.mode(WIFI_AP_STA);//(WIFI_AP_STA);
   WiFi.softAP(soft_ap_ssid,soft_ap_password);
-  WiFi.begin(ssid, password);
+  //WiFi.begin(ssid, password);
   Serial.print("T5 MAC adress: ");
   WiFi.macAddress(mac);
  
   // Wait for connection during 10s in station mode
  // bool ota_notrunning=true;
   attachInterrupt(WAKE_UP_GPIO, isr, FALLING);
-  while ((WiFi.status() != WL_CONNECTED)&(SoftAP_connection==false)) {
-    if((Long_push39.Button_pushed())&(millis()>5000)) Shut_down();//to prevent Shut_down() @ boot
+  while ((wifiMulti.run() != WL_CONNECTED)&(SoftAP_connection==false)) {  
+    if((Long_push39.Button_pushed())&(millis()>20000)) Shut_down();//to prevent Shut_down() @ boot
     esp_task_wdt_reset();
     //server.handleClient(); // wait for client handle, and update BAT Status, this section should be moved to the loop... 
     Update_bat();         //client counter wait until download is finished to prevent stoping the server during download
     if(wifi_search<=10) Update_screen(WIFI_STATION);
     else Update_screen(WIFI_SOFT_AP);
     Serial.print(".");
-    wifi_search--;
+    wifi_search--;wifi_search--;//wifiMulti.run() takes 2 s !!!
     if(wifi_search<=0){
       server.close();
       IP_adress = "0.0.0.0";
@@ -134,9 +149,10 @@ void setup() {
       }
     }
   if((WiFi.status()== WL_CONNECTED)|SoftAP_connection){
+      actual_ssid=WiFi.SSID();
       Serial.println("");
       Serial.print("Connected to ");
-      Serial.println(ssid);
+      Serial.println(actual_ssid);
       Serial.print("IP address: ");
       Serial.println(IP_adress);
       Wifi_on=true;
@@ -214,8 +230,6 @@ void taskOne( void * parameter )
       else{
         if(Short_push39.button_count>config.speed_count){
           Short_push39.button_count=0;
-          //config.speed_large_font++;
-          //if(config.speed_large_font>3)config.speed_large_font=0;//testing speed screens ....
           }
         config.field_actual=config.speed_screen[Short_push39.button_count];
         //Serial.print("config.field_actual ");Serial.println(config.field_actual);
@@ -230,7 +244,6 @@ void taskOne( void * parameter )
         WiFi.mode(WIFI_OFF);
         Wifi_on=false; 
         sntp_stop();//no messing around with time synchronization anymore, EPOCH time is set to 0 !!! 
-        setTimeZone(0,0);//set TZ to UTC, as mktime returns localtime !!!!
         printLocalTime();
         NTP_time_set=false;
         if(!GPS_OK) {
@@ -243,15 +256,11 @@ void taskOne( void * parameter )
         ftpStatus=ftpSrv.cmdStatus;//for e-paper
         // Init and get the time if WLAN, create "Archive" dir if not present
         if(WiFi.status() == WL_CONNECTED){
-          const char* ntpServer = "pool.ntp.org";
-          long  gmtOffset_sec = 3600*config.timezone;//configTime sets Timezone !! mktime use TZ...
-          const int daylightOffset_sec = 0;
           if(NTP_time_set==0){
-            configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-            setTimeZone(-gmtOffset_sec, daylightOffset_sec);
+            configTime(0,0,"pool.ntp.org");
+            setenv("TZ",TimeZone,1);
+            tzset();
             printLocalTime();
-            //setTimeZone(0,0);
-           // printLocalTime();
             NTP_time_set=true;
             }
           if(!SD.exists("/Archive")&sdOK){
@@ -330,6 +339,7 @@ void taskOne( void * parameter )
                   A250.Update_Alfa(M250);
                   A500.Update_Alfa(M500);
                   a500.Update_Alfa(M500);
+                  if(S2.avg_s>4000) S10_previous_run=S10.s_max_speed;//only update to new run value if actual speed > 4 m/s
                   }     
       } 
      else if( msgType == MT_NAV_PVT )  { //order messages in ubx should be ascending !!!
@@ -392,10 +402,9 @@ void taskTwo( void * parameter)
     else if((gps_speed/1000.0f<config.stat_speed)&(Field_choice==false)){
           Update_screen(config.stat_screen[stat_count]);
           }
-    
     else {
           Update_screen(SPEED);
           stat_count=0;
-    }
+          }
   }
 }

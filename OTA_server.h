@@ -11,9 +11,12 @@ https://github.com/italocjs/ESP32_OTA_APMODE/blob/main/Main.cpp
 //#include <LittleFS.h>
 #include "Definitions.h"
 #include "OTA_html.h"
+//#include "ESP_functions.h"
 bool downloading_file = false;
 const char* host = "esp32";
 extern const char E_paper_version[16];
+extern RTC_DATA_ATTR float RTC_calibration_bat;
+extern RTC_DATA_ATTR int RTC_highest_read;
 WebServer server(80);
 
 //SD Card webinterface download section
@@ -84,9 +87,10 @@ String file_size(int kbytes) {
 }
 //changes JH 19/11/2022, added for formatting timestamp file
 String Print_time(time_t timestamp) {
-  //char message[120];
   char buff[30];
-  strftime(buff, 30, "%Y-%m-%d  %H:%M:%S", localtime(&timestamp));
+  tm *tm_local=localtime(&timestamp);
+  if(tm_local->tm_isdst==1)timestamp=timestamp-3600;//correction for littlefs bug if dst is active
+  strftime(buff, 30, "%Y-%m-%d  %H:%M:%S", localtime(&timestamp));//was localtime
   return buff;
 }
 
@@ -425,16 +429,12 @@ void handleConfigUpload() {
     //gnss 2 = GPS + GLONAS (default M8 ROM 2)
     //gnss 1 = GPS + GALILEO (not working for M8)
     //gnss 0 = GPS + BEIDOU
-    doc["cal_bat"] = serialized(server.arg("cal_bat"));
+    EEPROM.get(1,RTC_highest_read);
+    RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
+    //doc["cal_bat"] = serialized(server.arg("cal_bat"));
+    doc["cal_bat"] = RTC_calibration_bat;
     doc["cal_speed"] = serialized(server.arg("cal_speed"));
     doc["sample_rate"] = server.arg("sample_rate").toInt();
-    /*
-    if((config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)) {//limit sample rate for 3/4 GNSS M10, prevent lost points
-      if((server.arg("gnss").toInt()==3)&(server.arg("sample_rate").toInt()>5)){ doc["sample_rate"] = 5;}
-      if((server.arg("gnss").toInt()==4)&(server.arg("sample_rate").toInt()>8)){ doc["sample_rate"] = 8;}
-      if((server.arg("gnss").toInt()==5)&(server.arg("sample_rate").toInt()>4)){ doc["sample_rate"] = 4;}
-      }
-    */
     doc["gnss"] = server.arg("gnss").toInt();
     doc["speed_field"] = server.arg("speed_field").toInt();
     doc["speed_large_font"] = server.arg("speed_large_font").toInt();
@@ -450,7 +450,7 @@ void handleConfigUpload() {
     doc["Board_Logo"] = server.arg("Board_Logo").toInt();
     doc["Sail_Logo"] = server.arg("Sail_Logo").toInt();
     doc["sleep_off_screen"] = server.arg("sleep_off_screen").toInt();
-    doc["bat_choice"] = server.arg("bat_choice").toInt(); 
+    doc["bat_choice"] = server.arg("bat_choice").toInt();
     doc["logTXT"] = server.arg("logTXT").toInt();
     doc["logSBP"] = server.arg("logSBP").toInt();
     doc["logUBX"] = server.arg("logUBX").toInt();
@@ -460,20 +460,21 @@ void handleConfigUpload() {
     doc["file_date_time"] = server.arg("file_date_time").toInt();
     doc["dynamic_model"] = server.arg("dynamic_model").toInt();
     doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt();
+    doc["ublox_type"] = server.arg("GPS_type").toInt();//is overwritten @ boot by EEPROM value !!!
     doc["cpu_freq"] = server.arg("CPU_freq").toInt();
     doc["timezone"] = serialized(server.arg("timezone"));
+    doc["timezone_DST"] = server.arg("timezone_DST").toInt();
     doc["UBXfile"] = server.arg("UBXfile");
     doc["Sleep_info"] = server.arg("Sleep_info");
     doc["ssid"] = server.arg("ssid");
     doc["password"] = server.arg("password");
-
-
-    int ublox_type = server.arg("GPS_Type").toInt();
-    if (ublox_type == 0xFF) {  //not in config.txt but saved in EEPROM !!!)
-      EEPROM.write(0, config.ublox_type);
+    doc["ssid2"] = server.arg("ssid2");
+    doc["password2"] = server.arg("password2");
+    int Ublox_type = server.arg("GPS_Type").toInt();
+    if(Ublox_type == 0xFF) {  //not in config.txt but saved in EEPROM !!!)
+      EEPROM.write(0, Ublox_type);
       EEPROM.commit();
     }
-
     // Pretty Serialize JSON to file
     if (serializeJsonPretty(doc, file) == 0) {
       Serial.println(F("Failed to write to file"));

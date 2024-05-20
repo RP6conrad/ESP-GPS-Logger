@@ -1,5 +1,5 @@
 //html files readable
-
+extern RTC_DATA_ATTR float RTC_calibration_bat;
 //header file readable
 const char html_header[] PROGMEM = R"=====(
 <html><head><meta charset="UTF-8"><title>ESP-GPS-Logger</title>
@@ -346,11 +346,20 @@ void html_config(String& webpage){
    //password
   webpage += "<tr>\n<td>password</td><td>\n";
   webpage += "<input size='20' type='text' required name='password' value="+String(config.password)+">\n";
-  webpage += "</select>\n</td><td>password: the password of the wlan where the esp-logger should connect to</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>password: the password of the wlan where the esp-logger should connect to</td>\n</tr>\n"; 
+  //ssid2
+  String ssid2="\"" + String(config.ssid2) + "\"";//problem with white space in SSID depends on position in webpage ???
+  webpage += "<tr>\n<td>ssid2</td><td>\n";
+  webpage += "<input size='21' type='text' required name='ssid2' value="+ssid2+">\n";//input size 20->30 if SSID name exceeds input size, full name is not visible
+  webpage += "</select>\n</td><td>ssid2: wlan2, usefull for connection to your smartphone hotspot !</td>\n</tr>\n";  
+   //password2
+  webpage += "<tr>\n<td>password2</td><td>\n";
+  webpage += "<input size='20' type='text' required name='password2' value="+String(config.password2)+">\n";
+  webpage += "</select>\n</td><td>password2: the password of the wlan2 where the esp-logger should connect to</td>\n</tr>\n"; 
   //cal_bat
   webpage += "<tr>\n<td>cal_bat</td><td>\n";
-  webpage += "<input size='4' type='number' required name='cal_bat' min='1.6' max='1.89' value="+String(config.cal_bat)+" step='0.01'>\n";
-  webpage += "</select>\n</td><td>cal_bat: is the calibration <br> of the battery voltage measurement (1.6-1.89).</td>\n</tr>\n"; 
+  webpage += "<input size='4' type='number' required name='cal_bat' min='1.6' max='1.89' value="+String(RTC_calibration_bat)+" step='0.01'>\n";
+  webpage += "</select>\n</td><td>cal_bat: is the calibration <br> of the battery voltage measurement (1.6-1.89) Only info, auto-calibrate after full load of lipo !.</td>\n</tr>\n"; 
   //cal_speed 
   webpage += "<tr><td>cal_speed</td><td>\n<select id='cal_speed' name='cal_speed' type='number'>\n";
   if(config.cal_speed == 3.6) webpage += "<option value='3.60' selected>3.6 km/h</option>\n"; else webpage += "<option value=3.60>3.6 km/h</option>\n";
@@ -410,7 +419,7 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>archive_days</td><td>\n";
   webpage += "<input size='8' type='number' required name='archive_days' min='0' max='1000' value="+String(config.archive_days)+" step='1'>\n";
   webpage += "</select>\n</td><td>If the files on the sd are older then archive_days, they can be moved to the Archive directory with \"Archive Files\"</td>\n</tr>\n";
-  #ifdef T5_E_PAPER
+//  #ifdef T5_E_PAPER
   //speed_field
   webpage += "<tr>\n<td>speed_field</td><td>\n";
   webpage += "<input size='8' type='number' required name='speed_field' min='1' max='99999' value="+String(config.field)+" step='1'>\n";
@@ -477,6 +486,10 @@ void html_config(String& webpage){
   Drop_down_menu(config.Board_Logo,13,"Bic",webpage);
   Drop_down_menu(config.Board_Logo,14,"Carbon Art",webpage);
   Drop_down_menu(config.Board_Logo,15,"Future Fly",webpage);
+  Drop_down_menu(config.Board_Logo,16,"One Hundred",webpage);
+  Drop_down_menu(config.Board_Logo,17,"FMX",webpage);
+  Drop_down_menu(config.Board_Logo,18,"Phantom",webpage);
+  Drop_down_menu(config.Board_Logo,19,"F4 Foil",webpage);
   webpage += "</select>\n</td><td>Board_Logo :  See the logos on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a></td>\n</tr>\n";
   //Sail_Logo Drop down menu
   webpage += "<tr>\n<td>Sail_Logo</td><td>\n<select id='Sail_Logo' name='Sail_Logo'>";
@@ -492,16 +505,19 @@ void html_config(String& webpage){
   Drop_down_menu(config.Sail_Logo,9,"Naish",webpage);
   Drop_down_menu(config.Sail_Logo,10,"Severne",webpage);
   Drop_down_menu(config.Sail_Logo,11,"S2 Maui",webpage);
+  Drop_down_menu(config.Sail_Logo,12,"North Sails",webpage);
+  Drop_down_menu(config.Sail_Logo,13,"Challenger Sails",webpage);
+  Drop_down_menu(config.Sail_Logo,14,"Phantom",webpage);
+  Drop_down_menu(config.Sail_Logo,15,"Patrik",webpage);
   webpage += "</select>\n</td><td>Sail_Logo :  See the logos on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a></td>\n</tr>\n";
   //sleep_off_screen
   webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
   webpage += "<input size='8' type='number' required name='sleep_off_screen' min='0' max='1000' value="+String(config.sleep_off_screen)+" step='1'>\n";
   webpage += "</select>\n</td><td>Choice for switch_off (first digit 0 or 1) and sleep_screen (second digit 0 or 1): </td>\n</tr>\n";
-  #endif
-  //bat_choice
+  //bat value in % or volt
   webpage += "<tr><td>bat_choice</td><td>\n<select id='bat_choice' name='bat_choice'>\n";
-  if(config.bat_choice == 1) webpage += "<option value='1' selected>Batery value in percentage</option>\n"; else webpage += "<option value='1'>Batery value in percentage</option>\n";
-  if(config.bat_choice == 0) webpage += "<option value='0' selected>Batery value in voltage</option>\n"; else webpage += "<option value='0'>Batery value in voltage</option>\n";
+  Drop_down_menu(config.bat_choice,0,"Batery value in voltage",webpage);
+  Drop_down_menu(config.bat_choice,1,"Batery value in percentage",webpage);
   webpage += "</select>\n</td><td>bat_choice: Screen info on battery will be presented in either percentage of voltage.</td>\n</tr>\n"; 
   //logTXT
   webpage += "<tr><td>logTXT</td><td>\n<select id='logTXT' name='logTXT'>\n";
@@ -575,6 +591,11 @@ void html_config(String& webpage){
   Drop_down_menu(config.timezone,13.0,"+13 (Pacific/Fakaofo)",webpage);
   Drop_down_menu(config.timezone,14.0,"+14 (Pacific/Kiritimati)",webpage);    
   webpage += "</select>\n</td><td>timezone: The local time difference in hours with UTC (can be fractional / negative ! )<a href='https://en.wikipedia.org/wiki/List_of_UTC_offsets' target='_blank'>this Link</a></td>\n</tr>\n";
+  //timezone daylight saving
+  webpage += "<tr><td>timezone_DST</td><td>\n<select id='timezone_DST' name='timezone_DST'>\n";
+  if(config.timezone_DST == 1) webpage += "<option value='1' selected>DAYLIGHT SAVING ON</option>\n"; else webpage += "<option value='1'>DAYLIGHT SAVING ON</option>\n";
+  if(config.timezone_DST == 0) webpage += "<option value='0' selected>DAYLIGHT SAVING OFF</option>\n"; else webpage += "<option value='0'>DAYLIGHT SAVING OFF</option>\n";
+  webpage += "</select>\n</td><td>For automatic switching to summertime / wintertime (daylight saving) </td>\n</tr>\n";  
   //filenaming  
   webpage += "<tr><td>file_date_time</td><td>\n<select id='file_date_time' name='file_date_time'>\n";
   Drop_down_menu(config.file_date_time,0,"name_MAC_index",webpage);

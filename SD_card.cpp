@@ -254,6 +254,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.Board_Logo = doc["Board_Logo"] | 1;
   config.Sail_Logo = doc["Sail_Logo"] | 1;
   config.sleep_off_screen = doc["sleep_off_screen"] | 11;
+  config.bat_choice = doc["bat_choice"]|0;
   config.logTXT = doc["logTXT"] | 1;
   config.logUBX = doc["logUBX"] | 1;
   if (config.sample_rate < 10) {
@@ -267,6 +268,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.file_date_time = doc["file_date_time"] | 1;
   config.dynamic_model = doc["dynamic_model"] | 0;  //sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
   config.timezone = doc["timezone"] | 2.0;
+  config.timezone_DST = doc["timezone_DST"]|1;
   strlcpy(config.UBXfile,                      // <- destination
           doc["UBXfile"] | "/ubxGPS",          // <- source
           sizeof(config.UBXfile));             // <- destination's capacity
@@ -280,6 +282,12 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   strlcpy(config.password,                     // <- destination
           doc["password"] | "password",  // <- source
           sizeof(config.password));            // <- destination's capacity
+  strlcpy(config.ssid2,                         // <- destination
+          doc["ssid2"] | "ESP_GPS",             // <- source
+          sizeof(config.ssid2));                // <- destination's capacity
+  strlcpy(config.password2,                     // <- destination
+          doc["password2"] | "password2",  // <- source
+          sizeof(config.password2));            // <- destination's capacity        
                                                // Close the file (Curiously, File's destructor doesn't close the file)
   file.close();
   if (error) {
@@ -294,7 +302,8 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   }
   RTC_Board_Logo = config.Board_Logo;  //copy RTC memory !!
   RTC_Sail_Logo = config.Sail_Logo;    //copy to RTC memory !!
-  calibration_bat = config.cal_bat;
+  //RTC_calibration_bat = config.cal_bat;
+  config.cal_bat=RTC_calibration_bat; //stored in EEPROM !!!
   calibration_speed = config.cal_speed / 1000;  //3.6=km/h, 1.94384449 = knots, speed is now in mm/s
   //time_out_nav_pvt=(1000/config.sample_rate+75);//max time out = 175 ms
   RTC_SLEEP_screen = config.sleep_off_screen % 10;
@@ -322,6 +331,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
       config.speed_count = i + 1;  //vb 841 -> 3
     }
   }
+  TimeZone_env(config.timezone);//to set the correct posic TZ string
 }
 // Prints the content of a file to the Serial
 void printFile(const char *filename) {
@@ -378,9 +388,12 @@ void Session_info(GPS_data G) {
   strcat(message, tekst);
   sprintf(tekst, "Speed calibration: %f \n", config.cal_speed);
   strcat(message, tekst);
+  sprintf(tekst, "Lipo calibration: %.3f \n", RTC_calibration_bat);
+  strcat(message, tekst);
   sprintf(tekst, "Timezone : %f h\n", config.timezone);
   strcat(message, tekst);
-  strcat(message, "Dynamic model: ");
+  strcat(message,TimeZone);
+  strcat(message, "\nDynamic model: ");
   if (config.dynamic_model == 1) strcat(message, "Sea");
   else if (config.dynamic_model == 2) strcat(message, "Automotive");
   else strcat(message, "Portable");
@@ -524,5 +537,31 @@ void Session_results_Alfa(Alfa_speed A, GPS_speed M) {
     strcat(message, tekst);
     strcat(message, "\n");
     errorfile.print(message);
+  }
+}
+void TimeZone_env (float timezone){     //without daylight saving, standard TZ strirng
+  int hours=(int)(timezone);
+  int minutes=abs((int)(timezone*60)%60);
+  char time_noDST[64]="GMT0";
+  sprintf(time_noDST,"<%d%d>%d:%d",hours,minutes,-hours,minutes);
+  strcpy(TimeZone,time_noDST); //standard timezone without daylightsaving
+  if(config.timezone_DST){
+    switch((int)(timezone*100)){
+      case 0: strcpy (TimeZone,"GMT0BST,M3.5.0/1,M10.5.0");break;//Europe/ London
+      case 100: strcpy (TimeZone,"CET-1CEST,M3.5.0,M10.5.0/3");break;//Europe / Brussels
+      case 200: strcpy (TimeZone,"EET-2EEST,M3.5.0,M10.5.0/3");break;
+      case 300: strcpy (TimeZone,"<-03>3<-02>,M3.2.0,M11.1.0");break;
+      case 500: strcpy (TimeZone,"CST5CDT,M3.2.0/0,M11.1.0/1");break;//America/Detroit
+      case 600: strcpy (TimeZone,"CST6CDT,M3.2.0,M11.1.0");break;//America/Chicago
+      case 700: strcpy (TimeZone,"MST7MDT,M3.2.0,M11.1.0");break;//America/Boise
+      case 800: strcpy (TimeZone,"PST8PDT,M3.2.0,M11.1.0");break;//America/Los_Angeles
+      case 950: strcpy (TimeZone,"ACST-9:30ACDT,M10.1.0,M4.1.0/3");break;//Australia/Adelaide
+      case 1000: strcpy (TimeZone,"AEST-10AEDT,M10.1.0,M4.1.0/3");break;//Antarctica/Macquarie
+      case 1050: strcpy (TimeZone,"<+1030>-10:30<+11>-11,M10.1.0,M4.1.0");break;//Australia/Lord_Howe
+      case 1200: strcpy (TimeZone,"NZST-12NZDT,M9.5.0,M4.1.0/3");break;//Antarctica/McMurdo
+      case -100: strcpy (TimeZone,"<-01>1<+00>,M3.5.0/0,M10.5.0/1");break;
+      case -200: strcpy (TimeZone,"IST-2IDT,M3.4.4/26,M10.5.0");break;
+
+    } 
   }
 }
