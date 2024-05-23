@@ -752,15 +752,15 @@ void Update_screen(int screen) {
   if (screen == WIFI_STATION) {
     update_delay = 100;
     ESP_GPS_LOGO_40
-    TOP_LEFT_TITLE_MSG("ESP-GPS connect");
+    TOP_LEFT_TITLE_MSG("ESP-GPS try to connect");
     DEVICE_BOOT_LOG(2);
-    //display.fillRect(0, ROW_4_9PT+1, 190, INFO_BAR_TOP-ROW_4_9PT-10, GxEPD_WHITE);//clear lower part
     display.setFont(&FreeSansBold12pt7b);
     display.setCursor(offset, (cursor = ROW_3_9PT + ROW_12PT_W_SPACING));
-    display.print("Create wifi AP");
+    //display.println("Trying to connect...");
+    display.print(actual_ssid);
     display.setFont(&FreeSansBold9pt7b);
     display.setCursor(offset, (cursor += ROW_9PT_W_SPACING));
-    display.printf("Use magnet in %ds", wifi_search);
+    display.printf("For AP: use magnet in %ds", wifi_search);
     if (screen != old_screen) count = 0;  //eerste keer full update
   }
   if (screen == WIFI_SOFT_AP) {
@@ -822,6 +822,7 @@ void Update_screen(int screen) {
     if (GPS_Signal_OK == true) {
                                    //test for bigger font alfa
       if (config.speed_large_font == 2) {  //test for bigger font speed (Simon)
+        bar_position = 0;
         display.setFont(&FreeSansBold75pt7b);
         display.setCursor(offset + 5, 115);
         display.print(gps_speed * calibration_speed, 0);  //print main in large font
@@ -915,12 +916,14 @@ void Update_screen(int screen) {
       else if (config.speed_large_font == 3) {
         Speed_font3("Dist ",Ublox.total_distance / 1000000);//distance in km xx.xx
       }
-       else {
+      else if (config.speed_large_font == 0) {
         Speed_font0("Run"," Dist",Ublox.total_distance / 1000,Ublox.alfa_distance /1000000,gps_speed * calibration_speed,2);
       }
     }
     if (field == 6) {
+      if (config.speed_large_font != 2) {//Simon font, alleen speed !)
       Speed_font0("2S ","10S ",S2.display_max_speed * calibration_speed,S10.display_max_speed * calibration_speed,gps_speed * calibration_speed,0);
+      }
     }
     if (field == 7) {
       if (config.speed_large_font == 1) {
@@ -929,7 +932,7 @@ void Update_screen(int screen) {
        else if(config.speed_large_font == 3){
         Speed_font3("0.5 Hour",S1800.display_max_speed * calibration_speed);
       }
-       else {
+       else if(config.speed_large_font == 0) {
         Speed_font0(".5hA",".5hB",S1800.avg_s * calibration_speed,S1800.display_max_speed * calibration_speed,gps_speed * calibration_speed,0);
       }
     }
@@ -940,7 +943,7 @@ void Update_screen(int screen) {
       else if(config.speed_large_font == 3){
         Speed_font3("1 Hour",S3600.display_max_speed * calibration_speed);
       }
-      else {
+       else if(config.speed_large_font == 0) {
         Speed_font0("1hA ","1hB ",S3600.avg_s * calibration_speed,S3600.display_max_speed * calibration_speed,gps_speed * calibration_speed,0);
       }
     }

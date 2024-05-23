@@ -15,7 +15,7 @@ extern int Time_Set_OK;
 extern int NTP_time_set;
 extern int Gps_time_set;
 extern int first_fix_GPS;
-extern volatile int wifi_search;
+extern int wifi_search;
 extern int sdTrouble;
 extern int start_logging_millis;
 extern bool sdOK,button,LITTLEFS_OK;
@@ -44,7 +44,7 @@ extern int nav_pvt_message;
 extern int nav_sat_message;
 extern int RTC_Board_Logo;
 extern int RTC_Sail_Logo;
-extern bool RTC_bat_choice;
+extern int RTC_bat_choice;
 extern int RTC_SLEEP_screen;
 extern int RTC_OFF_screen;
 
@@ -69,6 +69,7 @@ struct Config {
   int stat_screen[10];//which stat_screen you want to see ?
   int gpio12_screen[10];//which stat_screen when gpio 12 toggles ?
   int speed_screen[10];//which speed fields are selected ?
+  //char Speed_Screen[10];//which speed fields are selected ?
   int screen_count=0;
   int gpio12_count=0;
   int speed_count=0;
@@ -110,6 +111,7 @@ void Session_results_M(GPS_speed M);
 void Session_results_S(GPS_time S);
 void Session_results_Alfa(Alfa_speed A,GPS_speed M);
 void TimeZone_env (float timezone);
+int string_to_int (char test);
 /*
 void log_header_SBP(void);
 void log_SBP(void);

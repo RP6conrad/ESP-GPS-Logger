@@ -1,4 +1,4 @@
-#include "E_paper_266.h"
+#include "E_paper.h"//"E_paper_266.h"
 #include "Definitions.h"
 
 #define ROW_SPACING 3
@@ -1129,17 +1129,14 @@ void Update_screen(int screen){
     CURSOR2C(6,Font); display.print("A5: "); display.print(a500.avg_speed[5]*calibration_speed,2);
     SetFont_M();CURSORC(7,Font); display.print(time_now);
   }
-  if(screen==STATS6){ //Simon stat screen
-    Serial.println("STATS6_Simon_screen");
+  if(screen==STATS6){ //Simon stat screen 10sec
+    Serial.println("STATS6_Simon_screen 10sec");
     update_delay=(config.Stat_screens_time-2)*1500;
     int line;
     double S10avgNEW;
-    if (S10.s_max_speed>S10.avg_speed[5]) {
-      S10avgNEW=(S10.avg_speed[9]+S10.avg_speed[8]+S10.avg_speed[7]+S10.avg_speed[6]+S10.s_max_speed)/5;
-    }
-    else {
-      S10avgNEW=(S10.avg_speed[9]+S10.avg_speed[8]+S10.avg_speed[7]+S10.avg_speed[6]+S10.avg_speed[5])/5;
-    }
+      if (S10.s_max_speed>S10.avg_speed[5]) S10avgNEW=(S10.avg_speed[9]+S10.avg_speed[8]+S10.avg_speed[7]+S10.avg_speed[6]+S10.s_max_speed)/5;
+      else  S10avgNEW=(S10.avg_speed[9]+S10.avg_speed[8]+S10.avg_speed[7]+S10.avg_speed[6]+S10.avg_speed[5])/5;
+
     SetCols(1);
     SetFont_LS();
     CURSOR_COLC(1,col1,Font); display.print("AV");
@@ -1169,16 +1166,16 @@ void Update_screen(int screen){
     CURSOR_COLC(4,col4,Font); display.print(":");display.print(A500.avg_speed[9]*calibration_speed,2); 
     CURSOR_COLC(5,col4,Font); display.print(":");display.print(M500.display_max_speed*calibration_speed,2);
     CURSOR_COLC(6,col4,Font); display.print(":");display.print(M1852.display_max_speed*calibration_speed,2);
-
- // position line of actual 10s run
-    if      (S10.s_max_speed*calibration_speed>S10.avg_speed[9]*calibration_speed) YPOS(1,Font);
-    else if (S10.s_max_speed*calibration_speed>S10.avg_speed[8]*calibration_speed) YPOS(2,Font);
-    else if (S10.s_max_speed*calibration_speed>S10.avg_speed[7]*calibration_speed) YPOS(3,Font);
-    else if (S10.s_max_speed*calibration_speed>S10.avg_speed[6]*calibration_speed) YPOS(4,Font);
-    else if (S10.s_max_speed*calibration_speed>S10.avg_speed[5]*calibration_speed) YPOS(5,Font);
+     
+    // position line of actual 10s run
+    if      (S10.display_last_run*calibration_speed>S10.avg_speed[9]*calibration_speed) YPOS(1,Font);
+    else if (S10.display_last_run*calibration_speed>S10.avg_speed[8]*calibration_speed) YPOS(2,Font);
+    else if (S10.display_last_run*calibration_speed>S10.avg_speed[7]*calibration_speed) YPOS(3,Font);
+    else if (S10.display_last_run*calibration_speed>S10.avg_speed[6]*calibration_speed) YPOS(4,Font);
+    else if (S10.display_last_run*calibration_speed>S10.avg_speed[5]*calibration_speed) YPOS(5,Font);
     else YPOS(6,Font);
     display.fillRect(0,y_pos+2,col3-10,2,GxEPD_BLACK);//lijn voor actuele run weer te geven...
-  }
+ }
   if(screen==STATS7){ //Simon bar graph screen
     Serial.println("STATS7_Simon_bar graph");
     update_delay=(config.Stat_screens_time-2)*1500;
@@ -1234,6 +1231,253 @@ void Update_screen(int screen){
     Serial.print("barWidth: ");Serial.println(barWidth);
     #endif
   }
+  if(screen==STATS8){ //Simon stat screen for 2nd speed target
+    Serial.println("STATS8_Simon_screen");
+    update_delay=(config.Stat_screens_time-2)*1500;
+    int line;
+    double S2avgNEW;
+    double M500avgNEW;
+    double M1852avgNEW;
+    double A500avgNEW;
+    if(config.Stat_speed_target2==1){
+      if (S2.s_max_speed>S2.avg_speed[5]) S2avgNEW=(S2.avg_speed[9]+S2.avg_speed[8]+S2.avg_speed[7]+S2.avg_speed[6]+S2.s_max_speed)/5;
+      else  S2avgNEW=(S2.avg_speed[9]+S2.avg_speed[8]+S2.avg_speed[7]+S2.avg_speed[6]+S2.avg_speed[5])/5;
+    }
+    if(config.Stat_speed_target2==2){
+      double M500avgNEW;
+        M500avgNEW=(M500.avg_speed[9]+M500.avg_speed[8]+M500.avg_speed[7]+M500.avg_speed[6]+M500.avg_speed[5])/5;
+    }
+    if(config.Stat_speed_target2==4){
+      double M1852avgNEW;
+      M1852avgNEW=(M1852.avg_speed[9]+M1852.avg_speed[8]+M1852.avg_speed[7]+M1852.avg_speed[6]+M1852.avg_speed[5])/5;
+    }
+    if(config.Stat_speed_target2==5){
+      double A500avgNEW;
+      A500avgNEW=(A500.avg_speed[9]+A500.avg_speed[8]+A500.avg_speed[7]+A500.avg_speed[6]+A500.avg_speed[5])/5;
+    }
+    SetCols(1);
+    SetFont_LS();
+    CURSOR_COLC(1,col1,Font); display.print("AV");
+    CURSOR_COLC(2,col1,Font); display.print("R1");
+    CURSOR_COLC(3,col1,Font); display.print("R2");
+    CURSOR_COLC(4,col1,Font); display.print("R3"); 
+    CURSOR_COLC(5,col1,Font); display.print("R4");
+    CURSOR_COLC(6,col1,Font); display.print("R5"); 
+
+    if(config.Stat_speed_target2==1){
+      CURSOR_COLC(1,col2,Font); display.print(":");display.print(S2avgNEW * calibration_speed, 2);
+      CURSOR_COLC(2,col2,Font); display.print(":");display.print(S2.avg_speed[9]*calibration_speed,2);
+      CURSOR_COLC(3,col2,Font); display.print(":");display.print(S2.avg_speed[8]*calibration_speed,2);
+      CURSOR_COLC(4,col2,Font); display.print(":");display.print(S2.avg_speed[7]*calibration_speed,2); 
+      CURSOR_COLC(5,col2,Font); display.print(":");display.print(S2.avg_speed[6]*calibration_speed,2);
+      CURSOR_COLC(6,col2,Font); display.print(":");display.print(S2.avg_speed[5]*calibration_speed,2); 
+      
+      display.setTextSize(2);
+      CURSOR_COLC(2,col3,Font); display.print("Prv 2s");
+      CURSOR_COLC(4,col3,Font); display.print(S2.display_last_run*calibration_speed,2);
+      display.setTextSize(1);
+     
+      // position line of actual 2s run
+      if      (S2.display_last_run*calibration_speed>S2.avg_speed[9]*calibration_speed) YPOS(1,Font);
+      else if (S2.display_last_run*calibration_speed>S2.avg_speed[8]*calibration_speed) YPOS(2,Font);
+      else if (S2.display_last_run*calibration_speed>S2.avg_speed[7]*calibration_speed) YPOS(3,Font);
+      else if (S2.display_last_run*calibration_speed>S2.avg_speed[6]*calibration_speed) YPOS(4,Font);
+      else if (S2.display_last_run*calibration_speed>S2.avg_speed[5]*calibration_speed) YPOS(5,Font);
+      else YPOS(6,Font);
+      display.fillRect(0,y_pos+2,col3-10,2,GxEPD_BLACK);//lijn voor actuele run weer te geven...
+    }
+    if(config.Stat_speed_target2==2){
+      CURSOR_COLC(1,col2,Font); display.print(":");display.print(M500avgNEW * calibration_speed, 2);
+      CURSOR_COLC(2,col2,Font); display.print(":");display.print(M500.avg_speed[9]*calibration_speed,2);
+      CURSOR_COLC(3,col2,Font); display.print(":");display.print(M500.avg_speed[8]*calibration_speed,2);
+      CURSOR_COLC(4,col2,Font); display.print(":");display.print(M500.avg_speed[7]*calibration_speed,2); 
+      CURSOR_COLC(5,col2,Font); display.print(":");display.print(M500.avg_speed[6]*calibration_speed,2);
+      CURSOR_COLC(6,col2,Font); display.print(":");display.print(M500.avg_speed[5]*calibration_speed,2); 
+
+      display.setTextSize(2);
+      CURSOR_COLC(2,col3,Font); display.print("500m");
+//      CURSOR_COLC(4,col3,Font); display.print(":");display.print(M500.display_last_run*calibration_speed,2);
+      display.setTextSize(1);
+/*         
+      // position line of actual 500m run
+      if      (M500.s_max_speed*calibration_speed>M500.avg_speed[9]*calibration_speed) YPOS(1,Font);
+      else if (M500.s_max_speed*calibration_speed>M500.avg_speed[8]*calibration_speed) YPOS(2,Font);
+      else if (M500.s_max_speed*calibration_speed>M500.avg_speed[7]*calibration_speed) YPOS(3,Font);
+      else if (M500.s_max_speed*calibration_speed>M500.avg_speed[6]*calibration_speed) YPOS(4,Font);
+      else if (M500.s_max_speed*calibration_speed>M500.avg_speed[5]*calibration_speed) YPOS(5,Font);
+      else YPOS(6,Font);
+      display.fillRect(0,y_pos+2,col3-10,2,GxEPD_BLACK);//lijn voor actuele run weer te geven...
+*/    }
+    if(config.Stat_speed_target2==3){
+      CURSOR_COLC(1,col2,Font); display.print(":");display.print(M1852avgNEW * calibration_speed, 2);
+      CURSOR_COLC(2,col2,Font); display.print(":");display.print(M1852.avg_speed[9]*calibration_speed,2);
+      CURSOR_COLC(3,col2,Font); display.print(":");display.print(M1852.avg_speed[8]*calibration_speed,2);
+      CURSOR_COLC(4,col2,Font); display.print(":");display.print(M1852.avg_speed[7]*calibration_speed,2); 
+      CURSOR_COLC(5,col2,Font); display.print(":");display.print(M1852.avg_speed[6]*calibration_speed,2);
+      CURSOR_COLC(6,col2,Font); display.print(":");display.print(M1852.avg_speed[5]*calibration_speed,2); 
+ 
+      display.setTextSize(2);
+      CURSOR_COLC(2,col3,Font); display.print("1852m");
+//      CURSOR_COLC(4,col3,Font); display.print(":");display.print(M1852.display_last_run*calibration_speed,2);
+      display.setTextSize(1);
+/*         
+      // position line of actual 1852m run
+      if      (M1852.s_max_speed*calibration_speed>M1852.avg_speed[9]*calibration_speed) YPOS(1,Font);
+      else if (M1852.s_max_speed*calibration_speed>M1852.avg_speed[8]*calibration_speed) YPOS(2,Font);
+      else if (M1852.s_max_speed*calibration_speed>M1852.avg_speed[7]*calibration_speed) YPOS(3,Font);
+      else if (M1852.s_max_speed*calibration_speed>M1852.avg_speed[6]*calibration_speed) YPOS(4,Font);
+      else if (M1852.s_max_speed*calibration_speed>M1852.avg_speed[5]*calibration_speed) YPOS(5,Font);
+      else YPOS(6,Font);
+      display.fillRect(0,y_pos+2,col3-10,2,GxEPD_BLACK);//lijn voor actuele run weer te geven...
+*/    }
+    if(config.Stat_speed_target2==4){
+      CURSOR_COLC(1,col2,Font); display.print(":");display.print(A500avgNEW * calibration_speed, 2);
+      CURSOR_COLC(2,col2,Font); display.print(":");display.print(A500.avg_speed[9]*calibration_speed,2);
+      CURSOR_COLC(3,col2,Font); display.print(":");display.print(A500.avg_speed[8]*calibration_speed,2);
+      CURSOR_COLC(4,col2,Font); display.print(":");display.print(A500.avg_speed[7]*calibration_speed,2); 
+      CURSOR_COLC(5,col2,Font); display.print(":");display.print(A500.avg_speed[6]*calibration_speed,2);
+      CURSOR_COLC(6,col2,Font); display.print(":");display.print(A500.avg_speed[5]*calibration_speed,2); 
+ 
+      display.setTextSize(2);
+      CURSOR_COLC(2,col3,Font); display.print("Alpha");
+//      CURSOR_COLC(1,col4,Font); display.print(":");display.print(A500.display_last_run*calibration_speed,2);
+      display.setTextSize(1);
+
+/*         
+      // position line of actual 1852m run
+      if      (A500.s_max_speed*calibration_speed>A500.avg_speed[9]*calibration_speed) YPOS(1,Font);
+      else if (A500.s_max_speed*calibration_speed>A500.avg_speed[8]*calibration_speed) YPOS(2,Font);
+      else if (A500.s_max_speed*calibration_speed>A500.avg_speed[7]*calibration_speed) YPOS(3,Font);
+      else if (A500.s_max_speed*calibration_speed>A500.avg_speed[6]*calibration_speed) YPOS(4,Font);
+      else if (A500.s_max_speed*calibration_speed>A500.avg_speed[5]*calibration_speed) YPOS(5,Font);
+      else YPOS(6,Font);
+      display.fillRect(0,y_pos+2,col3-10,2,GxEPD_BLACK);//lijn voor actuele run weer te geven...
+*/    }
+  }
+  if(screen==STATS9){ //Simon stat screen for 3rd speed target
+    Serial.println("STATS9_Simon_screen");
+    update_delay=(config.Stat_screens_time-2)*1500;
+    int line;
+    double S2avgNEW;
+    double M500avgNEW;
+    double M1852avgNEW;
+    double A500avgNEW;
+    if(config.Stat_speed_target3==1){
+      if (S2.s_max_speed>S2.avg_speed[5]) S2avgNEW=(S2.avg_speed[9]+S2.avg_speed[8]+S2.avg_speed[7]+S2.avg_speed[6]+S2.s_max_speed)/5;
+      else  S2avgNEW=(S2.avg_speed[9]+S2.avg_speed[8]+S2.avg_speed[7]+S2.avg_speed[6]+S2.avg_speed[5])/5;
+    }
+    if(config.Stat_speed_target3==2){
+      double M500avgNEW;
+        M500avgNEW=(M500.avg_speed[9]+M500.avg_speed[8]+M500.avg_speed[7]+M500.avg_speed[6]+M500.avg_speed[5])/5;
+    }
+    if(config.Stat_speed_target3==4){
+      double M1852avgNEW;
+      M1852avgNEW=(M1852.avg_speed[9]+M1852.avg_speed[8]+M1852.avg_speed[7]+M1852.avg_speed[6]+M1852.avg_speed[5])/5;
+    }
+    if(config.Stat_speed_target3==5){
+      double A500avgNEW;
+      A500avgNEW=(A500.avg_speed[9]+A500.avg_speed[8]+A500.avg_speed[7]+A500.avg_speed[6]+A500.avg_speed[5])/5;
+    }
+    SetCols(1);
+    SetFont_LS();
+    CURSOR_COLC(1,col1,Font); display.print("AV");
+    CURSOR_COLC(2,col1,Font); display.print("R1");
+    CURSOR_COLC(3,col1,Font); display.print("R2");
+    CURSOR_COLC(4,col1,Font); display.print("R3"); 
+    CURSOR_COLC(5,col1,Font); display.print("R4");
+    CURSOR_COLC(6,col1,Font); display.print("R5"); 
+
+    if(config.Stat_speed_target3==1){
+      CURSOR_COLC(1,col2,Font); display.print(":");display.print(S2avgNEW * calibration_speed, 2);
+      CURSOR_COLC(2,col2,Font); display.print(":");display.print(S2.avg_speed[9]*calibration_speed,2);
+      CURSOR_COLC(3,col2,Font); display.print(":");display.print(S2.avg_speed[8]*calibration_speed,2);
+      CURSOR_COLC(4,col2,Font); display.print(":");display.print(S2.avg_speed[7]*calibration_speed,2); 
+      CURSOR_COLC(5,col2,Font); display.print(":");display.print(S2.avg_speed[6]*calibration_speed,2);
+      CURSOR_COLC(6,col2,Font); display.print(":");display.print(S2.avg_speed[5]*calibration_speed,2); 
+      
+      display.setTextSize(2);
+      CURSOR_COLC(2,col3,Font); display.print("Prv 2sec");
+      CURSOR_COLC(4,col3,Font); display.print(S2.display_last_run*calibration_speed,2);
+      display.setTextSize(1);
+     
+      // position line of actual 2s run
+      if      (S2.display_last_run*calibration_speed>S2.avg_speed[9]*calibration_speed) YPOS(1,Font);
+      else if (S2.display_last_run*calibration_speed>S2.avg_speed[8]*calibration_speed) YPOS(2,Font);
+      else if (S2.display_last_run*calibration_speed>S2.avg_speed[7]*calibration_speed) YPOS(3,Font);
+      else if (S2.display_last_run*calibration_speed>S2.avg_speed[6]*calibration_speed) YPOS(4,Font);
+      else if (S2.display_last_run*calibration_speed>S2.avg_speed[5]*calibration_speed) YPOS(5,Font);
+      else YPOS(6,Font);
+      display.fillRect(0,y_pos+2,col3-10,2,GxEPD_BLACK);//lijn voor actuele run weer te geven...
+    }
+    if(config.Stat_speed_target3==2){
+      CURSOR_COLC(1,col2,Font); display.print(":");display.print(M500avgNEW * calibration_speed, 2);
+      CURSOR_COLC(2,col2,Font); display.print(":");display.print(M500.avg_speed[9]*calibration_speed,2);
+      CURSOR_COLC(3,col2,Font); display.print(":");display.print(M500.avg_speed[8]*calibration_speed,2);
+      CURSOR_COLC(4,col2,Font); display.print(":");display.print(M500.avg_speed[7]*calibration_speed,2); 
+      CURSOR_COLC(5,col2,Font); display.print(":");display.print(M500.avg_speed[6]*calibration_speed,2);
+      CURSOR_COLC(6,col2,Font); display.print(":");display.print(M500.avg_speed[5]*calibration_speed,2); 
+
+      display.setTextSize(2);
+      CURSOR_COLC(2,col3,Font); display.print("500m");
+//      CURSOR_COLC(4,col3,Font); display.print(":");display.print(M500.display_last_run*calibration_speed,2);
+      display.setTextSize(1);
+/*         
+      // position line of actual 500m run
+      if      (M500.s_max_speed*calibration_speed>M500.avg_speed[9]*calibration_speed) YPOS(1,Font);
+      else if (M500.s_max_speed*calibration_speed>M500.avg_speed[8]*calibration_speed) YPOS(2,Font);
+      else if (M500.s_max_speed*calibration_speed>M500.avg_speed[7]*calibration_speed) YPOS(3,Font);
+      else if (M500.s_max_speed*calibration_speed>M500.avg_speed[6]*calibration_speed) YPOS(4,Font);
+      else if (M500.s_max_speed*calibration_speed>M500.avg_speed[5]*calibration_speed) YPOS(5,Font);
+      else YPOS(6,Font);
+      display.fillRect(0,y_pos+2,col3-10,2,GxEPD_BLACK);//lijn voor actuele run weer te geven...
+*/    }
+    if(config.Stat_speed_target3==3){
+      CURSOR_COLC(1,col2,Font); display.print(":");display.print(M1852avgNEW * calibration_speed, 2);
+      CURSOR_COLC(2,col2,Font); display.print(":");display.print(M1852.avg_speed[9]*calibration_speed,2);
+      CURSOR_COLC(3,col2,Font); display.print(":");display.print(M1852.avg_speed[8]*calibration_speed,2);
+      CURSOR_COLC(4,col2,Font); display.print(":");display.print(M1852.avg_speed[7]*calibration_speed,2); 
+      CURSOR_COLC(5,col2,Font); display.print(":");display.print(M1852.avg_speed[6]*calibration_speed,2);
+      CURSOR_COLC(6,col2,Font); display.print(":");display.print(M1852.avg_speed[5]*calibration_speed,2); 
+ 
+      display.setTextSize(2);
+      CURSOR_COLC(2,col3,Font); display.print("1852m");
+//      CURSOR_COLC(4,col3,Font); display.print(":");display.print(M1852.display_last_run*calibration_speed,2);
+      display.setTextSize(1);
+/*         
+      // position line of actual 1852m run
+      if      (M1852.s_max_speed*calibration_speed>M1852.avg_speed[9]*calibration_speed) YPOS(1,Font);
+      else if (M1852.s_max_speed*calibration_speed>M1852.avg_speed[8]*calibration_speed) YPOS(2,Font);
+      else if (M1852.s_max_speed*calibration_speed>M1852.avg_speed[7]*calibration_speed) YPOS(3,Font);
+      else if (M1852.s_max_speed*calibration_speed>M1852.avg_speed[6]*calibration_speed) YPOS(4,Font);
+      else if (M1852.s_max_speed*calibration_speed>M1852.avg_speed[5]*calibration_speed) YPOS(5,Font);
+      else YPOS(6,Font);
+      display.fillRect(0,y_pos+2,col3-10,2,GxEPD_BLACK);//lijn voor actuele run weer te geven...
+*/    }
+    if(config.Stat_speed_target3==4){
+      CURSOR_COLC(1,col2,Font); display.print(":");display.print(A500avgNEW * calibration_speed, 2);
+      CURSOR_COLC(2,col2,Font); display.print(":");display.print(A500.avg_speed[9]*calibration_speed,2);
+      CURSOR_COLC(3,col2,Font); display.print(":");display.print(A500.avg_speed[8]*calibration_speed,2);
+      CURSOR_COLC(4,col2,Font); display.print(":");display.print(A500.avg_speed[7]*calibration_speed,2); 
+      CURSOR_COLC(5,col2,Font); display.print(":");display.print(A500.avg_speed[6]*calibration_speed,2);
+      CURSOR_COLC(6,col2,Font); display.print(":");display.print(A500.avg_speed[5]*calibration_speed,2); 
+ 
+      display.setTextSize(2);
+      CURSOR_COLC(2,col3,Font); display.print("Alpha");
+//      CURSOR_COLC(1,col4,Font); display.print(":");display.print(A500.display_last_run*calibration_speed,2);
+      display.setTextSize(1);
+
+/*         
+      // position line of actual 1852m run
+      if      (A500.s_max_speed*calibration_speed>A500.avg_speed[9]*calibration_speed) YPOS(1,Font);
+      else if (A500.s_max_speed*calibration_speed>A500.avg_speed[8]*calibration_speed) YPOS(2,Font);
+      else if (A500.s_max_speed*calibration_speed>A500.avg_speed[7]*calibration_speed) YPOS(3,Font);
+      else if (A500.s_max_speed*calibration_speed>A500.avg_speed[6]*calibration_speed) YPOS(4,Font);
+      else if (A500.s_max_speed*calibration_speed>A500.avg_speed[5]*calibration_speed) YPOS(5,Font);
+      else YPOS(6,Font);
+      display.fillRect(0,y_pos+2,col3-10,2,GxEPD_BLACK);//lijn voor actuele run weer te geven...
+*/    }
+  }
+
   if(screen>BOOT_SCREEN&&screen<SPEED) {
     display.setFont(&FreeSansBold6pt7b);
     display.setCursor(displayWidth-10,InfoBarTop);
