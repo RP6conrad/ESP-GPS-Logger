@@ -1,0 +1,87 @@
+ESP_functions.h
+32:	bool test_screen = false; => bool test_screen = true; 
+
+90:	RTC_DATA_ATTR int RTC_SLEEP_screen=0; => RTC_DATA_ATTR int RTC_SLEEP_screen=1;
+91:	RTC_DATA_ATTR int RTC_OFF_screen=0; => RTC_DATA_ATTR int RTC_OFF_screen=1;
+
+129:	#if defined(_GxDEPG0266BN_H_) //only for screen BN266, Rolzz... !!!
+
+142:	GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ 19, /*RST=*/4);
+143:	GxEPD_Class display(io, /*RST=*/4, /*BUSY=*/34);
+144:	#else
+147:	GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ ELINK_DC, /*RST=*/ ELINK_RESET);
+148:	GxEPD_Class display(io, /*RST=*/ ELINK_RESET, /*BUSY=*/ ELINK_BUSY);
+149:	#endif
+
+
+
+
+Rto5
+/*
+//////////////////// testing screens ///////////////////////////////////////////////////////////
+    else if(test_screen==true){   // set in ESP_functions.h bool test_screen = true;          //
+      Update_screen(SPEED);       // scrolling through font and fields only works with speed  //
+//      Update_screen(config.stat_screen[stat_count]);
+      delay(3000);                                                                            //
+/////////////////// loop for Stats Screens /////////////////////////////////////////////////////
+//      Serial.print("stat_count=");Serial.println(stat_count);
+//      Update_screen(config.stat_screen[stat_count]);
+//      delay(1000); 
+    }
+/////////////////////////////////////////////////////////////////////////////////////
+*/
+
+362:	else if(test_screen==true){
+363:	      Update_screen(SPEED);
+365:	      delay(3000);
+370:	}
+
+
+
+SD_card
+55:	int Stat_screens=123; => int Stat_screens=1234567;
+57:	int GPIO12_screens=54; => int GPIO12_screens=1234567;
+
+E_paper.cpp
+///////////////for screentest purposes ///////////////////////////
+    if(test_screen==true){
+      config.field_actual=FieldLoop;
+      config.speed_large_font=FontLoop;
+      if(FieldLoop<=7) FieldLoop++;
+      else { FieldLoop=1; FontLoop++;}
+      if(FontLoop>=2) FontLoop=0;
+      config.field_actual=FieldLoop;
+    }
+//      Serial.print("FontLoop=");Serial.println(FontLoop);
+//      Serial.print("FieldLoop=");Serial.println(FieldLoop);
+//////////////////////////////////////////////////////////////////
+///////////////for screentest purposes ///////////////////////////
+//    field=1;   //actual Run - AVG
+//    field=2;   //default actual Run - AVG / NM
+//    field=3;   //first 350 m after gibe  alfa screen
+//    field=4;   //run longer dan 1852 m, NM scherm
+//    field=5;   //indien x*10km, totale afstand laten zien
+//    field=7;   //default 0.5h
+//    field=8;   //default 1h
+//    config.speed_large_font=1;  //smaller speed, but larger info
+//////////////////////////////////////////////////////////////////
+/*    
+    int calibration_speed=1;
+    float S2.display_max_speed=56.5;  // S2.avg_speed[9]=56.5;
+    float S10.display_max_speed=55.0; //S10.avg_speed[9]=55.0;
+    float S10.s_max_speed=56.5;
+    float S10.avg_5runs=55.0;
+    int alfa_window=45;
+    int alfa_exit=65;
+    float A500.alfa_speed_max=42.1;
+    float A500.display_max_speed=40.5;
+    float A500.alfa_speed_max=24.0;
+    float M1852.m_max_speed=48.1;
+    float M1852.display_max_speed=45.3;
+    float Ublox.total_distance=8563;
+    float S1800.avg_s=40.5;
+    float S1800.display_max_speed=42.1;
+    float S3600.avg_s=36.1;
+    float S3600.display_max_speed=37.4;
+    int run_rectangle_length=displayWidth*0.62;
+*/
