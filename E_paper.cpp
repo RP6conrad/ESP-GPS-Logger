@@ -711,7 +711,7 @@ void Update_screen(int screen) {
       if (S10.s_max_speed > S10.display_speed[5]) field = 2;   //if run faster then slowest run, show AVG & run after 1000 m
       if (Ublox.alfa_distance / 1000 < 1000) field = 8;
       if(alfa_screen)field=3;                         // 350m - 1000m : 1h !!
-    
+    }
     if(GPS_Signal_OK==true){
 //    if(GPS_Signal_OK==false){    //////////// for test purposes - set bool test_screen = false in ESP_functions ////////////////
 
