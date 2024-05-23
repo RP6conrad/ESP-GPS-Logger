@@ -422,7 +422,7 @@ void html_config(String& webpage){
 //  #ifdef T5_E_PAPER
   //speed_field
   webpage += "<tr>\n<td>speed_field</td><td>\n";
-  webpage += "<input size='8' type='number' required name='speed_field' min='1' max='99999' value="+String(config.field)+" step='1'>\n";
+  webpage += "<input size='8' type='number' required name='speed_field' min='1' max='99999' value="+String(config.field)+" step='1'>\n"; 
   webpage += "</select>\n</td><td>speed_field: The preferred value in the first line of the speed screen : 1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= Auto switching between Alfa & 0.5h, 8= Auto switching between Alfa & 1h, 9= Alfa, 1h, and good run. If more then 1 digit, toggle between separat digits : 841 toggle between 1,4 and 8 !</td>\n</tr>\n";
   //speed_large_font
   webpage += "<tr><td>speed_large_font</td><td>\n<select id='speed_large_font' name='speed_large_font'>\n";

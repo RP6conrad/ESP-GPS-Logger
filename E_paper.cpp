@@ -653,11 +653,11 @@ void Update_screen(int screen) {
     update_delay = 100;
     SetESPGPSLogo();
     SetFont_M();
-    CURSOR(1,Font); display.print("ESP-GPS connect");
+    CURSOR(1,Font); display.print("ESP-GPS try to connect");
 //    DEVICE_BOOT_LOG(2);
-    CURSOR(2,Font); display.print("Create wifi AP");
+    CURSOR(2,Font);  display.print(actual_ssid); 
     CURSOR(4,Font); 
-    SetFont_L();    display.printf("Use magnet in %ds", wifi_search);
+    SetFont_L();    display.printf("For AP: Use magnet in %ds", wifi_search);
     if (screen != old_screen) count = 0;  //eerste keer full update
   }
   if (screen == WIFI_SOFT_AP) {
@@ -711,8 +711,7 @@ void Update_screen(int screen) {
       if (S10.s_max_speed > S10.display_speed[5]) field = 2;   //if run faster then slowest run, show AVG & run after 1000 m
       if (Ublox.alfa_distance / 1000 < 1000) field = 8;
       if(alfa_screen)field=3;                         // 350m - 1000m : 1h !!
-    }
-
+    
     if(GPS_Signal_OK==true){
 //    if(GPS_Signal_OK==false){    //////////// for test purposes - set bool test_screen = false in ESP_functions ////////////////
 
@@ -723,6 +722,7 @@ void Update_screen(int screen) {
       if ((S2.s_max_speed*calibration_speed>S2.avg_speed[5]*calibration_speed)&(S2.s_max_speed*calibration_speed>config.start_logging_speed*1000)){// change color when 2s speed is in top5
         display.fillScreen(GxEPD_BLACK);        
         display.setTextColor(GxEPD_WHITE);
+
       } else {
         display.fillScreen(GxEPD_WHITE);      
         display.setTextColor(GxEPD_BLACK);
@@ -862,6 +862,7 @@ void Update_screen(int screen) {
       }
     }  
     if (field == 5) {
+
       if(config.speed_large_font==0){
         SetFont_L();  CURSOR(1,Font);  SetFont_M();         display.print("Dist");
         SetFont_XL();                                       display.print(Ublox.total_distance/1000000,1);//Total distance in km, als test run_distance
@@ -970,6 +971,7 @@ void Update_screen(int screen) {
             CURSOR_COL(2,displayWidth*0.62,Font); SetFont_M(); display.print("1hB:"); SetFont_L(); display.print(S3600.display_max_speed*calibration_speed,1);
           }
         }
+
       }
     }
     int log_seconds = (millis() - start_logging_millis) / 1000;  //aantal seconden sinds loggen is gestart

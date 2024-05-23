@@ -2,7 +2,6 @@
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
 const char SW_version[16]="Ver 5.84_sd";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
 #endif
@@ -15,6 +14,8 @@ const char E_paper_version[16]="E-paper 213B74";
 #if defined(_GxDEPG0266BN_H_) 
 const char E_paper_version[16]="E-paper 266BN";
 #endif
+//extern const char* soft_ap_ssid; //accespoint ssid
+//extern const char* soft_ap_password; //accespoint password
 char Ublox_type[20]="Ublox unknown...";
 char TimeZone[64] ="GMT0";
 int sdTrouble=0;
@@ -33,11 +34,12 @@ int Gps_time_set = 0;
 bool Shut_down_Save_session = false;
 bool trouble_screen = false;
 extern bool downloading_file;
+extern bool ap_mode;
 int GPS_OK = 0;
 int analog_bat;
 int first_fix_GPS,run_count,old_run_count,stat_count,GPS_delay;
 int start_logging_millis;
-volatile int wifi_search=10;//was 10
+int wifi_search=10;//was 10
 int ftpStatus=0;
 //int time_out_nav_pvt=TIME_OUT_NAV_PVT;
 int last_gps_msg=0;
@@ -96,7 +98,7 @@ RTC_DATA_ATTR int RTC_counter=0;
 RTC_DATA_ATTR float RTC_calibration_bat=1.75;//bij ontwaken uit deepsleep niet noodzakelijk config file lezen
 RTC_DATA_ATTR float RTC_voltage_bat=3.6;
 RTC_DATA_ATTR float RTC_old_voltage_bat=3.6;
-RTC_DATA_ATTR bool RTC_bat_choice = 0;
+RTC_DATA_ATTR int RTC_bat_choice = 0;
 RTC_DATA_ATTR int RTC_highest_read = STARTVALUE_HIGHEST_READ;
 /*Eenmaal flankdetectie indien GPIO langer dan push_time gedrukt
 * Ook variabele die dan long_pulse_time hoog blijft
@@ -124,6 +126,7 @@ GPS_speed M100(100);
 GPS_speed M250(250);
 GPS_speed M500(500);
 GPS_speed M1852(1852);
+//GPS_time S1(1); //voor 1s snelheden
 GPS_time S2(2);
 GPS_time s2(2);
 GPS_time S10(10);
@@ -337,10 +340,14 @@ void OnWiFiEvent(WiFiEvent_t event){
     default: break;
   }
 }
-
+/*
 void IRAM_ATTR isr() {
+  WiFi.disconnect();
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(soft_ap_ssid, soft_ap_password); 
 	wifi_search=150;//to prevent action @ boot
 }
+*/
 /*Eenmaal flankdetectie indien GPIO langer dan push_time gedrukt
 * Ook variabele die dan long_pulse_time hoog blijft
 * Ook variabele die optelt tot maw elke keer push
@@ -369,4 +376,20 @@ boolean Button_push::Button_pushed(void) {
   if (digitalRead(Input_pin) == 1) old_button_status = 0;
   return return_value;
 }
+void Search_for_wifi(void) {
+  while ((WiFi.status() != WL_CONNECTED)&(SoftAP_connection==false)){  
+    //if(Long_push39.Button_pushed()&(wifi_search>10)&(wifi_search<140)) Shut_down();//to prevent Shut_down() @ boot
+    if(Short_push39.Button_pushed()){ap_mode=true;break;}
+    esp_task_wdt_reset();
+    Update_bat();         //client counter wait until download is finished to prevent stoping the server during download
+    if(ap_mode==false)Update_screen(WIFI_STATION);
+    else Update_screen(WIFI_SOFT_AP);
+    Serial.print(".");
+    wifi_search--;
+    if(wifi_search<=0){
+      IP_adress = "0.0.0.0";
+      break;
+      }
+    }
+} 
 #endif

@@ -3,7 +3,6 @@
 #include <sd_diskio.h>
 #include <ETH.h>
 #include <WiFi.h>
-#include <WiFiMulti.h>
 #include <WiFiAP.h>
 #include <WiFiClient.h>
 #include <WiFiGeneric.h>
@@ -34,6 +33,14 @@
 //#include <LITTLEFS.h>
 #include <LittleFS.h>
 #include "ESP_functions.h"
+
+const char* ssid = config.ssid; //WiFi SSID
+const char* password = config.password; //WiFi Password
+const char* ssid2 = config.ssid2; //WiFi SSID
+const char* password2 = config.password2; //WiFi Password
+const char* soft_ap_ssid = "ESP32AP"; //accespoint ssid
+const char* soft_ap_password = "password"; //accespoint password
+bool ap_mode=false;
 
 void setup() {
   
@@ -114,40 +121,35 @@ void setup() {
   Boot_screen();
   Update_screen(BOOT_SCREEN);
 
-  const char* ssid = config.ssid; //WiFi SSID
-  const char* password = config.password; //WiFi Password
-  const char* ssid2 = config.ssid2; //WiFi SSID
-  const char* password2 = config.password2; //WiFi Password
-  const char *soft_ap_ssid = "ESP32AP"; //accespoint ssid
-  const char *soft_ap_password = "password"; //accespoint password
-  WiFiMulti wifiMulti;
-  wifiMulti.addAP(ssid,password);
-  wifiMulti.addAP(ssid2,password2);  
   WiFi.onEvent(OnWiFiEvent);
-  WiFi.mode(WIFI_AP_STA);//(WIFI_AP_STA);
-  WiFi.softAP(soft_ap_ssid,soft_ap_password);
-  //WiFi.begin(ssid, password);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
   Serial.print("T5 MAC adress: ");
   WiFi.macAddress(mac);
+  actual_ssid=ssid;
  
-  // Wait for connection during 10s in station mode
- // bool ota_notrunning=true;
-  attachInterrupt(WAKE_UP_GPIO, isr, FALLING);
-  while ((wifiMulti.run() != WL_CONNECTED)&(SoftAP_connection==false)) {  
-    if((Long_push39.Button_pushed())&(millis()>20000)) Shut_down();//to prevent Shut_down() @ boot
-    esp_task_wdt_reset();
-    //server.handleClient(); // wait for client handle, and update BAT Status, this section should be moved to the loop... 
-    Update_bat();         //client counter wait until download is finished to prevent stoping the server during download
-    if(wifi_search<=10) Update_screen(WIFI_STATION);
-    else Update_screen(WIFI_SOFT_AP);
-    Serial.print(".");
-    wifi_search--;wifi_search--;//wifiMulti.run() takes 2 s !!!
-    if(wifi_search<=0){
-      server.close();
-      IP_adress = "0.0.0.0";
-      break;
-      }
+  Serial.println("search SSID1");
+  Search_for_wifi(); 
+   if ((WiFi.status() != WL_CONNECTED)&(ap_mode==false)) {
+    WiFi.disconnect();
+    WiFi.begin(ssid2, password2);
+    actual_ssid=ssid2;  
+    wifi_search=10;
+   }
+  if(ap_mode==false) {
+    Serial.println("search SSID2");
+    Search_for_wifi();
     }
+
+  if(ap_mode==true){
+    WiFi.disconnect();
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP(soft_ap_ssid,soft_ap_password);
+    wifi_search=120;
+    Serial.println("search AP");
+    Search_for_wifi();
+  }
+  
   if((WiFi.status()== WL_CONNECTED)|SoftAP_connection){
       actual_ssid=WiFi.SSID();
       Serial.println("");
@@ -158,7 +160,6 @@ void setup() {
       Wifi_on=true;
       ftpSrv.begin("esp32","esp32");    //username, password for ftp
       OTA_setup();  //start webserver for over the air update
-      detachInterrupt(WAKE_UP_GPIO);
       }
   else{
       detachInterrupt(WAKE_UP_GPIO);
@@ -330,6 +331,7 @@ void taskOne( void * parameter )
                   M250.Update_distance(run_count);
                   M500.Update_distance(run_count);
                   M1852.Update_distance(run_count);
+                  //S1.Update_speed(run_count); 
                   S2.Update_speed(run_count); 
                   s2.Update_speed(run_count);      
                   S10.Update_speed(run_count);
