@@ -27,24 +27,13 @@ Flip: horizontally
 #include "Fonts/FreeMonoBold8pt7b.h"//gebruikt
 #include "Fonts/FreeMonoBold9pt7b.h"//gebruikt
 #include "Fonts/FreeMonoBold12pt7b.h"//gebruikt
-#include "Fonts/FreeMonoBold15pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold6pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold9pt7b.h"//gebruikt
-#include "Fonts/FreeSansBold11pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold12pt7b.h"//gebruikt
-#include "Fonts/FreeSansBold14pt7b.h"//gebruikt
-#include "Fonts/FreeSansBold15pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold18pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold24pt7b.h"//
 #include "Fonts/FreeSansBold30pt7b.h"//gebruikt
-#include "Fonts/FreeSansBold40pt7b.h"//gebruikt
-#include "Fonts/FreeSansBold50pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold75pt7b.h"//gebruikt
-#include "Fonts/FreeSansBold100pt7b.h"//gebruikt
-#include "Fonts/impact40pt7b.h"//gebruikt
-#include "Fonts/impact50pt7b.h"//gebruikt
-#include "Fonts/impact60pt7b.h"//gebruikt
-#include "Fonts/impact80pt7b.h"//gebruikt
 #include "Fonts/SansSerif_bold_46_nr.h"//bijgevoegd in lib
 #include "Fonts/SansSerif_bold_84_nr.h"//bijgevoegd in lib
 #include "Fonts/SansSerif_bold_96_nr.h"//bijgevoegd in lib
@@ -74,17 +63,15 @@ Flip: horizontally
 #define STATS5 5
 #define STATS6 6    //simon stat screen
 #define STATS7 7    //bar graph screen 10s run
-#define STATS8 8    //simon stat screen for 2nd speed target
-#define STATS9 9    //simon stat screen for 3rd speed target
-#define STATS10 10  //Motion BEST stat screen
-#define AVG_10S 11
-#define SPEED 12
-#define WIFI_ON 13
-#define WIFI_STATION 14
-#define WIFI_SOFT_AP 15
-#define SPEED2 16
-#define TROUBLE 17
-#define GPS_INIT_SCREEN 18
+#define STATS8 8
+#define AVG_10S 9
+#define SPEED 10
+#define WIFI_ON 11
+#define WIFI_STATION 12
+#define WIFI_SOFT_AP 13
+#define SPEED2 14
+#define TROUBLE 15
+#define GPS_INIT_SCREEN 16
 
 
 extern GxEPD_Class display;

@@ -249,8 +249,6 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.Stat_screens_persist = config.Stat_screens;
   config.GPIO12_screens = doc["GPIO12_screens"] | 12;
   config.GPIO12_screens_persist = config.GPIO12_screens;
-  config.Stat_speed_target2 = doc["Stat_speed_target2"] | 1;
-  config.Stat_speed_target3 = doc["Stat_speed_target3"] | 2;
   config.Board_Logo = doc["Board_Logo"] | 1;
   config.Sail_Logo = doc["Sail_Logo"] | 1;
   config.sleep_off_screen = doc["sleep_off_screen"] | 11;

@@ -17,6 +17,7 @@
 #include "soc/timer_group_reg.h"
 #include "Arduino.h"
 #include "Ublox.h"
+//#include "E_paper_266.h"//changing the E_paper : delete the build directory (can be found in the compile output)
 #include "E_paper.h"
 #include "SD_card.h"
 #include "GPS_data.h"

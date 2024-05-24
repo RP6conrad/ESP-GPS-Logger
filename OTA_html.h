@@ -419,13 +419,14 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>archive_days</td><td>\n";
   webpage += "<input size='8' type='number' required name='archive_days' min='0' max='1000' value="+String(config.archive_days)+" step='1'>\n";
   webpage += "</select>\n</td><td>If the files on the sd are older then archive_days, they can be moved to the Archive directory with \"Archive Files\"</td>\n</tr>\n";
-//  #ifdef T5_E_PAPER
+  #ifdef T5_E_PAPER
   //speed_field
   webpage += "<tr>\n<td>speed_field</td><td>\n";
   webpage += "<input size='8' type='number' required name='speed_field' min='1' max='99999' value="+String(config.field)+" step='1'>\n"; 
   webpage += "</select>\n</td><td>speed_field: The preferred value in the first line of the speed screen : 1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= Auto switching between Alfa & 0.5h, 8= Auto switching between Alfa & 1h, 9= Alfa, 1h, and good run. If more then 1 digit, toggle between separat digits : 841 toggle between 1,4 and 8 !</td>\n</tr>\n";
   //speed_large_font
   webpage += "<tr><td>speed_large_font</td><td>\n<select id='speed_large_font' name='speed_large_font'>\n";
+  Drop_down_menu(config.speed_large_font,3,"Giant_Font ON",webpage);
   Drop_down_menu(config.speed_large_font,2,"Simon_Font ON",webpage);
   Drop_down_menu(config.speed_large_font,1,"Large_Font ON",webpage);
   Drop_down_menu(config.speed_large_font,0,"Large_Font OFF",webpage);
@@ -454,20 +455,6 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>GPIO12_screens</td><td>\n";
   webpage += "<input size='8' type='number' required name='GPIO12_screens' min='0' max='1000' value="+String(config.GPIO12_screens_persist)+" step='1'>\n";
   webpage += "</select>\n</td><td>GPIO12_screens choice : Every digit shows the according GPIO_screen after each push. Screen 4 = s10 runs, screen 5 = alfa's.</td>\n</tr>\n";
-  //Stat_speed_target2
-  webpage += "<tr><td>Stat_speed_target2</td><td>\n<select id='Stat_speed_target2' name='Stat_speed_target2'>\n";
-  Drop_down_menu(config.Stat_speed_target2,1,"2sec",webpage);
-  Drop_down_menu(config.Stat_speed_target2,2,"500m",webpage);
-  Drop_down_menu(config.Stat_speed_target2,3,"1852m",webpage);
-  Drop_down_menu(config.Stat_speed_target2,4,"alpha",webpage);
-  webpage += "</select>\n</td><td>Stat_speed_target2: To choose the speed info in the first column of the stat screen. Choice 1 = 2sec, 2 = 500m, 3 = 1852m, 4 = alpha.</td>\n</tr>\n";  
-  //Stat_speed_target3
-  webpage += "<tr><td>Stat_speed_target3</td><td>\n<select id='Stat_speed_target3' name='Stat_speed_target3'>\n";
-  Drop_down_menu(config.Stat_speed_target3,1,"2sec",webpage);
-  Drop_down_menu(config.Stat_speed_target3,2,"500m",webpage);
-  Drop_down_menu(config.Stat_speed_target3,3,"1852m",webpage);
-  Drop_down_menu(config.Stat_speed_target3,4,"alpha",webpage);
-  webpage += "</select>\n</td><td>Stat_speed_target3: To choose the speed info in the first column of the stat screen. Choice 1 = 2sec, 2 = 500m, 3 = 1852m, 4 = alpha.</td>\n</tr>\n";  
   //Board_Logo
   webpage += "<tr>\n<td>Board_Logo</td><td>\n<select id='Board_Logo' name='Board_Logo'>";
   Drop_down_menu(config.Board_Logo,0,"No logo",webpage);
@@ -515,10 +502,13 @@ void html_config(String& webpage){
   webpage += "<input size='8' type='number' required name='sleep_off_screen' min='0' max='1000' value="+String(config.sleep_off_screen)+" step='1'>\n";
   webpage += "</select>\n</td><td>Choice for switch_off (first digit 0 or 1) and sleep_screen (second digit 0 or 1): </td>\n</tr>\n";
   //bat value in % or volt
+  #if defined(_GxDEPG0266BN_H_) 
   webpage += "<tr><td>bat_choice</td><td>\n<select id='bat_choice' name='bat_choice'>\n";
   Drop_down_menu(config.bat_choice,0,"Batery value in voltage",webpage);
   Drop_down_menu(config.bat_choice,1,"Batery value in percentage",webpage);
   webpage += "</select>\n</td><td>bat_choice: Screen info on battery will be presented in either percentage of voltage.</td>\n</tr>\n"; 
+  #endif     //266BN
+  #endif    //T5_EPAPER
   //logTXT
   webpage += "<tr><td>logTXT</td><td>\n<select id='logTXT' name='logTXT'>\n";
   if(config.logTXT == 1) webpage += "<option value='1' selected>LOG TXT ON</option>\n"; else webpage += "<option value='1'>LOG TXT ON</option>\n";
