@@ -209,7 +209,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
       file = SD.open(filename_backup);
     } else {
       Serial.println(F("no configuration file found"));
-      wifi_search = 10;  //elongation SoftAP mode to 120s !!!
+      wifi_search = 120;  //elongation SoftAP mode to 120s !!!
     }
   }
   if (LITTLEFS_OK){
@@ -221,10 +221,10 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
       file = LITTLEFS.open(filename_backup);
     } else {
       Serial.println(F("no configuration file found"));
-      wifi_search = 10;  //elongation SoftAP mode to 120s !!!
+      wifi_search = 120;  //elongation SoftAP mode to 120s !!!
     }
   }
-  StaticJsonDocument<2048> doc;
+  StaticJsonDocument<1024> doc;
   // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
   if (error) {
@@ -288,7 +288,16 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
           sizeof(config.password2));            // <- destination's capacity        
                                                // Close the file (Curiously, File's destructor doesn't close the file)
   file.close();
-  //Serial.println(config.Speed_Screen);
+  if (error) {
+    Serial.println(config.cal_bat);
+    Serial.println(config.cal_speed);
+    Serial.println(config.sample_rate);
+    Serial.println(config.logSBP);
+    Serial.println(config.logUBX);
+    Serial.println(config.ssid);
+    Serial.println(config.password);
+    Serial.println(config.Sail_Logo);
+  }
   RTC_Board_Logo = config.Board_Logo;  //copy RTC memory !!
   RTC_Sail_Logo = config.Sail_Logo;    //copy to RTC memory !!
   //RTC_calibration_bat = config.cal_bat;
@@ -553,10 +562,4 @@ void TimeZone_env (float timezone){     //without daylight saving, standard TZ s
 
     } 
   }
-}
-int string_to_int (char test){
-  if((test<58)&(test>47)) test=test-48;
-  if((test<91)&(test>64)) test=test-55;
-  if((test<124)&(test>96)) test=test-87;
-  return test;
 }

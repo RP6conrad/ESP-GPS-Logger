@@ -43,7 +43,7 @@
 #define VOLTAGE_LOW 25      //reading 25% bat
 #define MINIMUM_VOLTAGE 3.1       // if lower then minimum_voltage, back to sleep.....
 #define MINIMUM_VOLTAGE_CHANGE  0.01  //refresh screen if change > 0.01
-#define STARTVALUE_HIGHEST_READ 2300  //12 bit ADC, 4.2 V over voltagedivider
+#define STARTVALUE_HIGHEST_READ 2200  //12 bit ADC, 4.2 V over voltagedivider
 #define MAXVALUE_HIGHEST_READ 2700
 #define FULLY_CHARGED_LIPO_VOLTAGE 4200.0 // to calculate calibration factor :  4200.0/ADC value bij highest reading while charging
 #define uS_TO_S_FACTOR 1000000UL /* Conversion factor for micro seconds to seconds */

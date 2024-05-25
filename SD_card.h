@@ -69,7 +69,6 @@ struct Config {
   int stat_screen[10];//which stat_screen you want to see ?
   int gpio12_screen[10];//which stat_screen when gpio 12 toggles ?
   int speed_screen[10];//which speed fields are selected ?
-  //char Speed_Screen[10];//which speed fields are selected ?
   int screen_count=0;
   int gpio12_count=0;
   int speed_count=0;
@@ -111,7 +110,6 @@ void Session_results_M(GPS_speed M);
 void Session_results_S(GPS_time S);
 void Session_results_Alfa(Alfa_speed A,GPS_speed M);
 void TimeZone_env (float timezone);
-int string_to_int (char test);
 /*
 void log_header_SBP(void);
 void log_SBP(void);
