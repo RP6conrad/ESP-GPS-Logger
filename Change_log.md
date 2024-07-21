@@ -1,9 +1,11 @@
   ###Changes SW5.85
-* changed value STARTVALUE_HIGHEST_READ 2500 -> 2200, otherwise out of limit in config ! 
+* changed value STARTVALUE_HIGHEST_READ 2500 -> 2300, otherwise out of limit in config ! 
 * Wifi searches fist for SSID1, then SSID2, if Wakeup is pushed -> AP-mode 
 * Wifi screen shows SSID when trying to connect 
 * No config.txt -> wifi_search = 10, because connection to ssid2 after 10s 
 * Speed screen Simon font bug fixes
+* JSON buffer 1024 -> 1280
+* Watchdog actife @ Wifi search, changed from 60s->120s (AP mode 100s search)!
  ###Changes SW5.84
 * stat6 screen bugfix "previous run", will be held until speed > 4m/s
 * Support for daylight saving in several timezones, configurable. 

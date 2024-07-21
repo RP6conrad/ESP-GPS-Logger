@@ -224,7 +224,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
       wifi_search = 120;  //elongation SoftAP mode to 120s !!!
     }
   }
-  StaticJsonDocument<1024> doc;
+  StaticJsonDocument<1280> doc;
   // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
   if (error) {

@@ -11,7 +11,7 @@
 #include <avr/pgmspace.h>
 #endif
 
-// Partial Update Delay, may have an influence on degradation, was 300 JH
+// Partial Update Delay, may have an influence on degradation
 #define GxDEPG0213BN_PU_DELAY 300
 
 const uint8_t GxDEPG0213BN::LUTDefault_full[] = {
@@ -19,30 +19,7 @@ const uint8_t GxDEPG0213BN::LUTDefault_full[] = {
     0x50, 0xAA, 0x55, 0xAA, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x1F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
-const uint8_t GxDEPG0213BN::LUTDefault_part[] = {
-    0x32, // command
-    0x0,    0x40,   0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,
-    0x80,   0x80,   0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,
-    0x40,   0x40,   0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,
-    0x0,    0x80,   0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,
-    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    //5*12=60 bytes
-    0xF,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,   
-    0x4,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,   //Partial update bad contrast with 0x1, change to 0x4, Jan Heynen !!!!!
-    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    
-    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    
-    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    
-    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    
-    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    
-    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    
-    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x1,    
-    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x1,    
-    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    
-    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,    0x0,  //12*7=84 bytes  
-    0x22,   0x22,   0x22,   0x22,   0x22,   0x22,   //6 bytes
-    0x0,    0x0,    0x0,                            //3 bytes, totaal dus 153 bytes
-    // 0x22,   0x17,   0x41,   0x0,    0x32,   0x32
-};
-/*
+
 const uint8_t GxDEPG0213BN::LUTDefault_part[] = {
     0x32, // command
     0x0,    0x40,   0x0,    0x0,    0x0,    0x0,    0x0,
@@ -69,12 +46,12 @@ const uint8_t GxDEPG0213BN::LUTDefault_part[] = {
     0x22,   0x22,   0x22,   0x0,    0x0,    0x0,
     // 0x22,   0x17,   0x41,   0x0,    0x32,   0x32
 };
-*/
+
 const uint8_t GxDEPG0213BN::GDOControl[] = {0x01, (GxDEPG0213BN_Y_PIXELS - 1) % 256, (GxDEPG0213BN_Y_PIXELS - 1) / 256, 0x00}; //for 1.54inch
 const uint8_t GxDEPG0213BN::softstart[] = {0x0c, 0xd7, 0xd6, 0x9d};
 const uint8_t GxDEPG0213BN::VCOMVol[] = {0x2c, 0x9b}; // VCOM 7c
 const uint8_t GxDEPG0213BN::DummyLine[] = {0x3a, 0x1a}; // 4 dummy line per gate
-const uint8_t GxDEPG0213BN::Gatetime[] = {0x3b, 0x08}; // 2us per line  {0x3b, 0x08}, test met 0x0A ????
+const uint8_t GxDEPG0213BN::Gatetime[] = {0x3b, 0x08}; // 2us per line
 
 GxDEPG0213BN::GxDEPG0213BN(GxIO &io, int8_t rst, int8_t busy) :
     GxEPD(GxDEPG0213BN_VISIBLE_WIDTH, GxDEPG0213BN_HEIGHT), IO(io),
@@ -92,7 +69,6 @@ void GxDEPG0213BN::drawPixel(int16_t x, int16_t y, uint16_t color)
     case 1:
         swap(x, y);
         x = GxDEPG0213BN_VISIBLE_WIDTH - x - 1;
-		//y = GxDEPG0213BN_HEIGHT - y - 1;//test for inverted screen
         break;
     case 2:
         x = GxDEPG0213BN_VISIBLE_WIDTH - x - 1;
@@ -289,8 +265,7 @@ void GxDEPG0213BN::updateWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h, 
         }
     }
     _Update_Part();
-    delay(GxDEPG0213BN_PU_DELAY);//JH
-    //delay(100);//JH
+    delay(GxDEPG0213BN_PU_DELAY);
     // update erase buffer
     _SetRamArea(xs_d8, xe_d8, y % 256, y / 256, ye % 256, ye / 256); // X-source area,Y-gate area
     _SetRamPointer(xs_d8, y % 256, y / 256); // set ram
@@ -304,7 +279,6 @@ void GxDEPG0213BN::updateWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h, 
         }
     }
     delay(GxDEPG0213BN_PU_DELAY);
-    //delay(200);//JH
 }
 
 void GxDEPG0213BN::_writeToWindow(uint16_t xs, uint16_t ys, uint16_t xd, uint16_t yd, uint16_t w, uint16_t h)
@@ -510,35 +484,35 @@ void GxDEPG0213BN::_Init_Part(uint8_t em)
     _InitDisplay(em);
     _writeCommandData(LUTDefault_part, sizeof(LUTDefault_part));
 
-    _writeCommand(0x3F);//Option for LUT end, 0x22=Normal
+    _writeCommand(0x3F);
     _writeData(0x22);
 
-    _writeCommand(0x03);//Gate Driving voltage, 0x17=20V
+    _writeCommand(0x03);
     _writeData(0x17);
-    _writeCommand(0x04);//Source Driving Voltage, 0x41=VSH1/VSH2=15V
-    _writeData(0x41);//
-    _writeData(0x00);// B=niks
-    _writeData(0x32);//VSL = -15V
-    _writeCommand(0x2C);//VCOM register x34= -1.3V, x18=-0.6V
-    _writeData(0x34);//was 0x32, datasheet zegt 0x30 of 0x34, test JH op 0x34 ???
+    _writeCommand(0x04);
+    _writeData(0x41);
+    _writeData(0x00);
+    _writeData(0x32);
+    _writeCommand(0x2C);
+    _writeData(0x32);
 
-    _writeCommand(0x37);//Write Register for Display option
+    _writeCommand(0x37);
     _writeData(0x00);
     _writeData(0x00);
     _writeData(0x00);
     _writeData(0x00);
     _writeData(0x00);
-    _writeData(0x40);//F Display Mode for [WS35:32] ?
+    _writeData(0x40);
     _writeData(0x00);
     _writeData(0x00);
     _writeData(0x00);
     _writeData(0x00);
 
-    _writeCommand(0x3C);//Border Wafeform control
-    _writeData(0x80);//
-    _writeCommand(0x22);//Display update control 2
-    _writeData(0xC0);//Enable Analog
-    _writeCommand(0x20);//Master Activation
+    _writeCommand(0x3C);
+    _writeData(0x80);
+    _writeCommand(0x22);
+    _writeData(0xC0);
+    _writeCommand(0x20);
     _waitWhileBusy("_Init_Part", 10000);
     _PowerOn();
 }

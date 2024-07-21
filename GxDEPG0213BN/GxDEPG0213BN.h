@@ -5,7 +5,7 @@
 #define _GxDEPG0213BN_H_
 
 #include <Arduino.h>
-#include <GxEPD.h>
+#include "../GxEPD.h"
 
 // the physical number of pixels (for controller parameter)
 #define GxDEPG0213BN_X_PIXELS 128
@@ -33,7 +33,7 @@ public:
     // use pin numbers, other ESP8266 than Wemos may not use Dx names
     GxDEPG0213BN(GxIO &io, int8_t rst = 2, int8_t busy = 4);
 #else
-    GxDEPG0213BN(GxIO &io, int8_t rst = 16, int8_t busy = 4);
+    GxDEPG0213BN(GxIO &io, int8_t rst = 9, int8_t busy = 7);
 #endif
     void drawPixel(int16_t x, int16_t y, uint16_t color);
     void init(uint32_t serial_diag_bitrate = 0); // = 0 : disabled
@@ -109,7 +109,7 @@ private:
     static const uint16_t power_on_time = 80; // ms, e.g. 73508us
     static const uint16_t power_off_time = 80; // ms, e.g. 68982us
     static const uint16_t full_refresh_time = 1200; // ms, e.g. 1113273us
-    static const uint16_t partial_refresh_time = 300; // ms, e.g. 290867us, was 300 JH
+    static const uint16_t partial_refresh_time = 300; // ms, e.g. 290867us
 #if defined(ESP8266) || defined(ESP32)
 public:
     // the compiler of these packages has a problem with signature matching to base classes

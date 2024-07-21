@@ -379,10 +379,8 @@ boolean Button_push::Button_pushed(void) {
 }
 void Search_for_wifi(void) {
   while ((WiFi.status() != WL_CONNECTED)&(SoftAP_connection==false)){  
-    //if(Long_push39.Button_pushed()&(wifi_search>10)&(wifi_search<140)) Shut_down();//to prevent Shut_down() @ boot
-    if(Short_push39.Button_pushed()){ap_mode=true;break;}
-    esp_task_wdt_reset();
-    Update_bat();         //client counter wait until download is finished to prevent stoping the server during download
+    if(Short_push39.Button_pushed()){ap_mode=true;esp_task_wdt_reset();break;}
+    Update_bat();        
     if(ap_mode==false)Update_screen(WIFI_STATION);
     else Update_screen(WIFI_SOFT_AP);
     Serial.print(".");
