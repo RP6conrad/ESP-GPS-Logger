@@ -24,6 +24,7 @@
 #include "ESP32FtpServerJH.h"
 #include "OTA_server.h" 
 #include <esp_task_wdt.h>
+#include "freertos/task.h"//added V3
 #include <driver/rtc_io.h>
 #include <driver/gpio.h>
 #include <lwip/apps/sntp.h>
@@ -31,10 +32,8 @@
 #include <time.h>
 #include <EEPROM.h>
 #include "Definitions.h"
-//#include <LITTLEFS.h>
 #include <LittleFS.h>
 #include "ESP_functions.h"
-
 const char* ssid = config.ssid; //WiFi SSID
 const char* password = config.password; //WiFi Password
 const char* ssid2 = config.ssid2; //WiFi SSID
@@ -42,7 +41,7 @@ const char* password2 = config.password2; //WiFi Password
 const char* soft_ap_ssid = "ESP32AP"; //accespoint ssid
 const char* soft_ap_password = "password"; //accespoint password
 bool ap_mode=false;
-
+  
 void setup() {
   
   EEPROM.begin(EEPROM_SIZE);
@@ -62,12 +61,11 @@ void setup() {
   Serial.print("RTC_calibration_bat EEPROM = ");
   Serial.println(RTC_calibration_bat);
   Serial.println("Configuring WDT...");
-  esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
+  esp_task_wdt_init(WDT_TIMEOUT,true);
   esp_task_wdt_add(NULL); //add current thread to WDT watch
   SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
   print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
   analog_mean = analogRead(PIN_BAT);//fill FIR filter
- //sometimes after OTA hangs here ???
   pinMode(UBLOX_POWER1, OUTPUT);//Power beitian //default drive strength 2, only 2.7V @ ublox gps
   pinMode(UBLOX_POWER2, OUTPUT);//Power beitian
   pinMode(UBLOX_POWER3, OUTPUT);//Power beitiansee

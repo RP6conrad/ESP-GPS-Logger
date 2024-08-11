@@ -14,6 +14,7 @@ extern struct tm tmstruct ;
 extern int Time_Set_OK;
 extern int NTP_time_set;
 extern int Gps_time_set;
+extern long _timezone;//library time.h !!
 extern int first_fix_GPS;
 extern int wifi_search;
 extern int sdTrouble;

@@ -1,7 +1,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 5.85";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 5.87";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -15,8 +15,7 @@ const char E_paper_version[16]="E-paper 213B74";
 #if defined(_GxDEPG0266BN_H_) 
 const char E_paper_version[16]="E-paper 266BN";
 #endif
-//extern const char* soft_ap_ssid; //accespoint ssid
-//extern const char* soft_ap_password; //accespoint password
+
 char Ublox_type[20]="Ublox unknown...";
 char TimeZone[64] ="GMT0";
 int sdTrouble=0;
@@ -300,6 +299,7 @@ void printLocalTime(){
 }  
 //For RTOS, the watchdog has to be triggered
 void feedTheDog_Task0(){
+  //esp_task_wdt_reset();
   TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
   TIMERG0.wdt_feed=1;                       // feed dog
   TIMERG0.wdt_wprotect=0;                   // write protect
@@ -321,7 +321,7 @@ void OnWiFiEvent(WiFiEvent_t event){
       Serial.println("ESP32 disconnected to WIFI");
       //SoftAP_connection=false;
       break;
-    case SYSTEM_EVENT_STA_GOT_IP://  @this event no IP !!!         SYSTEM_EVENT_STA_CONNECTED:
+    case SYSTEM_EVENT_STA_GOT_IP://  @this event no IP !!!         ARDUINO__EVENT_STA_CONNECTED:
       Serial.println("ESP32 Connected to WiFi Network");
       IP_adress =  WiFi.localIP().toString();
       break;

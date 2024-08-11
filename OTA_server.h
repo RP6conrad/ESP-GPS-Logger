@@ -8,7 +8,6 @@ https://github.com/italocjs/ESP32_OTA_APMODE/blob/main/Main.cpp
 #include <Update.h>
 #include <EEPROM.h>
 #include <LITTLEFS.h>
-//#include <LittleFS.h>
 #include "Definitions.h"
 #include "OTA_html.h"
 //#include "ESP_functions.h"
@@ -89,7 +88,7 @@ String file_size(int kbytes) {
 String Print_time(time_t timestamp) {
   char buff[30];
   tm *tm_local=localtime(&timestamp);
-  if(tm_local->tm_isdst==1)timestamp=timestamp-3600;//correction for littlefs bug if dst is active
+  if((tm_local->tm_isdst==1)&(sdOK))timestamp=timestamp-3600;//correction for littlefs bug if dst is active and sdOK
   strftime(buff, 30, "%Y-%m-%d  %H:%M:%S", localtime(&timestamp));//was localtime
   return buff;
 }

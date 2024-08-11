@@ -1,7 +1,6 @@
 #include "SD_card.h"
 #include <SD.h>
 #include <LITTLEFS.h>
-//#include <LittleFS.h>
 #include "Definitions.h"
 #include "gpx.h"
 #include "sbp.h"
@@ -390,6 +389,8 @@ void Session_info(GPS_data G) {
   strcat(message, tekst);
   sprintf(tekst, "Timezone : %f h\n", config.timezone);
   strcat(message, tekst);
+  sprintf(tekst, "tz offset (sec) : %d \n", _timezone);
+  strcat(message, tekst);
   strcat(message,TimeZone);
   strcat(message, "\nDynamic model: ");
   if (config.dynamic_model == 1) strcat(message, "Sea");
@@ -541,7 +542,12 @@ void TimeZone_env (float timezone){     //without daylight saving, standard TZ s
   int hours=(int)(timezone);
   int minutes=abs((int)(timezone*60)%60);
   char time_noDST[64]="GMT0";
-  sprintf(time_noDST,"<%d%d>%d:%d",hours,minutes,-hours,minutes);
+  if(hours>0){
+    sprintf(time_noDST,"CET-%d:%02d",hours,minutes); //default TZ string is CET + timezone offset, no DST possible
+    }
+  else{
+    sprintf(time_noDST,"CET+%d:%02d",-hours,minutes);
+    }  
   strcpy(TimeZone,time_noDST); //standard timezone without daylightsaving
   if(config.timezone_DST){
     switch((int)(timezone*100)){
