@@ -260,6 +260,7 @@ const char html_header[] PROGMEM = R"=====(
     <div id="navbar-menu" aria-labelledby="navbar-toggle">
       <ul class="navbar-links">
         <li class="navbar-item"><a class="navbar-link" href='https://github.com/RP6conrad/ESP-GPS-Logger' target='_blank'>Github</a></li>
+        <li class="navbar-item"><a class="navbar-link" href="/gpstc">GPSTC</a></li>
         <li class="navbar-item"><a class="navbar-link" href="/">Files</a></li>
         <li class="navbar-item"><a class="navbar-link" href="/archive_file">Archive Files</a></li>
         <li class="navbar-item"><a class="navbar-link" href="/archive_list">Archive List</a></li>

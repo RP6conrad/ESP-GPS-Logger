@@ -538,6 +538,9 @@ void Session_results_Alfa(Alfa_speed A, GPS_speed M) {
     errorfile.print(message);
   }
 }
+void Session_gpstc(char* gpstc){
+  errorfile.print(gpstc);
+}
 void TimeZone_env (float timezone){     //without daylight saving, standard TZ strirng
   int hours=(int)(timezone);
   int minutes=abs((int)(timezone*60)%60);

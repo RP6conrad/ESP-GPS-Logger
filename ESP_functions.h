@@ -1,7 +1,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 5.87";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 5.88";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -47,7 +47,6 @@ int nav_pvt_message=0;
 int old_message=0;
 int nav_sat_message=0;
 int next_gpy_full_frame=0;
-//int nav_pvt_message_nr=0;
 int msgType;
 int GPIO12_screen=0;//keuze welk scherm
 int low_bat_count;
@@ -73,16 +72,22 @@ RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
 RTC_DATA_ATTR float RTC_avg_10s;
 RTC_DATA_ATTR float RTC_max_2s;
+RTC_DATA_ATTR float RTC_1h;
+RTC_DATA_ATTR float RTC_alp;
+RTC_DATA_ATTR float RTC_mile;
+RTC_DATA_ATTR float RTC_avg_10s_knots;
+RTC_DATA_ATTR float RTC_max_2s_knots;
+RTC_DATA_ATTR float RTC_alp_knots;
+RTC_DATA_ATTR float RTC_1h_knots;
+RTC_DATA_ATTR float RTC_mile_knots;
 //Simon
 RTC_DATA_ATTR short RTC_year;
 RTC_DATA_ATTR short RTC_month;
 RTC_DATA_ATTR short RTC_day;
 RTC_DATA_ATTR short RTC_hour;
 RTC_DATA_ATTR short RTC_min;
-RTC_DATA_ATTR float RTC_alp;
 RTC_DATA_ATTR float RTC_500m;
-RTC_DATA_ATTR float RTC_1h;
-RTC_DATA_ATTR float RTC_mile;
+
 RTC_DATA_ATTR float RTC_R1_10s;
 RTC_DATA_ATTR float RTC_R2_10s;
 RTC_DATA_ATTR float RTC_R3_10s;
@@ -100,6 +105,8 @@ RTC_DATA_ATTR float RTC_voltage_bat=3.6;
 RTC_DATA_ATTR float RTC_old_voltage_bat=3.6;
 RTC_DATA_ATTR int RTC_bat_choice = 0;
 RTC_DATA_ATTR int RTC_highest_read = STARTVALUE_HIGHEST_READ;
+
+//void GPSTC_info(char* GPSTC_post );
 /*Eenmaal flankdetectie indien GPIO langer dan push_time gedrukt
 * Ook variabele die dan long_pulse_time hoog blijft
 * Ook variabele die optelt tot maw elke keer push
@@ -136,6 +143,7 @@ GPS_time S3600(3600);
 Alfa_speed A250(50);
 Alfa_speed A500(50);
 Alfa_speed a500(50);//for  Alfa stats GPIO_12 screens, reset possible !!
+
 Button_push Short_push12 (12,50,15,1); //GPIO12 pull up, 100ms push time, 15s long_pulse, count 1, STAT screen 4&5
 Button_push Long_push12 (12,2000,10,4); //GPIO12 pull up, 2000ms push time, 10s long_pulse, count 4, reset STAT screen 4&5
 Button_push Short_push39 (WAKE_UP_GPIO,10,10,9);//was 39
@@ -158,6 +166,7 @@ void go_to_sleep(uint64_t sleep_time);
 void Update_bat(void);
 void taskOne( void * parameter );
 void taskTwo( void * parameter);  
+void GPSTC_info(char* GPSTC_post );
 
   /*
 Method to print the reason by which ESP32 has been awaken from sleep
@@ -249,17 +258,33 @@ void Shut_down(void){
         if(Time_Set_OK){    //Only safe to RTC memory if new GPS data is available !!
             Time_Set_OK=false;
             RTC_distance=Ublox.total_distance/1000000;
-            RTC_alp=A500.display_max_speed*calibration_speed;
-            RTC_500m=M500.avg_speed[9]*calibration_speed;
-            RTC_1h=S3600.display_max_speed*calibration_speed;            
-            RTC_mile=M1852.display_max_speed*calibration_speed;
             RTC_max_2s= S2.avg_speed[9]*calibration_speed;
             RTC_avg_10s=S10.avg_5runs*calibration_speed;
+            RTC_mile=M1852.display_max_speed*calibration_speed;
+            RTC_alp=A500.display_max_speed*calibration_speed;
+            RTC_1h=S3600.display_max_speed*calibration_speed; 
+            RTC_500m=M500.avg_speed[9]*calibration_speed;
+
+            RTC_max_2s_knots= S2.avg_speed[9]*1.9438/1000;
+            RTC_avg_10s_knots=S10.avg_5runs*1.9438/1000;
+            RTC_1h_knots=S3600.display_max_speed*1.9438/1000;               
+            RTC_mile_knots=M1852.display_max_speed*1.9438/1000;
+            RTC_alp_knots=A500.display_max_speed*1.9438/1000;
+            
             RTC_R1_10s=S10.avg_speed[9]*calibration_speed;
             RTC_R2_10s=S10.avg_speed[8]*calibration_speed;
             RTC_R3_10s=S10.avg_speed[7]*calibration_speed;
             RTC_R4_10s=S10.avg_speed[6]*calibration_speed;
             RTC_R5_10s=S10.avg_speed[5]*calibration_speed;
+
+            RTC_year=(tmstruct.tm_year+1900);//local time is corrected with timezone in close_files() !!
+            RTC_month=(tmstruct.tm_mon+1);
+            RTC_day=(tmstruct.tm_mday);
+            RTC_hour=(tmstruct.tm_hour);
+            RTC_min=(tmstruct.tm_min);
+
+            char gpstc_post[2000]="";
+            GPSTC_info(gpstc_post);
             if(config.logTXT){
               Session_info(Ublox);
               Session_results_S(S2);
@@ -271,17 +296,63 @@ void Shut_down(void){
               Session_results_M(M1852);
               Session_results_Alfa(A250,M250);
               Session_results_Alfa(A500,M500);
+              Session_gpstc(gpstc_post);
               }
             delay(100);
-            Close_files(); 
-            RTC_year=(tmstruct.tm_year+1900);//local time is corrected with timezone in close_files() !!
-            RTC_month=(tmstruct.tm_mon+1);
-            RTC_day=(tmstruct.tm_mday);
-            RTC_hour=(tmstruct.tm_hour);
-            RTC_min=(tmstruct.tm_min);
+            Close_files();  
             }
         RTC_old_voltage_bat=0; //to force refresh the sleep screen when shutting down !!!    
         go_to_sleep(5);//got to sleep after 5 s, this to prevent booting when GPIO39 is still low !     
+}
+void GPSTC_info(char *GPSTC_post) {
+  char tekst[160] ="<html><hr><h2>GPS Team Challenge Category Results:</h2>\r";
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<h3>Date: %d-%d-%d</h3>\r",RTC_year,RTC_month,RTC_day);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<table cellpadding=\"10\" style=\"text-align: right;\"><tr style=\"text-align: center;\"><th>Category</th><th>Speed (kn)</th><th>Speed (km/h)</th></tr>\r");
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<tr><td>2 sec</td><td><b>%.3f  </b></td><td>%.3f</td></tr>\r",RTC_max_2s_knots,RTC_max_2s);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<tr><td>5*10 sec</td><td><b>%.3f  </b></td><td>%.3f</td></tr>\r",RTC_avg_10s_knots,RTC_avg_10s);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<tr><td>1 hour</td><td><b>%.3f  </b></td><td>%.3f</td></tr>\r",RTC_1h_knots,RTC_1h);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<tr><td>alfa500</td><td><b>%.3f  </b></td><td>%.3f</td></tr>\r",RTC_alp_knots,RTC_alp);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<tr><td>1852 m</td><td><b>%.3f  </b></td><td>%.3f</td></tr>\r",RTC_mile_knots,RTC_mile);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<tr><td>Distance</td><td><b>%.3f  </b></td><td>km</td></tr>\r",RTC_distance);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<form method=\"POST\" action=\"https://gpsteamchallenge.com.au/sailor_session/post\"><input type=\"hidden\" name=\"load_from_post\" value=\"true\">");
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"hidden\" name=\"date\" value=\"%d-%02d-%02d\">",RTC_year,RTC_month,RTC_day);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"hidden\" name=\"2_sec_peak\" value=\"%.3f\">",RTC_max_2s_knots);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"hidden\" name=\"2_sec_peak_calc_method\" value=\"D\">");
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"hidden\" name=\"5x10\" value=\"%.3f\">",RTC_avg_10s_knots);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"hidden\" name=\"5x10_calc_method\" value=\"D\">");
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"hidden\" name=\"1_hour\" value=\"%.3f\">",RTC_1h_knots);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"hidden\" name=\"1_hour_calc_method\" value=\"D\">");
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"hidden\" name=\"alpha_500\" value=\"%.3f\">",RTC_alp_knots);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"hidden\" name=\"alpha_500_calc_method\" value=\"D\">");
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"hidden\" name=\"nautical_mile\" value=\"%.3f\">",RTC_mile_knots);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"hidden\" name=\"nautical_mile_calc_method\" value=\"D\">");
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"hidden\" name=\"distance\" value=\"%.3f\">",RTC_distance);
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"hidden\" name=\"distane_calc_method\" value=\"D\">");
+  strcat(GPSTC_post, tekst);
+  sprintf(tekst,"<input type=\"submit\" name=\"Submit\" value=\"Submit this session to the GPS Team Challenge website\"></form>\r</html>");
+  strcat(GPSTC_post, tekst);
 }
 void Update_bat(void){
     analog_bat = analogRead(PIN_BAT);

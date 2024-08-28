@@ -101,6 +101,9 @@ void Speed_font0(String message1,String message2,float speed1,float speed2,float
   display.setFont(&SansSerif_bold_96_nr);
   display.setCursor(offset, 120);
   display.println(speed, 1);
+  display.setFont(&FreeSansBold12pt7b);//print time
+  display.setCursor(offset+180, 43);
+  display.print(time_now);
 }
 void Speed_font1(String message1,String message2,float speed1,float speed2,float speed,int screen) {
   bar_position = 40;
@@ -810,12 +813,12 @@ void Update_screen(int screen) {
       field = 8; 
       if(alfa_screen)field=3;          
     }
-    if (config.field_actual == 9) {  //1 hour default, but first alfa, and if good run, last run
-      field = 2;
-      if(nautical_mile_screen) field = 4;
-      if (S10.s_max_speed > S10.display_speed[5]) field = 2;   //if run faster then slowest run, show AVG & run after 1000 m
-      if (Ublox.alfa_distance / 1000 < 1000) field = 8;
-      if(alfa_screen)field=3;                         // 350m - 1000m : 1h !!
+    if (config.field_actual == 9) {  //1 hour default, but prio alfa, and if good run, last run
+      field = 2;//default Run / Avg
+      if(nautical_mile_screen) field = 4;//after 1852 m 
+      if (Ublox.alfa_distance / 1000 < 1000) field = 8; // 350m - 1000m : 1h !!
+      if (S10.s_max_speed > S10.display_speed[5]) field = 2;   //if run faster then slowest run, show AVG & run after 1000 m 
+      if(alfa_screen)field=3;  //prio alfa                      
     }
 
     if (GPS_Signal_OK == true) {
@@ -828,7 +831,7 @@ void Update_screen(int screen) {
         display.setFont(&FreeSansBold30pt7b);
         display.print(".");
         display.println(int((gps_speed * calibration_speed - int(gps_speed * calibration_speed)) * 10), 0);  //int((x-int(x))*10) round to correct digit
-      }
+        }
       } else {
         display.setFont(&FreeSansBold18pt7b);
         display.setCursor(offset, 60);

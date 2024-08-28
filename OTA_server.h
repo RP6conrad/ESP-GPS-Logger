@@ -241,6 +241,12 @@ void SD_archive_list(void) {
 void SD_archive_file(void) {
   SD_dir(2);
 }
+void GPSTC_info(char* GPSTC_post );
+void GPSTC_Upload(void){
+  char gpstc_post[2000]="";
+  GPSTC_info(gpstc_post);
+  server.sendContent(gpstc_post);
+}
 //Initial page of the server web, list directory and give you the chance of deleting and uploading
 void SD_dir(int archive) {
   if (sdOK | LITTLEFS_OK) {
@@ -631,16 +637,15 @@ void OTA_setup(void) {
   server.on("/archive_list", SD_archive_list);
   server.on("/archive_file", SD_archive_file);
   server.on("/upload", File_Upload);
-  server.on(
-    "/fupload", HTTP_POST, []() {
+  server.on("/gpstc",GPSTC_Upload);
+  server.on("/fupload", HTTP_POST, []() {
       server.send(200);
     },
     handleFileUpload);
   server.on("/config", Config_TXT);
   server.on("/configupload", handleConfigUpload);
   /*handling uploading firmware file */
-  server.on(
-    "/update", HTTP_POST, []() {
+  server.on("/update", HTTP_POST, []() {
       server.sendHeader("Connection", "close");
       server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
       Ublox_off();

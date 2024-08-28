@@ -1,5 +1,8 @@
+ ###Changes SW5.88
+* Added upload session to GPSTC 
+* Added actual time in speed screen "Large Font Off"
  ###Changes SW5.87
-*  Timezone & DST bugs in gpy file correction
+* Timezone & DST bugs in gpy file correction
  ###Changes SW5.84
 * stat6 screen bugfix "previous run", will be held until speed > 4m/s
 * Support for daylight saving in several timezones, configurable. 
