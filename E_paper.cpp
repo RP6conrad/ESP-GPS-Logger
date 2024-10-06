@@ -1,6 +1,5 @@
 #include "E_paper.h"
 #include "Definitions.h"
-#include <LITTLEFS.h>
 #define ROW_SPACING 2
 
 // row height 14pt spacing 2pt

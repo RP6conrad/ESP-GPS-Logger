@@ -62,8 +62,9 @@ void setup() {
   Serial.print("RTC_calibration_bat EEPROM = ");
   Serial.println(RTC_calibration_bat);
   Serial.println("Configuring WDT...");
-  esp_task_wdt_init(WDT_TIMEOUT,true);
+  esp_task_wdt_init(&wdt_config);
   esp_task_wdt_add(NULL); //add current thread to WDT watch
+  esp_task_wdt_reset();
   SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
   print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
   analog_mean = analogRead(PIN_BAT);//fill FIR filter

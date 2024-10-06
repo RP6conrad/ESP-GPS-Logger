@@ -1,6 +1,5 @@
 #include "SD_card.h"
 #include <SD.h>
-#include <LITTLEFS.h>
 #include "Definitions.h"
 #include "gpx.h"
 #include "sbp.h"

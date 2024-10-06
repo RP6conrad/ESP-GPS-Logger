@@ -48,6 +48,8 @@ Flip: horizontally
 #include "Fonts/BitmapSurfbuddies.h"
 #include <GxIO/GxIO_SPI/GxIO_SPI.h>
 #include <GxIO/GxIO.h>
+#include <LittleFS.h>
+#define LITTLEFS LittleFS
 
 #define ELINK_SS 5
 #define ELINK_BUSY 4
