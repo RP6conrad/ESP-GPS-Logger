@@ -7,10 +7,11 @@ https://github.com/italocjs/ESP32_OTA_APMODE/blob/main/Main.cpp
 #include <ESPmDNS.h>
 #include <Update.h>
 #include <EEPROM.h>
-#include <LITTLEFS.h>
+#include <LittleFS.h>
 #include "Definitions.h"
 #include "OTA_html.h"
 //#include "ESP_functions.h"
+#define LITTLEFS LittleFS
 bool downloading_file = false;
 const char* host = "esp32";
 extern const char E_paper_version[16];

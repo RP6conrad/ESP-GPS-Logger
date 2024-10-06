@@ -1,6 +1,6 @@
 //JsonConfigFile.ino for reading config file !!!
-//Changed next file for compiling with Arduino IDE 2.02 (SD(esp32) to SD)
-//C:\Users\andre\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.6\libraries\SD\library.properties
+//Changed next file for compiling with Arduino IDE 2.3.3 (SD(esp32) to SD)
+//%UserProfile%\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.0.5\libraries\SD\library.properties
 
 #ifndef SD_CARD_H
 #define SD_CARD_H
@@ -8,7 +8,8 @@
 #include "GPS_data.h"
 #include <SD.h>
 #include "ArduinoJson.h"
-
+#include <LittleFS.h>
+#define LITTLEFS LittleFS
  
 extern struct tm tmstruct ;
 extern int Time_Set_OK;

@@ -371,41 +371,41 @@ void printLocalTime(){
 //For RTOS, the watchdog has to be triggered
 void feedTheDog_Task0(){
   //esp_task_wdt_reset();
-  TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-  TIMERG0.wdt_feed=1;                       // feed dog
-  TIMERG0.wdt_wprotect=0;                   // write protect
+  TIMERG0.wdtwprotect.wdt_wkey=TIMG_WDT_WKEY_VALUE; // write enable TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+  TIMERG0.wdtfeed.val=1;                            // feed dog
+  TIMERG0.wdtwprotect.wdt_wkey=0;                   // write protect
 }
 void feedTheDog_Task1(){ 
-  TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable
-  TIMERG1.wdt_feed=1;                       // feed dog
-  TIMERG1.wdt_wprotect=0;                   // write protect
+  TIMERG1.wdtwprotect.wdt_wkey=TIMG_WDT_WKEY_VALUE; // write enable
+  TIMERG1.wdtfeed.val=1;                            // feed dog
+  TIMERG1.wdtwprotect.wdt_wkey=0;                   // write protect
 } 
 
 void OnWiFiEvent(WiFiEvent_t event){
   switch (event) {
-    case SYSTEM_EVENT_STA_CONNECTED:
+    case WIFI_EVENT_STA_CONNECTED:
       Serial.println("ESP32 Connected to SSID Station mode");
       WiFi.mode(WIFI_MODE_STA);//switch off softAP
       Serial.println("ESP32 Soft AP switched off");
       break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:         //test
+    case WIFI_EVENT_STA_DISCONNECTED:         //test
       Serial.println("ESP32 disconnected to WIFI");
       //SoftAP_connection=false;
       break;
-    case SYSTEM_EVENT_STA_GOT_IP://  @this event no IP !!!         ARDUINO__EVENT_STA_CONNECTED:
+    case IP_EVENT_STA_GOT_IP://  @this event no IP !!!         ARDUINO__EVENT_STA_CONNECTED:
       Serial.println("ESP32 Connected to WiFi Network");
       IP_adress =  WiFi.localIP().toString();
       break;
-    case SYSTEM_EVENT_AP_START:
+    case WIFI_EVENT_AP_START:
       WiFi.softAPConfig(local_IP, gateway, subnet);  
       Serial.println("ESP32 soft AP started");
       break;
-    case SYSTEM_EVENT_AP_STACONNECTED:
+    case WIFI_EVENT_AP_STACONNECTED:
       Serial.println("Station connected to ESP32 soft AP");
       IP_adress =  WiFi.softAPIP().toString();
       SoftAP_connection=true;
       break;
-    case SYSTEM_EVENT_AP_STADISCONNECTED:
+    case WIFI_EVENT_AP_STADISCONNECTED:
       Serial.println("Station disconnected from ESP32 soft AP");
       SoftAP_connection=false;
       break;
@@ -462,4 +462,9 @@ void Search_for_wifi(void) {
       }
     }
 } 
+esp_task_wdt_config_t wdt_config = {
+    .timeout_ms = WDT_TIMEOUT * 1000,
+    .idle_core_mask = 0,
+    .trigger_panic = true
+};
 #endif
