@@ -291,14 +291,17 @@ void SD_dir(int archive) {
     String firmware = "Firmware "+ String(SW_version);
     String gps_warning = "<h3>"+ font_color_start+"Sample-rate too high for the actual gnss setting, possible lost points in the log file !!"+font_color_end + "</h3>";
     String CPU_freq =  "<h3>"+ font_color_start+"For 5 Hz sample_rate, CPU freq of 80 MHz is sufficient. For 10 Hz, CPU freq of 160 MHz gives the maximal performance."+font_color_end + "</h3>";
+    String Data_rate_high = "<h3>"+ font_color_start+"Max 2 file types set to ON, otherwise data rate too high and lost points possible !!"+font_color_end + "</h3>";
     bool GPS_warning=false;
     bool CPU_freq_warning = false;
+    bool Data_rate_overload = false;
     if(bat_perc<VOLTAGE_LOW) voltage_percent = "&emsp;"+font_color_start+"Bat = " + String(bat_perc,0)+" % &emsp;"+font_color_end;
     else voltage_percent = "&emsp;Bat % = " + String(bat_perc,0)+" % &emsp;";
     if ((config.ublox_type == M10_9600BD) | (config.ublox_type == M10_38400BD) | (config.ublox_type == AUTO_DETECT)) {  //limit sample rate for 3/4 GNSS M10, prevent lost points
       if (((config.gnss == 3) & (config.sample_rate> 5)) | ((config.gnss== 4) & (config.sample_rate > 8)) | ((config.gnss== 5) & (config.sample_rate > 4))) {GPS_warning=true;}
        }
     if(((config.sample_rate==5)&!(config.cpu_freq==80))|((config.sample_rate==10)&!(config.cpu_freq==160)))CPU_freq_warning=true;
+   // if((config.logSBP+config.logUBX+config.logGPY+config.logGPX)>2)Data_rate_overload = true;
     if (root) {
       root.rewindDirectory();
       SendHTML_Header();
@@ -306,6 +309,7 @@ void SD_dir(int archive) {
       webpage += "<h3>" + free_space + voltage_lipo + voltage_percent + firmware + "</h3>";
       if(GPS_warning) webpage += gps_warning;
       if(CPU_freq_warning) webpage += CPU_freq;
+      if(Data_rate_overload)webpage += Data_rate_high;
       webpage += F("<tr><th>Name</th><th>Size</th><th>Timestamp</th><th>Download</th><th>Delete</th></tr>");
       printDirectory("/", archive);
       webpage += F("\n</table>");
@@ -436,20 +440,19 @@ void handleConfigUpload() {
     //gnss 0 = GPS + BEIDOU
     EEPROM.get(1,RTC_highest_read);
     RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
-    //doc["cal_bat"] = serialized(server.arg("cal_bat"));
     doc["cal_bat"] = RTC_calibration_bat;
     doc["cal_speed"] = serialized(server.arg("cal_speed"));
     doc["sample_rate"] = server.arg("sample_rate").toInt();
     doc["gnss"] = server.arg("gnss").toInt();
-    doc["speed_field"] = server.arg("speed_field").toInt();
+    doc["speed_screen"] = server.arg("speed_screen");
     doc["speed_large_font"] = server.arg("speed_large_font").toInt();
     doc["bar_length"] = server.arg("bar_length").toInt();
-    doc["Stat_screens"] = server.arg("Stat_screens").toInt();
+    doc["stat_screen"] = server.arg("stat_screen");
     doc["Stat_screens_time"] = server.arg("Stat_screens_time").toInt();
     doc["stat_speed"] = server.arg("stat_speed").toInt();
     doc["start_logging_speed"] = server.arg("start_logging_speed").toInt();
     doc["archive_days"] = server.arg("archive_days").toInt();
-    doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt();
+    doc["gpio12_screen"] = server.arg("gpio12_screen");
     doc["Board_Logo"] = server.arg("Board_Logo").toInt();
     doc["Sail_Logo"] = server.arg("Sail_Logo").toInt();
     doc["sleep_off_screen"] = server.arg("sleep_off_screen").toInt();

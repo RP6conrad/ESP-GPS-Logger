@@ -63,13 +63,14 @@ struct Config {
   int Stat_screens=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active
   int Stat_screens_time=4;//time between switching stat_screens
   int GPIO12_screens=54;//choice for stats field when gpio12 is activated (pull-up high, low = active)
-  int Stat_screens_persist=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active / for resave the config
-  int GPIO12_screens_persist=54;//choice for stats field when gpio12 is activated (pull-up high, low = active) / for resave the config
+  //int Stat_screens_persist=123;//choice for stats field when no speed, here stat_screen 1, 2 and 3 will be active / for resave the config
+  //int GPIO12_screens_persist=54;//choice for stats field when gpio12 is activated (pull-up high, low = active) / for resave the config
   int Board_Logo=1;
   int Sail_Logo=1;
-  int stat_screen[10];//which stat_screen you want to see ?
-  int gpio12_screen[10];//which stat_screen when gpio 12 toggles ?
-  int speed_screen[10];//which speed fields are selected ?
+  char stat_screen[10]="167";//which stat_screen you want to see ?
+  char gpio12_screen[10];//which stat_screen when gpio 12 toggles ?
+  //int speed_screen[10];//which speed fields are selected ?
+  char speed_screen[10];//which speed fields are selected ?
   int screen_count=0;
   int gpio12_count=0;
   int speed_count=0;

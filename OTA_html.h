@@ -421,25 +421,27 @@ void html_config(String& webpage){
   webpage += "<input size='8' type='number' required name='archive_days' min='0' max='1000' value="+String(config.archive_days)+" step='1'>\n";
   webpage += "</select>\n</td><td>If the files on the sd are older then archive_days, they can be moved to the Archive directory with \"Archive Files\"</td>\n</tr>\n";
   #ifdef T5_E_PAPER
-  //speed_field
-  webpage += "<tr>\n<td>speed_field</td><td>\n";
-  webpage += "<input size='8' type='number' required name='speed_field' min='1' max='99999' value="+String(config.field)+" step='1'>\n";
-  webpage += "</select>\n</td><td>speed_field: The preferred value in the first line of the speed screen : 1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= Auto switching between Alfa & 0.5h, 8= Auto switching between Alfa & 1h, 9= Alfa, 1h, and good run. If more then 1 digit, toggle between separat digits : 841 toggle between 1,4 and 8 !</td>\n</tr>\n";
+  //speed_screen
+  webpage += "<tr>\n<td>speed_screen</td><td>\n";
+  webpage += "<input size='9' type='text' required name='speed_screen' value="+String(config.speed_screen)+">\n";//input size 9
+  webpage += "</select>\n</td><td>Speed_screens choice :  1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= Auto switching between Alfa & 500m, 8= Auto switching between Alfa & 1h, 9= Alfa, 1h, and good run. If more then 1 digit, toggle between separat digits : 841 toggle between 1,4 and 8 !</td>\n</tr>\n";  
   //speed_large_font
   webpage += "<tr><td>speed_large_font</td><td>\n<select id='speed_large_font' name='speed_large_font'>\n";
-  Drop_down_menu(config.speed_large_font,3,"Giant_Font ON",webpage);
-  Drop_down_menu(config.speed_large_font,2,"Simon_Font ON",webpage);
-  Drop_down_menu(config.speed_large_font,1,"Large_Font ON",webpage);
-  Drop_down_menu(config.speed_large_font,0,"Large_Font OFF",webpage);
-  webpage += "</select>\n</td><td>speed_large_font: To choose the font sizes of the first line in the speed screen. Choice 0 = small, 1 = medium, 2 = large.</td>\n</tr>\n";  
+  //Drop_down_menu(config.speed_large_font,4,"Giant_Font ON, no categories",webpage);
+  Drop_down_menu(config.speed_large_font,3,"No actual speed, only categories",webpage);
+  Drop_down_menu(config.speed_large_font,2,"Simon_Font ON, only speed",webpage);
+  Drop_down_menu(config.speed_large_font,1,"Large_Font ON, only run",webpage);
+  Drop_down_menu(config.speed_large_font,0,"Large_Font OFF,best of session + run",webpage);
+  webpage += "</select>\n</td><td>To choose the font sizes in the speed screen :<br> Large_Font OFF : first line small.<br>Large_FONT ON : first line medium.<b>Simon_Font ON : only speed & progress bar.</td>\n</tr>\n";  
   //bar_length
   webpage += "<tr>\n<td>bar_length</td><td>\n";
   webpage += "<input size='8' type='number' required name='bar_length' min='100' max='10000' value="+String(config.bar_length)+" step='1'>\n";
   webpage += "</select>\n</td><td>bar_length: Default length = 1852 m for 100% bar (=Nautical mile)</td>\n</tr>\n";
-  //Stat_screens
-  webpage += "<tr>\n<td>Stat_screens</td><td>\n";
-  webpage += "<input size='8' type='number' required name='Stat_screens' min='0' max='9999999' value="+String(config.Stat_screens_persist)+" step='1'>\n";
-  webpage += "</select>\n</td><td>Stat_screens choice : every digit shows the according stat_screen after each other</td>\n</tr>\n";
+  //stat_screen
+  webpage += "<tr>\n<td>stat_screen</td><td>\n";
+  webpage += "<input size='9' type='text' required name='stat_screen' value="+String(config.stat_screen)+">\n";//input size 9
+  webpage += "</select>\n</td><td>Stat_screens choice : every character shows the according stat_screen after each other</td>\n</tr>\n";  
+  
   //Stat_screens_time
   webpage += "<tr>\n<td>Stat_screens_time</td><td>\n";
   webpage += "<input size='8' type='number' required name='Stat_screens_time' min='2' max='10' value="+String(config.Stat_screens_time)+" step='1'>\n";
@@ -453,9 +455,9 @@ void html_config(String& webpage){
   webpage += "<input size='8' type='number' required name='start_logging_speed' min='0' max='10' value="+String(config.start_logging_speed)+" step='1'>\n";
   webpage += "</select>\n</td><td>If the actual speed(in m/s) exceed this start_logging_speed, then the log is started</td>\n</tr>\n"; 
   //GPIO12_screens
-  webpage += "<tr>\n<td>GPIO12_screens</td><td>\n";
-  webpage += "<input size='8' type='number' required name='GPIO12_screens' min='0' max='1000' value="+String(config.GPIO12_screens_persist)+" step='1'>\n";
-  webpage += "</select>\n</td><td>GPIO12_screens choice : Every digit shows the according GPIO_screen after each push. Screen 4 = s10 runs, screen 5 = alfa's.</td>\n</tr>\n";
+  webpage += "<tr>\n<td>gpio12_screen</td><td>\n";
+  webpage += "<input size='9' type='text' required name='gpio12_screen' value="+String(config.gpio12_screen)+">\n";//input size 9
+  webpage += "</select>\n</td><td>gpio12_screens choice : Every digit shows the according GPIO_screen after each push. Screen 4 = s10 runs, screen 5 = alfa's.</td>\n</tr>\n";  
   //Board_Logo
   webpage += "<tr>\n<td>Board_Logo</td><td>\n<select id='Board_Logo' name='Board_Logo'>";
   Drop_down_menu(config.Board_Logo,0,"No logo",webpage);
@@ -478,6 +480,7 @@ void html_config(String& webpage){
   Drop_down_menu(config.Board_Logo,17,"FMX",webpage);
   Drop_down_menu(config.Board_Logo,18,"Phantom",webpage);
   Drop_down_menu(config.Board_Logo,19,"F4 Foil",webpage);
+  Drop_down_menu(config.Board_Logo,20,"Lisa",webpage);
   webpage += "</select>\n</td><td>Board_Logo :  See the logos on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a></td>\n</tr>\n";
   //Sail_Logo Drop down menu
   webpage += "<tr>\n<td>Sail_Logo</td><td>\n<select id='Sail_Logo' name='Sail_Logo'>";
@@ -497,6 +500,7 @@ void html_config(String& webpage){
   Drop_down_menu(config.Sail_Logo,13,"Challenger Sails",webpage);
   Drop_down_menu(config.Sail_Logo,14,"Phantom",webpage);
   Drop_down_menu(config.Sail_Logo,15,"Patrik",webpage);
+  Drop_down_menu(config.Sail_Logo,16,"Lisa V",webpage);
   webpage += "</select>\n</td><td>Sail_Logo :  See the logos on <a href='https://www.seabreeze.com.au/img/photos/windsurfing/19565287.jpg' target='_blank'>this Link</a></td>\n</tr>\n";
   //sleep_off_screen
   webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
@@ -519,17 +523,17 @@ void html_config(String& webpage){
   webpage += "<tr><td>logSBP</td><td>\n<select id='logSBP' name='logSBP'>\n";
   if(config.logSBP == 1) webpage += "<option value='1' selected>LOG SBP ON</option>\n"; else webpage += "<option value='1'>LOG SBP ON</option>\n";
   if(config.logSBP == 0) webpage += "<option value='0' selected>LOG SBP OFF</option>\n"; else webpage += "<option value='0'>LOG SBP OFF</option>\n";
-  webpage += "</select>\n</td><td>logSBP: To save the GPS data in sbp format. This is also the file that you can upload to gp3s. The sbp format is ca 70% smaller then ubx.</td>\n</tr>\n";  
+  webpage += "</select>\n</td><td>logSBP: To save the GPS data in sbp format. This is the old Locosys GT31 format.The sbp format is ca 70% smaller then ubx.</td>\n</tr>\n";  
   //logUBX
   webpage += "<tr><td>logUBX</td><td>\n<select id='logUBX' name='logUBX'>\n";
   if(config.logUBX == 1) webpage += "<option value='1' selected>LOG UBX ON</option>\n"; else webpage += "<option value='1'>LOG UBX ON</option>\n";
   if(config.logUBX == 0) webpage += "<option value='0' selected>LOG UBX OFF</option>\n"; else webpage += "<option value='0'>LOG UBX OFF</option>\n";
-  webpage += "</select>\n</td><td>logUBX: To save the GPS data in ubx format. This is also the file that you can upload to gp3s.</td>\n</tr>\n";  
+  webpage += "</select>\n</td><td>logUBX: To save the GPS data in ubx format. Fileformat accepted by gp3s.</td>\n</tr>\n";  
   //logGPY  
   webpage += "<tr><td>logGPY</td><td>\n<select id='logGPY' name='logGPY'>\n";
   if(config.logGPY == 1) webpage += "<option value='1' selected>LOG GPY ON</option>\n"; else webpage += "<option value='1'>LOG GPY ON</option>\n";
   if(config.logGPY == 0) webpage += "<option value='0' selected>LOG GPY OFF</option>\n"; else webpage += "<option value='0'>LOG GPY OFF</option>\n";
-  webpage += "</select>\n</td><td>logGPY: To save the GPS data in the new open source format .gpy. </td>\n</tr>\n";  
+  webpage += "</select>\n</td><td>logGPY: To save the GPS data in the new open source format .gpy. Fileformat accepted by gp3s. Highly recommended, smallest filesize ! </td>\n</tr>\n";  
   //logGPX  
   webpage += "<tr><td>logGPX</td><td>\n<select id='logGPX' name='logGPX'>\n";
   if(config.logGPX == 1) webpage += "<option value='1' selected>LOG GPX ON</option>\n"; else webpage += "<option value='1'>LOG GPX ON</option>\n";

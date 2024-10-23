@@ -1,6 +1,19 @@
+ ###Changes SW5.89
+* Added Lisa logos
+* Stat_screen 7,8,9 no info-bar, because info-bar overwrites last line....
+* Shorten bar_length if actual time is visible 
+* Added bar length info on the screen (large font on)
+* Added speed_screen 7 -> 500m (Weymouth speed week!)
+* Added stat_screen 8 -> Best 500m runs + timestamp.
+* Added stat_screen A -> Best 2s runs + timestamp
+* stat_screen / speed screen choice extended, digits + characters can be used.....
+* Bugfix in simon screen : rounding error fix
  ###Changes SW5.88
 * Added upload session to GPSTC 
 * Added actual time in speed screen "Large Font Off"
+* Added Lisa logos
+* Stat_screen 9 no info-bar, because info-bar overwrites last line....
+* Shorten bar_length if actual time is visible
  ###Changes SW5.87
 * Timezone & DST bugs in gpy file correction
  ###Changes SW5.84

@@ -234,37 +234,46 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   // Copy values from the JsonDocument to the Config
   config.cal_bat = doc["cal_bat"] | 1.75;
   config.cal_speed = doc["cal_speed"] | 3.6;
-  config.sample_rate = doc["sample_rate"] | 1;
+  config.sample_rate = doc["sample_rate"] | 5;
   config.cpu_freq = doc["cpu_freq"] | 80;
-  config.gnss = doc["gnss"] | 2;
+  config.gnss = doc["gnss"] | 3;
   config.field = doc["speed_field"] | 1;
   config.speed_large_font = doc["speed_large_font"] | 0;
   config.bar_length = doc["bar_length"] | 1852;
   config.Stat_screens = doc["Stat_screens"] | 12;
-  config.Stat_screens_time = doc["Stat_screens_time"] | 2;
+  strlcpy(config.speed_screen,                      // <- destination
+          doc["speed_screen"] | "1",          // <- source
+          sizeof(config.speed_screen)); 
+  strlcpy(config.stat_screen,                      // <- destination
+          doc["stat_screen"] | "12",          // <- source
+          sizeof(config.stat_screen)); 
+  strlcpy(config.gpio12_screen,                      // <- destination
+          doc["gpio12_screen"] | "4",          // <- source
+          sizeof(config.gpio12_screen));         
+  config.Stat_screens_time = doc["Stat_screens_time"] | 4;
   config.stat_speed = doc["stat_speed"] | 1;
   config.start_logging_speed = doc["start_logging_speed"] | 1;
-  config.archive_days = doc["archive_days"] | 0;
-  config.Stat_screens_persist = config.Stat_screens;
-  config.GPIO12_screens = doc["GPIO12_screens"] | 12;
-  config.GPIO12_screens_persist = config.GPIO12_screens;
+  config.archive_days = doc["archive_days"] | 10;
+  //config.Stat_screens_persist = config.Stat_screens;
+  //config.GPIO12_screens = doc["GPIO12_screens"] | 12;
+  //config.GPIO12_screens_persist = config.GPIO12_screens;
   config.Board_Logo = doc["Board_Logo"] | 1;
   config.Sail_Logo = doc["Sail_Logo"] | 1;
   config.sleep_off_screen = doc["sleep_off_screen"] | 11;
   config.bat_choice = doc["bat_choice"]|0;
   config.logTXT = doc["logTXT"] | 1;
-  config.logUBX = doc["logUBX"] | 1;
+  config.logUBX = doc["logUBX"] | 0;
   if (config.sample_rate < 10) {
     config.logUBX_nav_sat = doc["logUBX_nav_sat"] | 0;
   } else {
     config.logUBX_nav_sat = 0;
   }
-  config.logSBP = doc["logSBP"] | 1;
+  config.logSBP = doc["logSBP"] | 0;
   config.logGPY = doc["logGPY"] | 1;
   config.logGPX = doc["logGPX"] | 0;
   config.file_date_time = doc["file_date_time"] | 1;
   config.dynamic_model = doc["dynamic_model"] | 0;  //sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
-  config.timezone = doc["timezone"] | 2.0;
+  config.timezone = doc["timezone"] | 1.0;
   config.timezone_DST = doc["timezone_DST"]|1;
   strlcpy(config.UBXfile,                      // <- destination
           doc["UBXfile"] | "/ubxGPS",          // <- source
@@ -274,7 +283,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
           sizeof(config.Sleep_info));          // <- destination's capacity
   strcpy(RTC_Sleep_txt, config.Sleep_info);    //copy into RTC mem
   strlcpy(config.ssid,                         // <- destination
-          doc["ssid"] | "ssidNOK",             // <- source
+          doc["ssid"] | "ssid_not_set",             // <- source
           sizeof(config.ssid));                // <- destination's capacity
   strlcpy(config.password,                     // <- destination
           doc["password"] | "password",  // <- source
@@ -310,24 +319,10 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   int GPIO_12_screens = config.GPIO12_screens;        //preserve value config
   int speed_screens = config.field;                   //preserve speed_screen setting
   if (config.file_date_time == 0) config.logTXT = 1;  //because txt file is needed for generating new file count !!
-  for (int i = 0; i < 9; i++) {
-    config.stat_screen[i] = stat_screen % 10;  //STATSx heeft geen offset !!! 641
-    stat_screen = stat_screen / 10;
-    if (stat_screen > 0) {
-      config.screen_count = i + 1;
-    }
-    config.gpio12_screen[i] = GPIO_12_screens % 10;  //
-    GPIO_12_screens = GPIO_12_screens / 10;
-    if (GPIO_12_screens > 0) {
-      config.gpio12_count = i + 1;
-    }
-    config.speed_screen[i] = speed_screens % 10;   //vb 841, [0]=1, [1]=4,[2]=8,[3]=0.....[8]=0;
-    config.field_actual = config.speed_screen[0];  //vb 841 -> 1 of 3 -> 3
-    speed_screens = speed_screens / 10;
-    if (speed_screens > 0) {
-      config.speed_count = i + 1;  //vb 841 -> 3
-    }
-  }
+  config.screen_count= strlen(config.stat_screen)-1;
+  config.speed_count =strlen(config.speed_screen)-1;
+  config.gpio12_count =strlen(config.gpio12_screen)-1;
+  config.field_actual=config.speed_screen[0];
   TimeZone_env(config.timezone);//to set the correct posic TZ string
 }
 // Prints the content of a file to the Serial

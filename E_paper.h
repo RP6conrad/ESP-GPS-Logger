@@ -24,10 +24,11 @@ Flip: horizontally
 */
 // https://tchapi.github.io/Adafruit-GFX-Font-Customiser/ used for extracting only needed digits and decimal point !!
 // FreeFonts from Adafruit_GFX
+#include "Fonts/FreeSansBold6pt7b.h"//gebruikt
 #include "Fonts/FreeMonoBold8pt7b.h"//gebruikt
 #include "Fonts/FreeMonoBold9pt7b.h"//gebruikt
 #include "Fonts/FreeMonoBold12pt7b.h"//gebruikt
-#include "Fonts/FreeSansBold6pt7b.h"//gebruikt
+
 #include "Fonts/FreeSansBold9pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold12pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold18pt7b.h"//gebruikt
@@ -56,26 +57,38 @@ Flip: horizontally
 
 //#define BUTTON_PIN 39
 #define BOOT_SCREEN 0
-#define STATS1 1
-#define STATS2 2
-#define STATS3 3
-#define STATS4 4
-#define STATS5 5
-#define STATS6 6    //simon stat screen
-#define STATS7 7    //bar graph screen 10s run
-#define STATS8 8
-#define AVG_10S 9
+#define STATS1 49
+#define STATS2 50
+#define STATS3 51
+#define STATS4 52
+#define STATS5 53
+#define STATS6 54    //simon stat screen
+#define STATS7 55    //bar graph screen 10s run
+#define STATS8 56
+#define RUNS_STAT 57
+#define STATSA 65  //asci code for A
+#define SPEED1 49
+#define SPEED2 50
+#define SPEED3 51
+#define SPEED4 52
+#define SPEED5 53
+#define SPEED6 54
+#define SPEED7 55
+#define SPEED8 56
+#define SPEED9 57
+
+
 #define SPEED 10
 #define WIFI_ON 11
 #define WIFI_STATION 12
 #define WIFI_SOFT_AP 13
-#define SPEED2 14
+//#define SPEED2 14
 #define TROUBLE 15
 #define GPS_INIT_SCREEN 16
 
 
 extern GxEPD_Class display;
-extern int sdTrouble,gps_speed,S10_previous_run;;
+extern int sdTrouble,gps_speed,S10_previous_run;
 extern int wifi_search;
 extern int start_logging_millis;
 extern bool sdOK,LITTLEFS_OK;

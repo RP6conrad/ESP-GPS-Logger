@@ -1,18 +1,9 @@
 #include "E_paper.h"
 #include "Definitions.h"
 #include <LITTLEFS.h>
-#define ROW_SPACING 2
 
 // row height 14pt spacing 2pt
-#define ROW_6PT 10
-#define ROW_6PT_W_SPACING (ROW_6PT + ROW_SPACING)
-#define ROW_1_6PT ROW_9PT
-#define ROW_2_6PT (ROW_1_6PT + ROW_6PT_W_SPACING)
-#define ROW_3_6PT (ROW_2_6PT + ROW_6PT_W_SPACING)
-#define ROW_4_6PT (ROW_3_6PT + ROW_6PT_W_SPACING)
-#define ROW_5_6PT (ROW_4_6PT + ROW_6PT_W_SPACING)
-#define ROW_6_6PT (ROW_5_6PT + ROW_6PT_W_SPACING)
-#define ROW_7_6PT (ROW_6_6PT + ROW_6PT_W_SPACING)
+#define ROW_SPACING 2
 
 // 3 rows 9pt font (9pt font height 18px-22pt)
 // row height 14pt spacing 2pt
@@ -77,13 +68,16 @@ char time_now[8];
 char time_now_sec[12];
 int16_t displayHeight;
 int16_t displayWidth;
+int bar_length = 1852;
 int bar_position = 32;
+int total_bar_length=240;
+int run_rectangle_length=0;
 void InfoBar(int offset);
 void InfoBarRtc(int offset);
 void sdCardInfo(void);
 const char* gpsChip(int longname);
+char bar_info[8]="info";
 void Speed_font0(String message1,String message2,float speed1,float speed2,float speed,int screen) {
-  bar_position=32;
   int decimal=1;
   if(screen==2)decimal=0;               //screen==1 : Run xx.x AVG xx.x
   display.setFont(&FreeSansBold12pt7b); //screen==2 : Gate xx Exit xx
@@ -101,16 +95,10 @@ void Speed_font0(String message1,String message2,float speed1,float speed2,float
   display.setFont(&SansSerif_bold_96_nr);
   display.setCursor(offset, 120);
   display.println(speed, 1);
-  display.setFont(&FreeSansBold12pt7b);//print time
-  display.setCursor(offset+180, 43);
-  display.print(time_now);
 }
 void Speed_font1(String message1,String message2,float speed1,float speed2,float speed,int screen) {
-  bar_position = 40;
   display.setCursor(offset, 36); 
   if(screen==0)  {                    //Run "A" AVG
-    //display.setFont(&FreeSansBold12pt7b);
-    //display.print(message1);
     display.setFont(&SansSerif_bold_46_nr);  //Test for bigger alfa fonts
     display.print(speed1, 1);  //last 10s max from run
     display.setFont(&FreeSansBold12pt7b);                  
@@ -155,8 +143,6 @@ void Speed_font3(String message1,float speed) {
       }
 int device_boot_log(int rows, int ws) {
   int r = 2, row = ROW_9PT + ROW_SPACING;
-  //display.fillRect(0, ROW_1_9PT+1,175, r*row, GxEPD_WHITE);
-  //display.setFont(&FreeMonoBold8pt7b);
   display.setCursor(offset, ROW_2_9PT);
   if (ws) delay(ws);
   display.print(SW_version);
@@ -183,64 +169,6 @@ int device_boot_log(int rows, int ws) {
   return r;
 }
 #define DEVICE_BOOT_LOG(rows) device_boot_log(rows, 0)
-
-int rowTestUnit(int xPos) {
-  int16_t x1, y1, box_padding, rows, rowheight;
-  uint16_t w, h;
-  display.getTextBounds("000", xPos, INFO_BAR_TOP, &x1, &y1, &w, &h);
-  Serial.print("000");
-  Serial.print(" getTextBounds got (");
-  Serial.print(x1);
-  Serial.print(", ");
-  Serial.print(y1);
-  Serial.print(", ");
-  Serial.print(w);
-  Serial.print(", ");
-  Serial.print(h);
-  Serial.println(")");
-  rows = INFO_BAR_TOP / (h + ROW_SPACING);
-  rowheight = INFO_BAR_TOP / rows;
-  box_padding = ((rowheight - h) / 2);
-  Serial.printf("fontbounds: rows:%d rowheight:%d,  fontheight: %d, spacing:%d, box_padding:%d\n", rows, rowheight, h, ROW_SPACING, box_padding);
-  for (int row = 0, i = 0, j = INFO_BAR_TOP; i < j; i += rowheight, ++row) {
-
-    if (row == 0 && box_padding > 0)
-      i -= box_padding;
-    if (i > 0) {
-      display.setCursor(xPos, i);
-      display.println(i);
-    }
-    display.fillRect(xPos - 5, i, 5, 1, GxEPD_BLACK);
-  }
-  return xPos + w + 10;
-}
-
-void rowTest() {
-  int16_t x1, y1, box_padding, xPos = 20, rows, rowheight;
-  uint16_t w, h;
-  display.fillScreen(GxEPD_WHITE);
-  display.setTextColor(GxEPD_BLACK);
-  //display.fillRect(0, 5, displayWidth, 1, GxEPD_BLACK);
-  //display.fillRect(0, INFO_BAR_TOP-1, displayWidth, 1, GxEPD_BLACK);
-  //display.fillRect(0, 0, 1, INFO_BAR_TOP, GxEPD_BLACK);
-  //6pt test
-  display.setFont(&FreeSansBold6pt7b);
-  xPos = rowTestUnit(xPos);
-  //9pt test
-  display.setFont(&FreeSansBold9pt7b);
-  xPos = rowTestUnit(xPos);
-  //12pt test
-  display.setFont(&FreeSansBold12pt7b);
-  xPos = rowTestUnit(xPos);
-  //18pt test
-  display.setFont(&FreeSansBold18pt7b);
-  xPos = rowTestUnit(xPos);
-  //24pt test
-  display.setFont(&FreeSansBold24pt7b);
-  xPos = rowTestUnit(xPos);
-  display.updateWindow(0, 0, displayWidth, displayHeight, true);
-  delay(100);
-}
 
 void Boot_screen(void) {
   display.init();
@@ -365,10 +293,7 @@ void Sleep_screen(int choice) {
     int col2 = 34 + offset;
     int col3 = 90 + offset;
     int col4 = 146 + offset;
-    //int line=0;
-    //display.fillScreen(GxEPD_WHITE);
-    //display.fillRect(0,0,255,122,GxEPD_WHITE);
-
+  
     // Board Logo's:
     // add special logos - funlogos
     //Board logos
@@ -408,8 +333,10 @@ void Sleep_screen(int choice) {
       display.drawExampleBitmap(FMX_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK); 
     if (RTC_Board_Logo == 18)
       display.drawExampleBitmap(Phantom_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);   
-    if (RTC_Board_Logo == 18)
+    if (RTC_Board_Logo == 19)
       display.drawExampleBitmap(f4_foils_logoS_zwart, 195, 0, 48, 48, GxEPD_BLACK);     
+    if (RTC_Board_Logo == 20)
+      display.drawExampleBitmap(Logo_LISA, 195, 0, 48, 48, GxEPD_BLACK);       
     // Zeil Logo's:
     if (RTC_Sail_Logo == 1)  //Logo's Simon Dijkstra
       display.drawExampleBitmap(GAsails_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);
@@ -446,6 +373,9 @@ void Sleep_screen(int choice) {
     }
     if (RTC_Sail_Logo == 15) { 
       display.drawExampleBitmap(Patrik_logoS_zwart, 195, 50, 48, 48, GxEPD_BLACK);//Patrik_logoS_zwart
+    }
+    if (RTC_Sail_Logo == 16) { 
+      display.drawExampleBitmap(Logo_LISA_vertical, 195, 50, 48, 48, GxEPD_BLACK);//Patrik_logoS_zwart
     }
     display.setCursor(col1, 105);  // was 121
     display.setFont(&SF_Distant_Galaxy9pt7b);
@@ -670,7 +600,7 @@ void Update_screen(int screen) {
   if (offset < 0) offset = 0;
   int cursor = 0;
   display.fillScreen(GxEPD_WHITE);
-  if (screen != SPEED) InfoBar(offset);
+  if ((screen != SPEED)&(screen != RUNS_STAT)&(screen != STATS8)&(screen != STATSA)) InfoBar(offset);
   if (screen == BOOT_SCREEN) {
     update_delay = 1000;
     ESP_GPS_LOGO_40
@@ -679,7 +609,7 @@ void Update_screen(int screen) {
     if (screen != old_screen) count = 0;  //eerste keer full update
     Speed_in_Unit(offset);
     delay(1000);
-  }
+    }
   if (screen == GPS_INIT_SCREEN) {
     update_delay = 100;
     ESP_GPS_LOGO_40
@@ -689,12 +619,12 @@ void Update_screen(int screen) {
       display.setFont(&FreeSansBold12pt7b);
       display.setCursor(offset, (cursor = ROW_4_9PT + ROW_12PT_W_SPACING));
       display.print("Auto detect gps-type");
-    }
+      }
     else if (!ubxMessage.monVER.hwVersion[0]) {
       display.setFont(&FreeSansBold12pt7b);
       display.setCursor(offset, (cursor = ROW_4_9PT + ROW_12PT_W_SPACING));
       display.print("Gps initializing");
-    }
+      }
     if (screen != old_screen) count = 0;  //eerste keer full update
     Speed_in_Unit(offset);
   }
@@ -782,68 +712,69 @@ void Update_screen(int screen) {
   }
   if (screen == SPEED) {
     update_delay = 50;
-    int run_rectangle_length;
     int field = config.field_actual;  //default is in config.txt
-    
-    int bar_length = config.bar_length * 1000 / 240;  //default 100% length = 1852 m
     bool alfa_screen = false;
     bool nautical_mile_screen = false;
     bool x_10km_screen = false;
     if ((Ublox.alfa_distance / 1000 < 350) & (alfa_window < 100)) alfa_screen=true; //true until 350 m after the jibe
-    if (Ublox.alfa_distance / 1000 > config.bar_length) nautical_mile_screen=true; // true if run exceeds 1852 m
+    if (Ublox.alfa_distance / 1000 >1852) nautical_mile_screen=true; // true if run exceeds 1852 m
     if (((int)(Ublox.total_distance / 1000000) % 10 == 0) & (Ublox.alfa_distance / 1000 > 1000)) x_10km_screen=true; //true if distance is x *10 km
     display.setFont(&FreeSansBold6pt7b);
-    display.setCursor(displayWidth - 10, INFO_BAR_TOP);
-    display.print(config.field_actual);      //show config field in small font
-    if (config.field_actual == 1) {                                                                            
-      field = 2;                             //Default actual RUN + AVG screen
-      if(nautical_mile_screen) field = 4;
-      if(x_10km_screen) field=5;                                                                                   
-      if(alfa_screen)field=3;
-    }
-    if (config.field_actual == 2) {
-      field = 2; 
-      if(nautical_mile_screen) field = 4;
-    }
-    if (config.field_actual == 7) {
-      field = 7; 
-      if(alfa_screen)field=3;
-    }
-    if (config.field_actual == 8) {
-      field = 8; 
-      if(alfa_screen)field=3;          
-    }
-    if (config.field_actual == 9) {  //1 hour default, but prio alfa, and if good run, last run
-      field = 2;//default Run / Avg
-      if(nautical_mile_screen) field = 4;//after 1852 m 
-      if (Ublox.alfa_distance / 1000 < 1000) field = 8; // 350m - 1000m : 1h !!
-      if (S10.s_max_speed > S10.display_speed[5]) field = 2;   //if run faster then slowest run, show AVG & run after 1000 m 
-      if(alfa_screen)field=3;  //prio alfa                      
-    }
+    display.setCursor(displayWidth - 20, INFO_BAR_TOP);
+    char c=config.field_actual;
+    display.print(c);      //show config field in small font
+    if (config.field_actual == SPEED1) {                                                                            
+      field = SPEED2;                             //Default actual RUN + AVG screen
+      if(nautical_mile_screen) field = SPEED4;
+      if(x_10km_screen) field=SPEED5;                                                                                   
+      if(alfa_screen)field=SPEED3;
+      }
+    if (config.field_actual == SPEED2) {
+      field = SPEED2; 
+      if(nautical_mile_screen) field = SPEED4;
+      }
+    if (config.field_actual == SPEED7) {
+      field = SPEED7; 
+      if(alfa_screen)field=SPEED3;
+      }
+    if (config.field_actual == SPEED8) {
+      field = SPEED8; 
+      if(alfa_screen)field=SPEED3;          
+      }
+    if (config.field_actual == SPEED9) {  //1 hour default, but prio alfa, and if good run, last run
+      field = SPEED2;//default Run / Avg
+      if(nautical_mile_screen) field = SPEED4;//after 1852 m 
+      if (Ublox.alfa_distance / 1000 < 1000) field = SPEED8; // 350m - 1000m : 1h !!
+      if (S10.s_max_speed > S10.display_speed[5]) field = SPEED2;   //if run faster then slowest run, show AVG & run after 1000 m 
+      if(alfa_screen)field=SPEED3;  //prio alfa                      
+      }
 
     if (GPS_Signal_OK == true) {
                                    //test for bigger font alfa
       if (config.speed_large_font == 2) {  //test for bigger font speed (Simon)
-        bar_position = 0;
+        //int gps_speed_int=(int)(gps_speed*calibration_speed);
+        int gps_speed_komma=(int)((gps_speed*calibration_speed)*10)%10;
         display.setFont(&FreeSansBold75pt7b);
-        display.setCursor(offset + 5, 115);
-        display.print(gps_speed * calibration_speed, 0);  //print main in large font
+        display.setCursor(offset-6, 115);
+        display.print((int)(gps_speed*calibration_speed));  //print main in large font, float with rounding ???
         display.setFont(&FreeSansBold30pt7b);
         display.print(".");
-        display.println(int((gps_speed * calibration_speed - int(gps_speed * calibration_speed)) * 10), 0);  //int((x-int(x))*10) round to correct digit
+        display.setFont(&SansSerif_bold_84_nr);
+        display.println(gps_speed_komma);
+        //display.println(int((gps_speed * calibration_speed - int(gps_speed * calibration_speed)) * 10), 0);  //int((x-int(x))*10) round to correct digit
         }
       } else {
         display.setFont(&FreeSansBold18pt7b);
         display.setCursor(offset, 60);
         display.print("Low GPS signal !");
-      }
-    if (field <= 2) {                         //Run and AVG first line speed screen
+        }
+    if (field <= SPEED2) {                         //Run and AVG first line speed screen
       if (config.speed_large_font == 0) {
         Speed_font0("Run","Avg ",S10.s_max_speed * calibration_speed,S10.avg_5runs * calibration_speed,gps_speed * calibration_speed,0);
-      }
+        }
       if (config.speed_large_font == 1) {
         Speed_font1("","A",S10.s_max_speed * calibration_speed,S10.avg_5runs * calibration_speed,gps_speed * calibration_speed,0);
-      }      
+        }      
       if (config.speed_large_font == 3) {               
         if(S10.s_max_speed<S10.display_speed[5]){
           Speed_font3("   SPEED",gps_speed * calibration_speed);   
@@ -859,8 +790,7 @@ void Update_screen(int screen) {
       Between 400m and 1852m after jibe : Actual Run + AVG
       More then 1852m : NM actual speed and NM Best speed
       */
-    if (field == 3){
-      bar_length = 250 * 1000 / 240; //full bar length with Alfa = 250 meter
+    if (field == SPEED3){
       if(config.speed_large_font == 0) {                         
         if ((alfa_window < 99) & (Ublox.alfa_distance / 1000 < 255)) {  //Window alleen indien Window<100 en Run>350 meter !!!!&(A500.alfa_speed_max*calibration_speed<1) 
           if (alfa_exit > 99) alfa_exit = 99;  //begrenzen alfa_exit...
@@ -900,7 +830,7 @@ void Update_screen(int screen) {
         }
       }
     }    
-    if (field == 4) {                     //First line speed screen = nautical mile info
+    if (field == SPEED4) {                     //First line speed screen = nautical mile info
       if (config.speed_large_font == 0) {
         Speed_font0("NMa "," NM ",M1852.display_max_speed * calibration_speed,M1852.m_max_speed * calibration_speed,gps_speed * calibration_speed,0);
       }
@@ -911,7 +841,7 @@ void Update_screen(int screen) {
         Speed_font3("  N. MILE",M1852.m_max_speed * calibration_speed); 
       }
     }
-    if (field == 5) {
+    if (field == SPEED5) {
       if (config.speed_large_font == 1) {
         Speed_font1("Dist "," ",Ublox.total_distance / 1000000,0,gps_speed * calibration_speed,2);//distance in km xx.xx
       }
@@ -922,23 +852,41 @@ void Update_screen(int screen) {
         Speed_font0("Run"," Dist",Ublox.total_distance / 1000,Ublox.alfa_distance /1000000,gps_speed * calibration_speed,2);
       }
     }
-    if (field == 6) {
-      if (config.speed_large_font != 2) {//Simon font, alleen speed !)
+    if (field == SPEED6) {
+      if ((config.speed_large_font != 2)&(config.speed_large_font != 4)) {//Simon font, alleen speed !)
       Speed_font0("2S ","10S ",S2.display_max_speed * calibration_speed,S10.display_max_speed * calibration_speed,gps_speed * calibration_speed,0);
       }
     }
-    if (field == 7) {
+    if (field == SPEED7) {
       if (config.speed_large_font == 1) {
-        Speed_font1("0.5h: "," ",S1800.display_max_speed * calibration_speed,S1800.avg_s * calibration_speed,gps_speed * calibration_speed,2);
+        Speed_font1("500m "," ",M500.m_max_speed * calibration_speed,M500.m_max_speed * calibration_speed,gps_speed * calibration_speed,2);
       }
        else if(config.speed_large_font == 3){
-        Speed_font3("0.5 Hour",S1800.display_max_speed * calibration_speed);
+        Speed_font3("500m :",M500.m_max_speed * calibration_speed);
       }
        else if(config.speed_large_font == 0) {
-        Speed_font0(".5hA",".5hB",S1800.avg_s * calibration_speed,S1800.display_max_speed * calibration_speed,gps_speed * calibration_speed,0);
+        Speed_font0("500A","Max",M500.m_max_speed * calibration_speed,M500.display_max_speed * calibration_speed,gps_speed * calibration_speed,0);
       }
     }
-    if (field == 8) {
+    if (config.speed_large_font == 4) {
+      double speed=gps_speed * calibration_speed;
+      display.setFont(&FreeSansBold75pt7b);
+      display.setCursor(offset-6, 118);
+      display.print(speed, 0);
+      display.setFont(&SansSerif_bold_84_nr);
+      display.print(".");
+      int komma=(int)(speed*10)%10;
+      display.print(komma, 0);
+      }
+    int log_seconds; 
+    static int low_speed_seconds; 
+    static int start_hour_millis=millis();//only set @declaration
+    log_seconds = (millis() - start_hour_millis) / 1000;  //aantal seconden sinds loggen is gestart
+    if (S10.avg_s > 2000) { low_speed_seconds = 0; }  //if the speed is higher then 2000 mm/s, reset the counter
+    low_speed_seconds++;//update rate e-paper is about 1s....
+    if (low_speed_seconds > 120) { start_hour_millis = millis(); }  //bar will be reset if the 10s speed drops under 2m/s for more then 120 s !!!! 
+    if (field == SPEED8) {
+      if (log_seconds > 3600) { start_hour_millis = millis();}//reset bar
       if (config.speed_large_font == 1) {
         Speed_font1("1h: "," ",S3600.display_max_speed * calibration_speed,S3600.avg_s * calibration_speed,gps_speed * calibration_speed,2);
       } 
@@ -949,39 +897,38 @@ void Update_screen(int screen) {
         Speed_font0("1hA ","1hB ",S3600.avg_s * calibration_speed,S3600.display_max_speed * calibration_speed,gps_speed * calibration_speed,0);
       }
     }
-    int log_seconds = (millis() - start_logging_millis) / 1000;  //aantal seconden sinds loggen is gestart
-    static int low_speed_seconds;
-    if (S10.avg_s > 2000) { low_speed_seconds = 0; }  //if the speed is higher then 2000 mm/s, reset the counter
-    low_speed_seconds++;
-    if (low_speed_seconds > 120) { start_logging_millis = millis(); }  //bar will be reset if the 10s speed drops under 2m/s for more then 120 s !!!!
-    run_rectangle_length = (Ublox.alfa_distance / bar_length);         //240 pixels is volledige bar, ublox.alfa_distance zijn mm
-    if (field == 7) {
-      run_rectangle_length = log_seconds * 240 / 1800;
-      if (log_seconds > 1800) { start_logging_millis = millis(); }
-    }  //30 minutes = full bar
-    if (field == 8) {
-      run_rectangle_length = log_seconds * 240 / 3600;
-      if (log_seconds > 3600) { start_logging_millis = millis(); }
-    }  //60 minutes = full bar
-    if (bar_length) {
-      display.fillRect(offset, bar_position, run_rectangle_length, 8, GxEPD_BLACK);  //balk voor run_distance weer te geven...
-    }
+    /*progress bar**************************************************************************************************************************/
+     if (config.speed_large_font == 0) {total_bar_length=180;bar_position=32;}
+     if (config.speed_large_font == 1) {total_bar_length=240;bar_position=38;}
+     if ((config.speed_large_font == 2)|(config.speed_large_font == 4)) {total_bar_length=240;bar_position=0;}
+    bar_length = config.bar_length * 1000 / total_bar_length;
+    sprintf(bar_info,"%dm",config.bar_length); //default in config 1852m
+    //strcpy(bar_info,"1852m");//default
+    if (field==SPEED3) {bar_length = 250 * 1000 / total_bar_length;strcpy(bar_info,"250m");}
+    if (field==SPEED7) {bar_length = 500 * 1000 / total_bar_length;strcpy(bar_info,"500m");}
+    if(field==SPEED8) {run_rectangle_length = log_seconds * total_bar_length / 3600;strcpy(bar_info,"3600s");}
+    else {run_rectangle_length = (Ublox.alfa_distance / bar_length); }
+    if(run_rectangle_length>total_bar_length) {run_rectangle_length=total_bar_length;}//limit bar length for time...
+    if((run_rectangle_length<180)&(config.speed_large_font == 1)){
+      display.setTextWrap(false);
+      display.setFont(&FreeMonoBold9pt7b);//print bar infoFreeMonoBold9pt7b
+      display.setCursor(offset+186, 48);
+      display.print(bar_info);
+      }
+    if(config.speed_large_font == 0) {
+      display.setFont(&FreeSansBold12pt7b);//print time
+      display.setCursor(offset+180, 43);
+      display.print(time_now);  
+      }
+    if((run_rectangle_length<160)&(config.speed_large_font == 2)){
+      display.setTextWrap(false);
+      display.setFont(&FreeMonoBold9pt7b);//print bar infoFreeMonoBold9pt7b
+      display.setCursor(offset+186, 10);
+      display.print(bar_info);
+      }  
+    display.fillRect(offset, bar_position, run_rectangle_length, 8, GxEPD_BLACK);  //balk voor run_distance weer te geven...
   }
-  if (screen == AVG_10S) {
-    update_delay = 1000;
-    display.setFont(&FreeSansBold12pt7b);
-    for (int i = 9; i > 4; i--) {
-      display.setCursor(offset, 24 * (10 - i));
-      display.print("Run ");
-      display.print(10 - i);
-      display.print(": ");
-      display.print(S10.avg_speed[i] * calibration_speed, 2);
-      display.print(" @");
-      display.print(S10.time_hour[i]);
-      display.print(":");
-      display.print(S10.time_min[i]);
-    }
-  }
+  /*
   if (screen == SPEED2) {
     update_delay = 100;
     if (GPS_Signal_OK == true) {
@@ -1021,6 +968,7 @@ void Update_screen(int screen) {
       Sats_level(offset);
     }
   }
+  */
   if (screen == TROUBLE) {
     display.setFont(&FreeSansBold12pt7b);
     display.setCursor(offset, ROW_1_12PT);
@@ -1030,7 +978,6 @@ void Update_screen(int screen) {
     //display.print(time_now);
   }
   if (screen == STATS1) {  //2s,10sF,10sS, AVG
-    update_delay = (config.Stat_screens_time - 2) * 1000;
     display.setFont(&FreeSansBold12pt7b);
     display.setCursor(offset, ROW_1_18PT);
     display.print("2l: ");
@@ -1041,7 +988,6 @@ void Update_screen(int screen) {
     display.print("2s: ");
     display.setFont(&FreeSansBold18pt7b);
     display.print(S2.display_max_speed * calibration_speed);  //best 2s, was avg_speed[9]
-    //display.setFont(&FreeSansBold12pt7b);
     display.setCursor(offset, ROW_2_18PT);
     display.print("10sF: ");
     display.println(S10.display_max_speed * calibration_speed);  //best 10s(Fast), was avg_speed[9]
@@ -1051,24 +997,13 @@ void Update_screen(int screen) {
     display.setCursor(offset, ROW_4_18PT);
     display.print("Avg: ");
     display.println(S10.avg_5runs * calibration_speed);  //average 5*10s
-    //Bat_level(offset+222,87);
   }
   if (screen == STATS2) {  //alfa 500m,1852m, 1800s,total_dist
-    update_delay = (config.Stat_screens_time - 2) * 1000;
     static int toggle = 0;
     display.setFont(&FreeSansBold18pt7b);
     display.setCursor(offset, ROW_1_18PT);
     display.print("Dist: ");
     display.print(Ublox.total_distance / 1000, 0);
-    //display.setFont(&FreeSansBold12pt7b);
-    //int posX = 196+offset%2;
-    //int satnum = ubxMessage.navPvt.numSV;
-    //display.setCursor(posX,22);//zodat SXX niet groter wordt dan 244 pix
-    //display.drawExampleBitmap((satnum<1?ESP_noSat_22:ESP_Sat_22), posX, 3, 22, 22, GxEPD_BLACK);
-    //display.print("S");
-    //display.setCursor(posX+23,22);
-    //display.println(ubxMessage.navPvt.numSV);
-    //display.setFont(&FreeSansBold18pt7b);
     display.setCursor(offset, ROW_2_18PT);
     display.print("1852m: ");
     display.println(M1852.display_max_speed * calibration_speed);  //was avg_speed[9]
@@ -1087,10 +1022,8 @@ void Update_screen(int screen) {
       display.print(time_now_sec);
       toggle = 0;
     }
-    //Bat_level(offset+222,87);
   }
   if (screen == STATS3) {  //100m,250m, 500m,Alfa
-    update_delay = (config.Stat_screens_time - 2) * 1000;
     display.setFont(&FreeSansBold18pt7b);
     display.setCursor(offset, ROW_1_18PT);
     display.print("100m: ");
@@ -1104,10 +1037,8 @@ void Update_screen(int screen) {
     display.setCursor(offset, ROW_4_18PT);
     display.print("Alfa: ");
     display.println(A500.avg_speed[9] * calibration_speed, 2);  //average 5*10s
-    //Bat_level(offset+222,87);
   }
   if (screen == STATS4) {  //10s,AVG,5 runs, update on the fly !!!
-    update_delay = (config.Stat_screens_time - 2) * 1000;
     display.setFont(&FreeSansBold12pt7b);
     display.setCursor(offset, ROW_1_18PT);
     display.print("10s Avg: ");
@@ -1135,7 +1066,6 @@ void Update_screen(int screen) {
     }
   }
   if (screen == STATS5) {  //alfa statistics
-    update_delay = (config.Stat_screens_time - 2) * 1000;
     display.setFont(&FreeSansBold12pt7b);
     display.setCursor(offset, ROW_1_18PT);
     display.print("Last Alfa stats ! ");
@@ -1157,14 +1087,10 @@ void Update_screen(int screen) {
         display.setFont(&FreeSansBold18pt7b);
         display.print(a500.avg_speed[i - 3] * calibration_speed, 1);
       }
-      /*else{
-            display.print(time_now);
-          }*/
     }
   }
   if (screen == STATS6) {  //Simon stat screen
     Serial.println("STATS6_Simon_screen");
-    update_delay = (config.Stat_screens_time - 2) * 1500;
     double S10avgNEW;
     if (S10.s_max_speed > S10.avg_speed[5]) S10avgNEW = (S10.avg_speed[9] + S10.avg_speed[8] + S10.avg_speed[7] + S10.avg_speed[6] + S10.s_max_speed) / 5;
     else S10avgNEW = (S10.avg_speed[9] + S10.avg_speed[8] + S10.avg_speed[7] + S10.avg_speed[6] + S10.avg_speed[5]) / 5;
@@ -1181,9 +1107,6 @@ void Update_screen(int screen) {
     int col4 = 182 + offset;
     int line = 0;
 
-    //display.setCursor(displayWidth-10,INFO_BAR_TOP);
-    //display.setFont(&FreeSansBold6pt7b);
-    //display.print(time_now);
     display.setFont(&FreeMonoBold12pt7b);
     display.setCursor(col1, row1);
     display.print("AV:");
@@ -1250,15 +1173,53 @@ void Update_screen(int screen) {
     else line = row6;
     display.fillRect(0, line + 2, col3 - 10, 2, GxEPD_BLACK);  //lijn voor actuele run weer te geven...
   }
+    if (screen == RUNS_STAT) {
+    display.setFont(&FreeSansBold12pt7b);
+    for (int i = 9; i > 4; i--) {
+      display.setCursor(offset, 24 * (10 - i));
+      display.print("Run ");
+      display.print(10 - i);
+      display.print(": ");
+      display.print(S10.avg_speed[i] * calibration_speed, 2);
+      display.print(" @");
+      display.print(S10.time_hour[i]);
+      display.print(":");
+      display.print(S10.time_min[i]);
+    }
+  }  
+  if (screen == STATS8) {
+    display.setFont(&FreeSansBold12pt7b);
+    for (int i = 9; i > 4; i--) {
+      display.setCursor(offset, 24 * (10 - i));
+      display.print("500 ");
+      display.print(10 - i);
+      display.print(": ");
+      display.print(M500.avg_speed[i] * calibration_speed, 2);
+      display.print(" @");
+      display.print(M500.time_hour[i]);
+      display.print(":");
+      display.print(M500.time_min[i]);
+    }  
+  }
+  if (screen == STATSA) {
+    display.setFont(&FreeSansBold12pt7b);
+    for (int i = 9; i > 4; i--) {
+      display.setCursor(offset, 24 * (10 - i));
+      display.print("2s: ");
+      display.print(10 - i);
+      display.print(": ");
+      display.print(S2.avg_speed[i] * calibration_speed, 2);
+      display.print(" @");
+      display.print(S2.time_hour[i]);
+      display.print(":");
+      display.print(S2.time_min[i]);
+    }  
+  }
   if (screen == STATS7) {  //Simon bar graph screen
     Serial.println("STATS7_Simon_bar graph");
-    update_delay = (config.Stat_screens_time - 2) * 1500;
-    //int DisplayWidth=255;
-    //int DisplayHeight=122;
     int posX = 5;
     int posY = INFO_BAR_TOP;
     int MaxNumberBar = NR_OF_BAR;  //is 42, zie GPS_data.h
-    //int barLengthMax=70;
     int GraphWidth = 215;  //was 220
     int barWidth = 3;
     int barSpace = 2;
@@ -1283,7 +1244,7 @@ void Update_screen(int screen) {
       display.print(min_bar + i * step);                                      //Printen y-as legende speed, van min_bar tot max_bar in 8 steps...
     }
 
-    display.setCursor(0, 30);
+    display.setCursor(0, 26);
     display.print("R1-R5:");
     display.print(S10.display_speed[9] * calibration_speed);
     display.print(" ");
@@ -1317,17 +1278,14 @@ void Update_screen(int screen) {
     Serial.println(barWidth);
 #endif
   }
-  if (screen > BOOT_SCREEN && screen < SPEED) {
-    display.setFont(&FreeSansBold6pt7b);
-    display.setCursor(displayWidth - 10, INFO_BAR_TOP);
-    display.print(screen);
-  }
+
   if (count % 200 == 0) {  //was 200
     if (update_epaper > 0) display.update();
     offset = 0;
   } else {
     if (update_epaper == 2) { display.fillScreen(GxEPD_WHITE); }                           //test
     if (update_epaper > 0) display.updateWindow(0, 0, displayWidth, displayHeight, true);  //was 244,122, true !!!
+    if(screen>=STATS1)update_delay = (config.Stat_screens_time - 2) * 1000;             //set delay for all stats screens !
     delay(update_delay);                                                                   //update delay function of screen to show
   }
   old_screen = screen;
