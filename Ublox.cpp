@@ -10,15 +10,22 @@ struct tm my_time;  // time elements structure
 time_t unix_timestamp; // a timestamp
 
 void Ublox_on(){
-   digitalWrite(25, HIGH); 
-   digitalWrite(26, HIGH);
-   digitalWrite(27, HIGH);
-   delay(20);
+  pinMode(UBLOX_POWER1, OUTPUT);//Power beitian //default drive strength 2, only 2.7V @ ublox gps
+  pinMode(UBLOX_POWER2, OUTPUT);//Power beitian
+  pinMode(UBLOX_POWER3, OUTPUT);//Power beitiansee
+  rtc_gpio_set_drive_capability(UBLOX_RTC_GPIO1,GPIO_DRIVE_CAP_3);// https://www.esp32.com/viewtopic.php?t=5840
+  rtc_gpio_set_drive_capability(UBLOX_RTC_GPIO2,GPIO_DRIVE_CAP_3);//3.0V @ ublox gps current 50 mA
+  gpio_set_drive_capability(UBLOX_GPIO3,GPIO_DRIVE_CAP_3);//rtc_gpio_ necessary, if not no output on RTC_pins 25 en 26, 13/3/2022
+  delay(50);
+  digitalWrite(UBLOX_POWER1, HIGH); 
+  digitalWrite(UBLOX_POWER2, HIGH);
+  digitalWrite(UBLOX_POWER3, HIGH);
+  delay(100);
 }
 void Ublox_off(){
-  digitalWrite(25, LOW);
-  digitalWrite(26, LOW);
-  digitalWrite(27, LOW);
+  digitalWrite(UBLOX_POWER1, LOW);
+  digitalWrite(UBLOX_POWER2, LOW);
+  digitalWrite(UBLOX_POWER3, LOW);
 }
 void Ublox_serial2(int delay_ms){
  for(int i=0;i<delay_ms;i++){

@@ -33,6 +33,7 @@
 #include <EEPROM.h>
 #include "Definitions.h"
 #include <LittleFS.h>
+#include "rom/rtc.h"
 #include "ESP_functions.h"
 //#include "OTA_server.h" 
 const char* ssid = config.ssid; //WiFi SSID
@@ -42,12 +43,15 @@ const char* password2 = config.password2; //WiFi Password
 const char* soft_ap_ssid = "ESP32AP"; //accespoint ssid
 const char* soft_ap_password = "password"; //accespoint password
 bool ap_mode=false;
-  
+extern bool reset_boot; 
 void setup() {
-  
+  Serial.begin(115200);
+  Serial.print("Actual CPU freq @ boot"); Serial.println (getCpuFrequencyMhz());
   EEPROM.begin(EEPROM_SIZE);
   config.ublox_type = EEPROM.read(0);
-  Serial.begin(115200);
+  //print_reset_reason(rtc_get_reset_reason(0));//Find out the reset reason, if no SW-reset-> back to deep sleep !
+  if(reset_boot==true) {setCpuFrequencyMhz(20);}
+  print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
   Serial.println("setup Serial");
   Serial.println("Serial Txd is on pin: "+String(TX));
   Serial.println("Serial Rxd is on pin: "+String(RX));
@@ -64,18 +68,11 @@ void setup() {
   Serial.println("Configuring WDT...");
   esp_task_wdt_init(WDT_TIMEOUT,true);
   esp_task_wdt_add(NULL); //add current thread to WDT watch
-  SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
-  print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
   analog_mean = analogRead(PIN_BAT);//fill FIR filter
-  pinMode(UBLOX_POWER1, OUTPUT);//Power beitian //default drive strength 2, only 2.7V @ ublox gps
-  pinMode(UBLOX_POWER2, OUTPUT);//Power beitian
-  pinMode(UBLOX_POWER3, OUTPUT);//Power beitiansee
-  rtc_gpio_set_drive_capability(UBLOX_RTC_GPIO1,GPIO_DRIVE_CAP_3);// https://www.esp32.com/viewtopic.php?t=5840
-  rtc_gpio_set_drive_capability(UBLOX_RTC_GPIO2,GPIO_DRIVE_CAP_3);//3.0V @ ublox gps current 50 mA
-  gpio_set_drive_capability(UBLOX_GPIO3,GPIO_DRIVE_CAP_3);//rtc_gpio_ necessary, if not no output on RTC_pins 25 en 26, 13/3/2022
-  
+  //pinMode(21, OUTPUT);
+  //digitalWrite(21,HIGH);
+  SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
   sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
-
   struct timeval tv = { .tv_sec =  0, .tv_usec = 0 };
   settimeofday(&tv, NULL);
   if (!SD.begin(SDCARD_SS, sdSPI)) {
@@ -119,8 +116,25 @@ void setup() {
         printFile(filename); 
   } 
   Boot_screen();
+   if(RTC_voltage_bat<MINIMUM_VOLTAGE+0.2){
+      RTC_OFF_screen=1;//Simon screen with info text !!!
+      char tekst[32] = "";
+      sprintf(tekst, "Shutdown low bat  @ %f V\n",MINIMUM_VOLTAGE+0.3);
+      logERR(tekst);
+      strcpy(RTC_Sleep_txt,"Shut down Low Bat !");
+      Shut_down();
+   }
+  if(reset_boot==true){
+    RTC_OFF_screen=1;//Simon screen with info text !!!
+      char tekst[32] = "";
+      sprintf(tekst, "Sleep after reset");
+      logERR(tekst);
+      strcpy(RTC_Sleep_txt,"Shutdown after reset!");
+      Shut_down();
+  }
+  setCpuFrequencyMhz(240);
   Update_screen(BOOT_SCREEN);
-
+  Serial.print("Actual CPU freq before Wifi.begin(): "); Serial.println (getCpuFrequencyMhz());
   WiFi.onEvent(OnWiFiEvent);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
@@ -384,14 +398,18 @@ void taskTwo( void * parameter)
     if(long_push==true){
         Off_screen(RTC_OFF_screen);
         Shut_down();
+        vTaskDelete(NULL);//to avoid that screen get new updates !!!!
     }
     else if(low_bat_count>10){
         RTC_OFF_screen=1;//Simon screen with info text !!!
         char tekst[32] = "";
         sprintf(tekst, "Shutdown low bat  @ %f V\n",MINIMUM_VOLTAGE);
         logERR(tekst);
-        Off_screen(RTC_OFF_screen);
+       // Off_screen(RTC_OFF_screen);
+        strcpy(RTC_Sleep_txt,"Shut down Low Bat !");
+        Boot_screen();
         Shut_down();
+        vTaskDelete(NULL);//to avoid that screen get new updates !!!!
     }
     else if(millis()<2000)Update_screen(BOOT_SCREEN);
     else if(trouble_screen) Update_screen(TROUBLE);

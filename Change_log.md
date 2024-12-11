@@ -1,4 +1,12 @@
- ###Changes SW5.89
+ ###Changes SW5.90beta
+* Stat screen 500m / runs bugfix time reading : time 18:6 -> 18:06
+* Adapt FIR filter bat reading 0.1 -> 0.02, more consistent measurement
+* Auto calibration, full lipo 4.2V -> 4.3 V
+* Before Wifi start, min 3.4V
+* Override lipo calibration possible, only auto-calibrate with more then 5% too high reading
+* Deep sleep current -> 80 µA without SD, with SD 550 µA, this by deleting  "hold_gpio_enable()" !!!
+* No config.txt -> 10s wifi search
+ ###Changes SW5.89e
 * Added Lisa logos
 * Stat_screen 7,8,9 no info-bar, because info-bar overwrites last line....
 * Shorten bar_length if actual time is visible 

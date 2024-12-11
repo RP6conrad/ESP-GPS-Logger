@@ -59,7 +59,7 @@
 #define TOP_LEFT_TITLE_MSG(msg) TITLE_9PT TOP_TITLE_MSG(msg)
 #ifndef T5_E_PAPER
 void Boot_screen(void){};
-void Off_screen(int choice){};
+//void Off_screen(int choice){};
 //void sleep_screen(void);
 void Sleep_screen(int choice){};
 void Update_screen(int screen){};
@@ -175,28 +175,29 @@ void Boot_screen(void) {
   display.setRotation(1);
   displayHeight = display.height();
   displayWidth = display.width();
-  //rowTest();
   display.fillScreen(GxEPD_WHITE);
   display.setTextColor(GxEPD_BLACK);
-  ESP_GPS_LOGO_40
+  display.drawExampleBitmap(ESP_GPS_logo_40, offset + 198, 6, 40, 40,GxEPD_BLACK);
   InfoBarRtc(offset);
-  TITLE_9PT
+  display.setFont(&FreeSansBold9pt7b);                                         \
+  display.setCursor(offset,14);
   if (RTC_voltage_bat < MINIMUM_VOLTAGE) {
-    int cursor = ROW_2_9PT;
-    TOP_LEFT_TITLE("EPS-GPS sleeping")
+    //int cursor = ROW_2_9PT;
+    display.println("EPS-GPS sleeping");
     display.print("Go back to sleep...");
     display.setFont(&FreeSansBold12pt7b);
-    display.setCursor(offset, (cursor += ROW_12PT_W_SPACING));
-    display.printf("Voltage to low: %f", RTC_voltage_bat);
-    display.setCursor(offset, (cursor += ROW_12PT_W_SPACING));
-    display.print("Please charge battery!");
+    display.setCursor(offset, 60);
+    display.printf("Voltage to low: %.2f", RTC_voltage_bat);
+    display.setCursor(offset,80);
+    display.print("Please charge lipo!");
     display.update();
   } else {
-    TOP_LEFT_TITLE_MSG("ESP-GPS booting");
-    DEVICE_BOOT_LOG(23);
+    display.println("ESP-GPS booting");
+    display.println(SW_version);
+    sdCardInfo();
     display.updateWindow(0, 0, displayWidth, displayWidth, true);
     delay(100);
-    //display.update();
+    display.update();
   }
 }
 void Off_screen(int choice) {  //choice 0 = old screen, otherwise Simon screens
@@ -229,7 +230,8 @@ void Off_screen(int choice) {  //choice 0 = old screen, otherwise Simon screens
     } else {
       display.println("Going back to sleep");
     }
-  } else {
+  } 
+  if (choice == 1)  {
     Serial.println("Off_screen Simon");
     ESP_GPS_LOGO_40
     TOP_LEFT_TITLE_MSG("ESP-GPS saving");
@@ -256,7 +258,7 @@ void Off_screen(int choice) {  //choice 0 = old screen, otherwise Simon screens
   }
   InfoBar(offset);
   display.updateWindow(0, 0, displayWidth, displayHeight, true);
-  delay(10000);  //om te voorkomen dat update opnieuw start !!!
+  delay(3000);  //om te voorkomen dat update opnieuw start !!!
 }
 //Screen in deepsleep, update bat voltage, refresh every 4000s !!
 void Sleep_screen(int choice) {
@@ -928,47 +930,7 @@ void Update_screen(int screen) {
       }  
     display.fillRect(offset, bar_position, run_rectangle_length, 8, GxEPD_BLACK);  //balk voor run_distance weer te geven...
   }
-  /*
-  if (screen == SPEED2) {
-    update_delay = 100;
-    if (GPS_Signal_OK == true) {
-      display.setFont(&FreeSansBold75pt7b);
-      // change color when 2s speed is in top5
-      if (S2.s_max_speed * calibration_speed > S2.avg_speed[5] * calibration_speed) {
-        display.fillScreen(GxEPD_BLACK);
-        display.setTextColor(GxEPD_WHITE);
-      } else {
-        display.fillScreen(GxEPD_WHITE);
-        display.setTextColor(GxEPD_BLACK);
-      }
-      if (gps_speed * calibration_speed < 10) {
-        display.setCursor(40, 115);
-      } else {
-        display.setCursor(0, 115);
-      }
-      display.print(gps_speed * calibration_speed, 0);
-      if (gps_speed * calibration_speed < 100) {
-        display.setFont(&FreeSansBold30pt7b);
-        display.print(".");
-        display.println(int((gps_speed * calibration_speed - int(gps_speed * calibration_speed)) * 10), 0);  //int((x-int(x))*10)
-        display.setFont(&FreeSansBold9pt7b);
-        display.setCursor(160, 14);
-        display.print("Run ");
-        display.print(S10.s_max_speed * calibration_speed, 1);
-        display.setCursor(160, 28);
-        display.print("2S ");
-        display.print(S2.display_max_speed * calibration_speed, 1);
-      }
-      Speed_in_Unit(offset);
-      display.setTextColor(GxEPD_BLACK);
-    } else {
-      display.setFont(&FreeSansBold18pt7b);
-      display.setCursor(offset, 60);
-      display.print("Low GPS signal !");
-      Sats_level(offset);
-    }
-  }
-  */
+  
   if (screen == TROUBLE) {
     display.setFont(&FreeSansBold12pt7b);
     display.setCursor(offset, ROW_1_12PT);
@@ -1183,7 +1145,8 @@ void Update_screen(int screen) {
       display.print(S10.avg_speed[i] * calibration_speed, 2);
       display.print(" @");
       display.print(S10.time_hour[i]);
-      display.print(":");
+      if(S10.time_min[i]<10)display.print(":0");
+      else display.print(":");
       display.print(S10.time_min[i]);
     }
   }  
@@ -1197,7 +1160,8 @@ void Update_screen(int screen) {
       display.print(M500.avg_speed[i] * calibration_speed, 2);
       display.print(" @");
       display.print(M500.time_hour[i]);
-      display.print(":");
+      if(M500.time_min[i]<10) display.print(":0");
+      else display.print(":");
       display.print(M500.time_min[i]);
     }  
   }
@@ -1211,7 +1175,8 @@ void Update_screen(int screen) {
       display.print(S2.avg_speed[i] * calibration_speed, 2);
       display.print(" @");
       display.print(S2.time_hour[i]);
-      display.print(":");
+      if(S2.time_min[i]<10) display.print(":0");
+      else display.print(":");
       display.print(S2.time_min[i]);
     }  
   }

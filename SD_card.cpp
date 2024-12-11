@@ -208,7 +208,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
       file = SD.open(filename_backup);
     } else {
       Serial.println(F("no configuration file found"));
-      wifi_search = 120;  //elongation SoftAP mode to 120s !!!
+      //wifi_search = 120;  //elongation SoftAP mode to 120s !!!
     }
   }
   if (LITTLEFS_OK){
@@ -220,7 +220,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
       file = LITTLEFS.open(filename_backup);
     } else {
       Serial.println(F("no configuration file found"));
-      wifi_search = 120;  //elongation SoftAP mode to 120s !!!
+      //wifi_search = 120;  //elongation SoftAP mode to 120s !!!
     }
   }
   StaticJsonDocument<1280> doc;

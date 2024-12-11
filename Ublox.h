@@ -4,6 +4,8 @@
 #include "Arduino.h"
 #include "sys/time.h"
 #include "SD_card.h"
+#include <driver/rtc_io.h>
+#include <driver/gpio.h>
 
 #define RXD2 32  //geel is Tx Ublox, Beitian wit is Tx
 #define TXD2 33  //groen is Rx Ublox, Beitian groen is Rx

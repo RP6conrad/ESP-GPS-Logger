@@ -4,7 +4,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 5.89";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 5.90beta";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -32,6 +32,7 @@ bool SoftAP_connection = false;
 bool GPS_Signal_OK = false;
 bool long_push = false;
 bool Field_choice = false;
+bool reset_boot = false;
 int NTP_time_set = 0;
 int Gps_time_set = 0;
 bool Shut_down_Save_session = false;
@@ -175,37 +176,41 @@ void GPSTC_info(char* GPSTC_post );
 Method to print the reason by which ESP32 has been awaken from sleep
 */
 void print_wakeup_reason(){
-  analog_bat = analogRead(PIN_BAT);
-  RTC_voltage_bat=analog_bat*RTC_calibration_bat/1000;
+  int sleeping_time= TIME_TO_SLEEP;                                                
+  analog_mean = analogRead(PIN_BAT);
+  for(int i=0;i<50;i++){Update_bat();}  
+  analog_bat = analog_mean;
+  RTC_voltage_bat=analog_mean*RTC_calibration_bat/1000;
   Serial.print("Battery voltage = ");
   Serial.println(RTC_voltage_bat);
   esp_sleep_wakeup_cause_t wakeup_reason;
   wakeup_reason = esp_sleep_get_wakeup_cause();
 
   switch(wakeup_reason)
-  {    
+  {  
     case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO");
+                                 reset_boot=false; 
                                  pinMode(WAKE_UP_GPIO,INPUT_PULLUP);
-                                 while(millis()<200){
+                                 while(millis()<200){ //minimal puls length = 200 ms !!!
                                     if (digitalRead(WAKE_UP_GPIO)==1){
-                                      esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0); //was 39  1 = High, 0 = Low
                                       go_to_sleep(TIME_TO_SLEEP);
                                       break;
                                       }
                                     }
                                  rtc_gpio_deinit(GPIO_NUM_xx);//was 39   
                                  reed=1;   
-                                 esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+                                // esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+                                 if(RTC_voltage_bat<MINIMUM_VOLTAGE){
+                                      Boot_screen();
+                                      sleeping_time=40000;//sleep much longer
+                                      go_to_sleep(sleeping_time); //was 4000
+                                    }
                                  Boot_screen();
                                  break;
     case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); 
                                  break;
-    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer");                           
-                                  analog_mean = analogRead(PIN_BAT);
-                                  for(int i=0;i<10;i++){
-                                        Update_bat();
-                                        }                                 
-                                  if((int)analog_mean>RTC_highest_read){ 
+    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer");                                 
+                                  if((int)analog_mean>(RTC_highest_read+TOLERANCE)){ 
                                     RTC_highest_read=(int)analog_mean; 
                                     EEPROM.put(1,RTC_highest_read) ;
                                     EEPROM.commit();
@@ -213,43 +218,74 @@ void print_wakeup_reason(){
                                     Serial.print("New RTC_highest_read = ");
                                     Serial.println(RTC_highest_read);
                                     }   
-                                  esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0); //was 39  1 = High, 0 = Low
                                   if(abs(RTC_voltage_bat-RTC_old_voltage_bat)>MINIMUM_VOLTAGE_CHANGE){
                                     Sleep_screen(RTC_SLEEP_screen);
+                                    display.powerDown();
+                                    delay(100);
                                     RTC_old_voltage_bat=RTC_voltage_bat;
                                     }
                                   if(RTC_voltage_bat<MINIMUM_VOLTAGE){
                                       Boot_screen();
-                                      delay(1000);
-                                      Sleep_screen(RTC_SLEEP_screen);
+                                      display.powerDown();
+                                      delay(100);
+                                      pinMode(WAKE_UP_GPIO,INPUT_PULLUP);
                                       esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0);
-                                      go_to_sleep(4000);
+                                      esp_deep_sleep_start();//sleep forever.....
                                     }
-                                  go_to_sleep(TIME_TO_SLEEP); //was 4000
+                                  go_to_sleep(sleeping_time); //was 4000
                                   break;                               
     case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); 
                                      break;
     case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); 
                                 break;
-    default : Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason); 
-              Boot_screen();
+    default : Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason);
               break;
     }
 }
-
+void print_reset_reason(int reason)
+{
+  switch ( reason)
+  {
+    /*
+    case 1 : Serial.println ("POWERON_RESET"); break;          //<1,  Vbat power on reset
+    case 3 : Serial.println ("SW_RESET");break;               //<3,  Software reset digital core
+    case 4 : Serial.println ("OWDT_RESET");break;             //<4,  Legacy watch dog reset digital core
+    case 5 : Serial.println ("DEEPSLEEP_RESET");break;        //<5,  Deep Sleep reset digital core
+    case 6 : Serial.println ("SDIO_RESET");break;             //<6,  Reset by SLC module, reset digital core
+    case 7 : Serial.println ("TG0WDT_SYS_RESET");break;       //<7,  Timer Group0 Watch dog reset digital core
+    case 8 : Serial.println ("TG1WDT_SYS_RESET");break;       //<8,  Timer Group1 Watch dog reset digital core
+    case 9 : Serial.println ("RTCWDT_SYS_RESET");break;       //<9,  RTC Watch dog Reset digital core
+    case 10 : Serial.println ("INTRUSION_RESET");break;       //<10, Instrusion tested to reset CPU
+    case 11 : Serial.println ("TGWDT_CPU_RESET");break;       //<11, Time Group reset CPU
+    case 12 : Serial.println ("SW_CPU_RESET");break;          //<12, Software reset CPU
+    case 13 : Serial.println ("RTCWDT_CPU_RESET");break;      //<13, RTC Watch dog Reset CPU
+    case 14 : Serial.println ("EXT_CPU_RESET");break;         //<14, for APP CPU, reseted by PRO CPU
+    case 15 : Serial.println ("RTCWDT_BROWN_OUT_RESET");break;//<15, Reset when the vdd voltage is not stable 
+    case 16 : Serial.println ("RTCWDT_RTC_RESET");break;      //<16, RTC Watch dog reset digital core and rtc module
+    */
+     case 5 : Serial.println ("DEEPSLEEP_RESET");break;        //<5,  Deep Sleep reset digital core
+    case 12 : Serial.println ("SW_CPU_RESET");break;          /**<12, Software reset CPU*/        
+    default : Serial.println ("NO_MEAN, always back to sleep after bootscreen()!!!");reset_boot=true; 
+  }
+}
 void go_to_sleep(uint64_t sleep_time){
   deep_sleep=true;
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
   Ublox_off();
-  pinMode(13, OUTPUT);
-  digitalWrite(13, HIGH);//flash in deepsleep, CS stays HIGH!!
-  gpio_deep_sleep_hold_en();
-  esp_sleep_enable_timer_wakeup( uS_TO_S_FACTOR*sleep_time);
+
   Serial.println("Setup ESP32 to sleep for every " + String((int)sleep_time) + " Seconds");
   Serial.println("Going to sleep now");
-  Serial.flush(); 
-  delay(3000);//time needed for showing go to sleep screen
+  Serial.flush();
+  if(reset_boot==false) delay(3000);//time needed for showing go to sleep screen
+  pinMode(11, OUTPUT);
+  digitalWrite(11, HIGH);//flash in deepsleep, CS stays HIGH!!
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);//sd-card  in deepsleep, CS stays HIGH!!
+  pinMode(WAKE_UP_GPIO,INPUT_PULLUP);
+ // gpio_deep_sleep_hold_en();//cost 300 µA !!!
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0);
+  esp_sleep_enable_timer_wakeup( uS_TO_S_FACTOR*sleep_time);
   esp_deep_sleep(uS_TO_S_FACTOR*sleep_time);
 }
 
@@ -305,7 +341,7 @@ void Shut_down(void){
             Close_files();  
             }
         RTC_old_voltage_bat=0; //to force refresh the sleep screen when shutting down !!!    
-        go_to_sleep(5);//got to sleep after 5 s, this to prevent booting when GPIO39 is still low !     
+        go_to_sleep(3);//got to sleep after 5 s, this to prevent booting when GPIO39 is still low !     
 }
 void GPSTC_info(char *GPSTC_post) {
   char tekst[160] ="<html><hr><h2>GPS Team Challenge Category Results:</h2>\r";
@@ -359,7 +395,7 @@ void GPSTC_info(char *GPSTC_post) {
 }
 void Update_bat(void){
     analog_bat = analogRead(PIN_BAT);
-    analog_mean=analog_bat*0.1+analog_mean*0.9;
+    analog_mean=analog_bat*0.02+analog_mean*0.98;
     RTC_voltage_bat=analog_mean*RTC_calibration_bat/1000;
 }
 void printLocalTime(){

@@ -1,6 +1,7 @@
 //JsonConfigFile.ino for reading config file !!!
 //Changed next file for compiling with Arduino IDE 2.02 (SD(esp32) to SD)
 //C:\Users\andre\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.6\libraries\SD\library.properties
+//https://thecavepearlproject.org/2017/05/21/switching-off-sd-cards-for-low-power-data-logging/  About current consumption with SD cards
 
 #ifndef SD_CARD_H
 #define SD_CARD_H
@@ -69,7 +70,6 @@ struct Config {
   int Sail_Logo=1;
   char stat_screen[10]="167";//which stat_screen you want to see ?
   char gpio12_screen[10];//which stat_screen when gpio 12 toggles ?
-  //int speed_screen[10];//which speed fields are selected ?
   char speed_screen[10];//which speed fields are selected ?
   int screen_count=0;
   int gpio12_count=0;
