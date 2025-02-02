@@ -1,3 +1,10 @@
+* Added 115200 Baud for Beitian Bx122 
+* Bugfix for M8@38400 bd
+* Added estimated logtime left (webserver+display). Calculates logtime with actual settings sample-rate, file selection and free space.
+* GPIO 19 Go to sleep pin PULLDOWN. 
+* GPIO 21 hold HIGH SIDE SWITCH 
+* GPIO2 pulldown in deepsleep, was still floating
+* Added statscreen B , last run, best run, slowest run and average
  ###Changes SW5.90beta
 * Stat screen 500m / runs bugfix time reading : time 18:6 -> 18:06
 * Adapt FIR filter bat reading 0.1 -> 0.02, more consistent measurement
@@ -48,7 +55,7 @@
 * Warning sample-rate setting moved to webserver index page (files)
 * Moved Button_push class E_Paper -> ESP_functions.h
 * BUFFER_SIZE 9500 -> 9000 due to ESP32 2.0x lib, to prevent "DRAM segment data does not fit."
-* interrupt on WAKE_UP_GPIO for set Wifi_Search to 150 without delay
+* interrupt on GO_TO_SLEEP_GPIO for set Wifi_Search to 150 without delay
 * Boot with Wifi station and acces point simultanous
 * Added local storage if no SD card found, only 1.5 Mb, total flash is only 4 Mb !!!
 * If in AP-mode, but counting down, shutdown is possible now.

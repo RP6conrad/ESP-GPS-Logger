@@ -84,6 +84,12 @@ String file_size(int kbytes) {
   else fsize = String(kbytes / 1024.0 / 1024.0, 2) + " GB";
   return fsize;
 }
+String logtime_left(int log_minutes){
+  String logtime="";
+  if (log_minutes<600) logtime= String(log_minutes)+ " Minutes";
+  else logtime = String(log_minutes/60)+ " Hours";
+  return logtime;
+}
 //changes JH 19/11/2022, added for formatting timestamp file
 String Print_time(time_t timestamp) {
   char buff[30];
@@ -273,25 +279,41 @@ void SD_dir(int archive) {
     File root;
     if (sdOK) root = SD.open("/");
     if (LITTLEFS_OK) root = LITTLEFS.open("/");
-    uint64_t free_kbytes;
+    /*
+    uint64_t free_kbytes=0;
     if(LITTLEFS_OK) free_kbytes = (LITTLEFS.totalBytes() - LITTLEFS.usedBytes())/1024;
     if(sdOK) {
         uint64_t totalBytes=SD.totalBytes();
         uint64_t usedBytes=SD.usedBytes();
         free_kbytes=(totalBytes-usedBytes)/1024;
-        }
+        }   
+    int data_rate = (config.logGPY*24+config.logUBX*100+config.logSBP*32)*config.sample_rate+config.logGPX*230;
+    int logtime_left_sec = free_kbytes/data_rate*1024;
+    int logtime_left_min = logtime_left_sec/60; 
+    */  
     float bat_perc = 100 * (1 - (VOLTAGE_100 - RTC_voltage_bat) / (VOLTAGE_100 - VOLTAGE_0));
     if (bat_perc>100)bat_perc=100;
      if (bat_perc<0)bat_perc=0;
     String font_color_start = "<FONT COLOR=\"RED\">";
     String font_color_end ="</FONT>"; 
     String voltage_percent;
-    String free_space = "Free storage space = " + file_size(free_kbytes);
+    String free_space = "Free storage space = " + file_size(Free_space()) + ". Logtime left: "+logtime_left(Logtime_left(Free_space()));
+    if(Logtime_left(Free_space())<200)free_space= "<h3>"+ font_color_start+free_space+font_color_end + "</h3>";
     String voltage_lipo = "&emsp;Bat voltage = " + String(RTC_voltage_bat, 2) + " Volt";
     String firmware = "Firmware "+ String(SW_version);
     String gps_warning = "<h3>"+ font_color_start+"Sample-rate too high for the actual gnss setting, possible lost points in the log file !!"+font_color_end + "</h3>";
     String CPU_freq =  "<h3>"+ font_color_start+"For 5 Hz sample_rate, CPU freq of 80 MHz is sufficient. For 10 Hz, CPU freq of 160 MHz gives the maximal performance."+font_color_end + "</h3>";
     String Data_rate_high = "<h3>"+ font_color_start+"Max 2 file types set to ON, otherwise data rate too high and lost points possible !!"+font_color_end + "</h3>";
+    /*
+    .gpy = ca 24 byte/datapoint
+    .ubx = 100 byte/datapoint
+    .gpx = 230 byte/sekonde
+    .sbp = 32 bytes/datapoint
+  Datarate/sek = (sum)*data_rate+ .gpx
+  Free_space/datarate/60 = minutes logtime left
+*/
+    
+    
     bool GPS_warning=false;
     bool CPU_freq_warning = false;
     bool Data_rate_overload = false;
@@ -617,7 +639,7 @@ String serverIndex =
   "</script>"
   + style;
 
-const uint16_t OTA_CHECK_INTERVAL = 5000;  // ms
+const uint16_t OTA_CHECK_INTERVAL = 20000;  // ms
 uint32_t _lastOTACheck = 0;
 
 /* setup function */
@@ -695,14 +717,14 @@ void OTA_setup(void) {
 */
 #define STRINGV(s) #s
 #ifndef OTA_URL
-#define OTA_URL \
-http:  //esplogger.majasa.ee
+#define OTA_URL http://esplogger.majasa.ee
 #endif
 #ifndef OTA_PATH
 #define OTA_PATH / api / firmware / versions /
 #endif
+//const char *test_host = "http://esplogger.majasa.ee";  
 // Connection port (HTTPS)
-const int port = 80;
+const int port = 443;
 
 // Connection timeout
 const uint32_t RESPONSE_TIMEOUT_MS = 5000;
@@ -716,16 +738,18 @@ inline String getHeaderValue(String header, String headerName) {
 }
 
 String getApiHost() {
-  return String(STRINGV(OTA_URL));
+  return String("https://esplogger.majasa.ee");
+  //return String(STRINGV(OTA_URL));
 }
 
 String getLatestVersionRequestPath() {
-  String path = STRINGV(OTA_PATH);
-  return String(path + "_latest");
+  //String path = STRINGV(OTA_PATH);
+  String path ="https://esplogger.majasa.ee/api/firmware/versions/";
+  return String(path + "_stable");
 }
 
 String getBinaryRequestPath(const String& version) {
-  return String(STRINGV(OTA_PATH) + version + "/firmware_v_" + version + ".bin");
+  return String("/api/firmware/versions/" + version + "/firmware_v_" + version + ".bin");
 }
 
 void processOTAUpdate(const String version) {
@@ -737,6 +761,8 @@ void processOTAUpdate(const String version) {
     return;
   }
   WiFiClientSecure client;
+  client.setInsecure();
+  //WiFiClient client;
   if (!client.connect(currentHost.c_str(), port)) {
     Serial.println("Cannot connect to " + currentHost);
     return;
@@ -751,9 +777,9 @@ void processOTAUpdate(const String version) {
         return;
       }
     }
-    client.print(String("GET ") + firmwarePath + " HTTP/1.1\r\n");
-    client.print(String("Host: ") + currentHost + "\r\n");
-    client.print("Cache-Control: no-cache\r\n");
+    client.print(String("GET ") + firmwarePath  + " HTTP/1.1\r\n");
+   // client.print(String("Host: ") + currentHost + "\r\n");
+   // client.print("Cache-Control: no-cache\r\n");
     client.print("Connection: close\r\n\r\n");
 
     unsigned long timeout = millis();
@@ -766,23 +792,23 @@ void processOTAUpdate(const String version) {
     }
     while (client.available()) {
       String line = client.readStringUntil('\n');
+      Serial.println(line);
       // Check if the line is end of headers by removing space symbol
       line.trim();
       // if the the line is empty, this is the end of the headers
       if (!line.length()) {
         break;  // proceed to OTA update
       }
-
       // Check allowed HTTP responses
       if (line.startsWith("HTTP/1.1")) {
         if (line.indexOf("200") > 0) {
-          //Serial.println("Got 200 status code from server. Proceeding to firmware flashing");
+          Serial.println("Got 200 status code from server. Proceeding to firmware flashing");
           redirect = false;
         } else if (line.indexOf("302") > 0) {
-          //Serial.println("Got 302 status code from server. Redirecting to the new address");
+          Serial.println("Got 302 status code from server. Redirecting to the new address");
           redirect = true;
         } else {
-          //Serial.println("Could not get a valid firmware url");
+          Serial.println("Could not get a valid firmware url");
           //Unexptected HTTP response. Retry or skip update?
           redirect = false;
         }
@@ -791,24 +817,24 @@ void processOTAUpdate(const String version) {
       // Extracting new redirect location
       if (line.startsWith("Location: ")) {
         String newUrl = getHeaderValue(line, "Location: ");
-        //Serial.println("Got new url: " + newUrl);
+        Serial.println("Got new url: " + newUrl);
         newUrl.remove(0, newUrl.indexOf("//") + 2);
         currentHost = newUrl.substring(0, newUrl.indexOf('/'));
         newUrl.remove(newUrl.indexOf(currentHost), currentHost.length());
         firmwarePath = newUrl;
-        //Serial.println("firmwarePath: " + firmwarePath);
+        Serial.println("firmwarePath: " + firmwarePath);
         continue;
       }
 
       // Checking headers
-      if (line.startsWith("Content-Length: ")) {
-        contentLength = atoi((getHeaderValue(line, "Content-Length: ")).c_str());
+      if (line.startsWith("content-length: ")) {
+        contentLength = atoi((getHeaderValue(line, "content-length: ")).c_str());
         Serial.println("Got " + String(contentLength) + " bytes from server");
       }
 
-      if (line.startsWith("Content-Type: ")) {
-        String contentType = getHeaderValue(line, "Content-Type: ");
-        //Serial.println("Got " + contentType + " payload.");
+      if (line.startsWith("content-type: ")) {
+        String contentType = getHeaderValue(line, "content-type: ");
+        Serial.println("Got " + contentType + " payload.");
         if (contentType == "application/octet-stream") {
           isValidContentType = true;
         }
@@ -829,13 +855,17 @@ String requestHTTPContent() {
   String payload = "";
   String currentHost = getApiHost();
   WiFiClientSecure client;
+  client.setInsecure();
   String versionPath = getLatestVersionRequestPath();
+  Serial.println(versionPath);
   if (!client.connect(currentHost.c_str(), port)) {
-    Serial.println("Cannot connect to " + currentHost);
+    Serial.println("request : Cannot connect to " + currentHost);
     return payload;
   }
   client.print(String("GET ") + versionPath + " HTTP/1.1\r\n");
-  client.print(String("Host: ") + currentHost + "\r\n");
+  Serial.println(String("GET ") + versionPath + " HTTP/1.1\r\n");
+  //client.print(String("Host: ") + currentHost + "\r\n");
+  //Serial.println(String("Host: ") + currentHost + "\r\n");
   client.print("Cache-Control: no-cache\r\n");
   client.print("Connection: close\r\n\r\n");
   unsigned long timeout = millis();
@@ -848,36 +878,48 @@ String requestHTTPContent() {
   }
   while (client.available()) {
     String line = client.readStringUntil('\n');
-    int content = 0;
     line.trim();
+    Serial.print("Return  ");
+    Serial.print(line);
+    Serial.print(" length");
+    Serial.println(line.length());
+    int content = 0;
+   
     // if the the line is empty, this is the end of the headers
     if (!content && !line.length()) {
       content = 1;  // proceed to OTA update
       continue;
     }
-    if (line.startsWith("Content-Type: ")) {
-      String contentType = getHeaderValue(line, "Content-Type: ");
-      //Serial.println("Got " + contentType + " payload.");
-      if (contentType == "text/plain") {
+    if (line.startsWith("content-type: ")) {
+      String contentType = getHeaderValue(line, "content-type: ");
+      Serial.println(contentType);
+      //if (contentType == "text/plain") {
+      //if (contentType == "application/octet_stream") { 
+      if(true){
+        Serial.println("ValidContentType") ;
         isValidContentType = true;
       }
       continue;
     }
     if (isValidContentType && content == 1) {
       if (!line.length()) {
+        Serial.println("isValidContentType && content == 1");
         continue;
       }
       payload += line;
+      Serial.print(payload);Serial.print(" Line length "); Serial.println(line.length());
       break;  //1 line for version string
     }
   }
   client.flush();
+  Serial.println(payload);
   return payload;
 }
 
 void checkFirmwareUpdates() {
   // Fetch the latest firmware version
-  const String latest = requestHTTPContent();
+ // const String latest = requestHTTPContent();
+  const String latest = "https://github.com/RP6conrad/ESP-GPS-Logger/blob/master/Bin_files_B74/Rtos5.89B74.bin"
   if (latest.length() == 0) {
     Serial.println("Could not load info about the latest firmware, so nothing to update. Continue ...");
     return;
@@ -887,6 +929,7 @@ void checkFirmwareUpdates() {
   }
 
   Serial.println("There is a new version of firmware available: v." + latest);
+ // https://github.com/RP6conrad/ESP-GPS-Logger/blob/master/Bin_files_B74/Rtos5.89B74.bin
   processOTAUpdate(latest);
 }
 

@@ -384,7 +384,7 @@ void Session_info(GPS_data G) {
   strcat(message, tekst);
   sprintf(tekst, "Timezone : %f h\n", config.timezone);
   strcat(message, tekst);
-  sprintf(tekst, "tz offset (sec) : %d \n", _timezone);
+  sprintf(tekst, "tz offset (sec) : %ld \n", _timezone);
   strcat(message, tekst);
   strcat(message,TimeZone);
   strcat(message, "\nDynamic model: ");
@@ -566,4 +566,27 @@ void TimeZone_env (float timezone){     //without daylight saving, standard TZ s
 
     } 
   }
+}
+uint64_t Free_space(void){
+  uint64_t free_kbytes=0;
+  if(LITTLEFS_OK) free_kbytes = (LITTLEFS.totalBytes() - LITTLEFS.usedBytes())/1024;
+  if(sdOK) {
+    uint64_t totalBytes=SD.totalBytes();
+    uint64_t usedBytes=SD.usedBytes();
+    free_kbytes=(totalBytes-usedBytes)/1024;
+    }
+  return free_kbytes;
+}
+int Logtime_left (uint64_t kbytes){
+  uint64_t free_kbytes=0;
+    if(LITTLEFS_OK) free_kbytes = (LITTLEFS.totalBytes() - LITTLEFS.usedBytes())/1024;
+    if(sdOK) {
+        uint64_t totalBytes=SD.totalBytes();
+        uint64_t usedBytes=SD.usedBytes();
+        free_kbytes=(totalBytes-usedBytes)/1024;
+        }
+    int data_rate = (config.logGPY*24+config.logUBX*100+config.logSBP*32)*config.sample_rate+config.logGPX*230;
+    int logtime_left_sec = free_kbytes/data_rate*1024;
+    int logtime_left_min = logtime_left_sec/60; 
+    return logtime_left_min;   
 }

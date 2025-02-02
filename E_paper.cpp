@@ -59,8 +59,6 @@
 #define TOP_LEFT_TITLE_MSG(msg) TITLE_9PT TOP_TITLE_MSG(msg)
 #ifndef T5_E_PAPER
 void Boot_screen(void){};
-//void Off_screen(int choice){};
-//void sleep_screen(void);
 void Sleep_screen(int choice){};
 void Update_screen(int screen){};
 #else
@@ -189,12 +187,16 @@ void Boot_screen(void) {
     display.setCursor(offset, 60);
     display.printf("Voltage to low: %.2f", RTC_voltage_bat);
     display.setCursor(offset,80);
-    display.print("Please charge lipo!");
+    display.println("Please charge lipo!");
+    display.setCursor(offset,100);
+    display.print(RTC_Sleep_txt);
     display.update();
   } else {
     display.println("ESP-GPS booting");
     display.println(SW_version);
     sdCardInfo();
+    display.setCursor(offset,102);
+    display.printf("Logtime left : %d hour",Logtime_left(Free_space())/60);
     display.updateWindow(0, 0, displayWidth, displayWidth, true);
     delay(100);
     display.update();
@@ -207,13 +209,12 @@ void Off_screen(int choice) {  //choice 0 = old screen, otherwise Simon screens
   display.fillScreen(GxEPD_WHITE);
   display.setTextColor(GxEPD_BLACK);
   int cursor = ROW_3_9PT + ROW_12PT_W_SPACING;
-  if (choice == 0) {
-    ESP_GPS_LOGO_40
-    TOP_LEFT_TITLE_MSG("ESP-GPS saving");  //row1 14
-    DEVICE_BOOT_LOG(4);                    //2 rows until 46
-    //display.println("Need for speed!");
-    display.setFont(&FreeSansBold12pt7b);
-    display.setCursor(offset, cursor);
+  ESP_GPS_LOGO_40
+  TOP_LEFT_TITLE_MSG("ESP-GPS saving");  //row1 14
+  DEVICE_BOOT_LOG(4); 
+  display.setFont(&FreeSansBold12pt7b);
+  display.setCursor(offset, cursor); 
+  if (choice == 0) { 
     if (Shut_down_Save_session == true) {
       display.println("Saving session");
       display.setFont(&FreeSansBold9pt7b);
@@ -232,13 +233,6 @@ void Off_screen(int choice) {  //choice 0 = old screen, otherwise Simon screens
     }
   } 
   if (choice == 1)  {
-    Serial.println("Off_screen Simon");
-    ESP_GPS_LOGO_40
-    TOP_LEFT_TITLE_MSG("ESP-GPS saving");
-    DEVICE_BOOT_LOG(4);  //row 2 and 3
-    //display.println("Need for speed!");
-    display.setFont(&FreeSansBold12pt7b);
-    display.setCursor(offset, cursor);  //62
     if (Shut_down_Save_session == true) {
       display.println("Saving session");
       display.setFont(&FreeSansBold9pt7b);
@@ -256,9 +250,15 @@ void Off_screen(int choice) {  //choice 0 = old screen, otherwise Simon screens
       display.println("Going back to sleep");
     }
   }
+  if(choice==2){//shutdown due low bat
+    display.println("Shutdown LOW Bat");
+    display.setFont(&FreeSansBold9pt7b);
+    display.print("Bat = ");display.print(RTC_voltage_bat);display.println(" V");
+  }
   InfoBar(offset);
+  //display.update();
   display.updateWindow(0, 0, displayWidth, displayHeight, true);
-  delay(3000);  //om te voorkomen dat update opnieuw start !!!
+  //delay(3000);  //om te voorkomen dat update opnieuw start !!!
 }
 //Screen in deepsleep, update bat voltage, refresh every 4000s !!
 void Sleep_screen(int choice) {
@@ -508,8 +508,8 @@ void Bat_level_Simon(int offset) {
 }
 void Sats_level(int offset) {
   if (!ubxMessage.monVER.swVersion[0]) return;
-  int circelL = 5;
-  int circelS = 2;
+ // int circelL = 5;
+  //int circelS = 2;
   int posX = 120 + offset;//was 176
   int posY = INFO_BAR_TOP;  //-(circelL+2*circelS);
   int satnum = ubxMessage.navPvt.numSV;
@@ -526,18 +526,27 @@ const char* gpsChip(int longname) {
     case M8_38400BD:
       return longname ? "M8 38.4Kbd" : "M8";
       break;
+    case M8_115200BD:
+      return longname ? "M8 115.2Kbd" : "M8";
+      break;  
     case M9_9600BD:
       return longname ? "M9 9.6Kbd" : "M9";
       break;
     case M9_38400BD:
       return longname ? "M9 38.4Kbd" : "M9";
       break;
+    case M9_115200BD:
+      return longname ? "M9 115.2Kbd" : "M9";
+      break;  
     case M10_9600BD:
       return longname ? "M10 9.6Kbd" : "M10";
       break;
     case M10_38400BD:
       return longname ? "M10 38.4Kbd" : "M10";
       break;
+    case M10_115200BD:
+      return longname ? "M10 115.2Kbd" : "M10";
+      break;  
     default:
       return "unknown";
       break;
@@ -591,7 +600,56 @@ void Speed_in_Unit(int offset) {
 void sdCardInfo(void) {
   if (sdOK) display.printf("SD : %d Mb\n", freeSpace);
   if (LITTLEFS_OK) display.printf("Local : %d kb\n", (LITTLEFS.totalBytes() - LITTLEFS.usedBytes()) / 1024);
+ // display.setCursor(offset,102);
+ // display.printf("Logtime left : %d hour",Logtime_left(Free_space())/60);
 }
+void Stats_4lines(String Message1, String Message2, String Message3, String Message4, float Value1, float Value2, float Value3, float Value4) {
+  #define STAT4_ROW2 150
+  #define DIS_WIDTH 240
+  display.setCursor(offset, ROW_1_18PT);
+  display.setFont(&FreeSansBold18pt7b);
+  display.print(Message1); display.setCursor(STAT4_ROW2, ROW_1_18PT);
+  display.setFont(&FreeSansBold18pt7b);
+  if(Value1<100.0) display.println(Value1,2);
+  else if(Value1<1000.0) display.println(Value1,1);
+  else  display.println(Value1,0);
+  display.setCursor(offset,ROW_2_18PT);
+ // display.setFont(&FreeSansBold12pt7b);
+  display.print(Message2); display.setCursor(STAT4_ROW2,ROW_2_18PT);
+  display.setFont(&FreeSansBold18pt7b);
+  display.println(Value2,2);
+  display.setCursor(offset,ROW_3_18PT);
+  //display.setFont(&FreeSansBold12pt7b);
+  display.print(Message3); display.setCursor(STAT4_ROW2,ROW_3_18PT);
+  display.setFont(&FreeSansBold18pt7b);
+  display.println(Value3,2);
+  display.setCursor(offset,ROW_4_18PT);
+  //display.setFont(&FreeSansBold12pt7b);
+  display.print(Message4); display.setCursor(STAT4_ROW2,ROW_4_18PT);
+  display.setFont(&FreeSansBold18pt7b);
+  if(Value4>=0) display.println(Value4,2);
+}
+  void Stats_2s_3_lines(String Message1,String Message2,String Message3,float Value1,float Value2,float Value3){
+    display.setFont(&FreeSansBold12pt7b);
+    display.setCursor(offset, ROW_1_18PT);
+    display.print("2l: ");
+    display.setFont(&FreeSansBold18pt7b);
+    display.print(S2.display_last_run * calibration_speed, 1);  //last 2s max from rundisplay.print(S2.avg_speed[9]*calibration_speed);
+    display.setFont(&FreeSansBold12pt7b);
+    display.setCursor(120 + offset % 2, ROW_1_18PT);  //zodat SXX niet groter wordt dan 244 pix
+    display.print("2s: ");
+    display.setFont(&FreeSansBold18pt7b);
+    display.print(S2.display_max_speed * calibration_speed);  //best 2s, was avg_speed[9]
+    display.setCursor(offset, ROW_2_18PT);
+    display.print(Message1);
+    display.println(Value1);  //best 10s(Fast), was avg_speed[9]
+    display.setCursor(offset, ROW_3_18PT);
+    display.print(Message2);
+    display.println(Value2);  //langzaamste 10s(Slow) run van de sessie
+    display.setCursor(offset, ROW_4_18PT);
+    display.print(Message3);
+    display.println(Value3);  //average 5*10s
+  }
 void Update_screen(int screen) {
   static int count, old_screen, update_delay;
   update_time();
@@ -617,6 +675,7 @@ void Update_screen(int screen) {
     ESP_GPS_LOGO_40
     TOP_LEFT_TITLE_MSG("ESP-GPS GPS init");
     DEVICE_BOOT_LOG(24);
+
     if(config.ublox_type==0xFF){
       display.setFont(&FreeSansBold12pt7b);
       display.setCursor(offset, (cursor = ROW_4_9PT + ROW_12PT_W_SPACING));
@@ -637,6 +696,8 @@ void Update_screen(int screen) {
     ESP_GPS_LOGO_40
     TOP_LEFT_TITLE_MSG("ESP-GPS connect");
     DEVICE_BOOT_LOG(2);
+    display.setCursor(offset,102);
+    display.printf("Logtime left : %d hour",Logtime_left(Free_space())/60);
 
     if (Wifi_on == 1) {
       display.setFont(&FreeSansBold12pt7b);
@@ -654,18 +715,17 @@ void Update_screen(int screen) {
       display.printf("http://%s", IP_adress.c_str());
      
     } else {
-      display.fillRect(0, 0, 180, 104, GxEPD_WHITE);
+      display.fillRect(0, 0, 250, 122, GxEPD_WHITE);
+      ESP_GPS_LOGO_40
       TOP_LEFT_TITLE_MSG("ESP-GPS ready");
       DEVICE_BOOT_LOG(24);
-
       display.setFont(&FreeSansBold12pt7b);
       display.setCursor(offset, (cursor = ROW_4_9PT + ROW_12PT_W_SPACING));
       if (ubxMessage.navPvt.numSV < 5) {
         display.println("Waiting for Sat >=5");
         display.setFont(&FreeSansBold9pt7b);
-        display.setCursor(offset, (cursor += ROW_9PT_W_SPACING));
-        display.println("Please go outside");
-
+        display.setCursor(offset,102);
+        display.println("Please go outside...       ");
       } else {
         display.println("Ready for action");
         display.setFont(&FreeSansBold9pt7b);
@@ -681,6 +741,7 @@ void Update_screen(int screen) {
         }
         Speed_in_Unit(offset);
       }
+     InfoBar(offset) ;
     }
   }
   if (screen == WIFI_STATION) {
@@ -688,6 +749,8 @@ void Update_screen(int screen) {
     ESP_GPS_LOGO_40
     TOP_LEFT_TITLE_MSG("ESP-GPS try to connect");
     DEVICE_BOOT_LOG(2);
+    display.setCursor(offset,102);
+    display.printf("Logtime left : %d hour",Logtime_left(Free_space())/60);
     display.setFont(&FreeSansBold12pt7b);
     display.setCursor(offset, (cursor = ROW_3_9PT + ROW_12PT_W_SPACING));
     //display.println("Trying to connect...");
@@ -939,68 +1002,29 @@ void Update_screen(int screen) {
     //display.setCursor(offset,120);
     //display.print(time_now);
   }
+
   if (screen == STATS1) {  //2s,10sF,10sS, AVG
-    display.setFont(&FreeSansBold12pt7b);
-    display.setCursor(offset, ROW_1_18PT);
-    display.print("2l: ");
-    display.setFont(&FreeSansBold18pt7b);
-    display.print(S2.display_last_run * calibration_speed, 1);  //last 2s max from rundisplay.print(S2.avg_speed[9]*calibration_speed);
-    display.setFont(&FreeSansBold12pt7b);
-    display.setCursor(120 + offset % 2, ROW_1_18PT);  //zodat SXX niet groter wordt dan 244 pix
-    display.print("2s: ");
-    display.setFont(&FreeSansBold18pt7b);
-    display.print(S2.display_max_speed * calibration_speed);  //best 2s, was avg_speed[9]
-    display.setCursor(offset, ROW_2_18PT);
-    display.print("10sF: ");
-    display.println(S10.display_max_speed * calibration_speed);  //best 10s(Fast), was avg_speed[9]
-    display.setCursor(offset, ROW_3_18PT);
-    display.print("10sS: ");
-    display.println(S10.display_speed[5] * calibration_speed);  //langzaamste 10s(Slow) run van de sessie
-    display.setCursor(offset, ROW_4_18PT);
-    display.print("Avg: ");
-    display.println(S10.avg_5runs * calibration_speed);  //average 5*10s
+     Stats_2s_3_lines("10sF: ","10sS: ","AVG:  ",S10.display_max_speed * calibration_speed,S10.display_speed[5] * calibration_speed,S10.avg_5runs * calibration_speed);
   }
+
   if (screen == STATS2) {  //alfa 500m,1852m, 1800s,total_dist
     static int toggle = 0;
-    display.setFont(&FreeSansBold18pt7b);
-    display.setCursor(offset, ROW_1_18PT);
-    display.print("Dist: ");
-    display.print(Ublox.total_distance / 1000, 0);
-    display.setCursor(offset, ROW_2_18PT);
-    display.print("1852m: ");
-    display.println(M1852.display_max_speed * calibration_speed);  //was avg_speed[9]
-    display.setCursor(offset, ROW_3_18PT);
     if (toggle == 0) {
-      display.print("1800s: ");
-      display.println(S1800.display_max_speed * calibration_speed);
-      display.setCursor(offset, ROW_4_18PT);
-      display.print("Alfa: ");
-      display.print(A500.avg_speed[9] * calibration_speed);  //best Alfa on 500 m
+      Stats_4lines("Dist: ","1852m: ","1800s: ","Alfa: ",Ublox.total_distance / 1000,M1852.display_max_speed * calibration_speed,S1800.display_max_speed * calibration_speed,A500.avg_speed[9] * calibration_speed);
       toggle = 1;
     } else {
-      display.print("3600s: ");
-      display.println(S3600.display_max_speed * calibration_speed);
-      display.setCursor(offset, ROW_4_18PT);
-      display.print(time_now_sec);
+      Stats_4lines("Dist: ","1852m: ","3600s: ","Alfa: ",Ublox.total_distance / 1000,M1852.display_max_speed * calibration_speed,S3600.display_max_speed * calibration_speed,A500.avg_speed[9] * calibration_speed);
       toggle = 0;
     }
   }
   if (screen == STATS3) {  //100m,250m, 500m,Alfa
-    display.setFont(&FreeSansBold18pt7b);
-    display.setCursor(offset, ROW_1_18PT);
-    display.print("100m: ");
-    display.print(M100.avg_speed[9] * calibration_speed);  //best 2s, was avg_speed[9]
-    display.setCursor(offset, ROW_2_18PT);
-    display.print("250m: ");
-    display.println(M250.display_max_speed * calibration_speed);  //best 10s(Fast), was avg_speed[9]
-    display.setCursor(offset, ROW_3_18PT);
-    display.print("500m: ");
-    display.println(M500.avg_speed[9] * calibration_speed);  //langzaamste 10s(Slow) run van de sessie
-    display.setCursor(offset, ROW_4_18PT);
-    display.print("Alfa: ");
-    display.println(A500.avg_speed[9] * calibration_speed, 2);  //average 5*10s
+    Stats_4lines("100m:","250m:","500m:","Alfa:",M100.avg_speed[9] * calibration_speed,M250.display_max_speed * calibration_speed,M500.avg_speed[9] * calibration_speed,A500.avg_speed[9] * calibration_speed);
   }
-  if (screen == STATS4) {  //10s,AVG,5 runs, update on the fly !!!
+  if(screen == STATSB){
+    Stats_2s_3_lines("10sLast: ","10sBest: ","AVG :  ",S10.display_last_run * calibration_speed,S10.display_max_speed * calibration_speed,S10.avg_5runs * calibration_speed);
+   // Stats_4lines("Last run","Best run","AVG","2sM",S10.display_last_run * calibration_speed,S10.s_max_speed * calibration_speed,S10.avg_5runs * calibration_speed,-1.0);
+  }
+  if (screen == STATS4) {  //10s,AVG,5 runs, update on the fly !!!S10.display_speed[5] * calibration_speed
     display.setFont(&FreeSansBold12pt7b);
     display.setCursor(offset, ROW_1_18PT);
     display.print("10s Avg: ");

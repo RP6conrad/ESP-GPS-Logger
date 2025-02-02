@@ -43,7 +43,9 @@ const char* password2 = config.password2; //WiFi Password
 const char* soft_ap_ssid = "ESP32AP"; //accespoint ssid
 const char* soft_ap_password = "password"; //accespoint password
 bool ap_mode=false;
+bool sleep_mode=false;
 extern bool reset_boot; 
+
 void setup() {
   Serial.begin(115200);
   Serial.print("Actual CPU freq @ boot"); Serial.println (getCpuFrequencyMhz());
@@ -69,8 +71,6 @@ void setup() {
   esp_task_wdt_init(WDT_TIMEOUT,true);
   esp_task_wdt_add(NULL); //add current thread to WDT watch
   analog_mean = analogRead(PIN_BAT);//fill FIR filter
-  //pinMode(21, OUTPUT);
-  //digitalWrite(21,HIGH);
   SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
   sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
   struct timeval tv = { .tv_sec =  0, .tv_usec = 0 };
@@ -116,10 +116,10 @@ void setup() {
         printFile(filename); 
   } 
   Boot_screen();
-   if(RTC_voltage_bat<MINIMUM_VOLTAGE+0.2){
+   if(RTC_voltage_bat<MINIMUM_VOLTAGE){
       RTC_OFF_screen=1;//Simon screen with info text !!!
       char tekst[32] = "";
-      sprintf(tekst, "Shutdown low bat  @ %f V\n",MINIMUM_VOLTAGE+0.3);
+      sprintf(tekst, "Shutdown low bat  @ %d V\n",MINIMUM_VOLTAGE);
       logERR(tekst);
       strcpy(RTC_Sleep_txt,"Shut down Low Bat !");
       Shut_down();
@@ -176,7 +176,7 @@ void setup() {
       OTA_setup();  //start webserver for over the air update
       }
   else{
-      detachInterrupt(WAKE_UP_GPIO);
+      detachInterrupt(GO_TO_SLEEP_GPIO);
       Serial.println("No Wifi connection !");
       WiFi.disconnect(true);
       WiFi.mode(WIFI_OFF);
@@ -195,7 +195,7 @@ void setup() {
                     10000,            /* Stack size in bytes. */
                     NULL,             /* Parameter passed as input of the task */
                     1,                /* Priority of the task. */
-                    &t1,
+                    &t1,  //&t1,
                     1);            /* Task handle. */
  
  // xTaskCreate(
@@ -205,7 +205,7 @@ void setup() {
                     10000,            /* Stack size in bytes was 10000, but stack overflow on task 2 ?????? now 20000. */
                     NULL,             /* Parameter passed as input of the task */
                     1,                /* Priority of the task. */
-                    &t2,
+                    &t2,//&t2,
                     0);            /* Task handle. */
 }
  
@@ -237,21 +237,16 @@ void taskOne( void * parameter )
    if (Short_push12.Button_pushed())GPIO12_screen++;//toggle screen
    if (GPIO12_screen>config.gpio12_count)GPIO12_screen=0;
    if (Long_push12.Button_pushed()){ s10.Reset_stats(); s2.Reset_stats();a500.Reset_stats();} //resetten stats   
-   #endif  
-   if(Long_push39.Button_pushed()) Shut_down();
-
-   if (Short_push39.Button_pushed()){
-      if(config.speed_count==0){config.field_actual=Short_push39.button_count;}
-      else{
-        if(Short_push39.button_count>config.speed_count){
-          Short_push39.button_count=0;
-          }
-        config.field_actual=config.speed_screen[Short_push39.button_count];
-        //Serial.print("config.field_actual ");Serial.println(config.field_actual);
-        }
-      }
-   Field_choice=Short_push39.long_pulse;//10s wachttijd voor menu field keuze....//bug sw 5.54 !!
-   
+   #endif
+    if(Long_push39.Button_pushed()|Long_push19.Button_pushed()) {
+      sleep_mode=true;
+      Serial.println("task one delete");vTaskDelete(NULL);
+      }//to prevent gps boot in task one....
+    static int actual_speed_field=0;  
+    if (Short_push39.Button_pushed()|Short_push19.Button_pushed()){actual_speed_field++;}
+    if (actual_speed_field>config.speed_count) actual_speed_field=0;
+    config.field_actual=config.speed_screen[actual_speed_field];
+    Field_choice=Short_push39.long_pulse|Short_push19.long_pulse;//10s wachttijd voor menu field keuze....
    if((WiFi.status() != WL_CONNECTED)&(Wifi_on==true)&(SoftAP_connection==false)){
         Serial.println("No Wifi connection !");
         server.close();
@@ -395,19 +390,20 @@ void taskTwo( void * parameter)
     Update_bat();
     if(RTC_voltage_bat<MINIMUM_VOLTAGE) low_bat_count++;
     else low_bat_count=0;
-    if(long_push==true){
+    if(sleep_mode==true){
+        Ublox_off();
         Off_screen(RTC_OFF_screen);
+        Serial.println("RTC_OFF_screen");
+        delay(2000);
         Shut_down();
         vTaskDelete(NULL);//to avoid that screen get new updates !!!!
     }
     else if(low_bat_count>10){
-        RTC_OFF_screen=1;//Simon screen with info text !!!
+        sleep_mode==true;
         char tekst[32] = "";
-        sprintf(tekst, "Shutdown low bat  @ %f V\n",MINIMUM_VOLTAGE);
+        sprintf(tekst, "Shutdown low bat  @ %d V\n",MINIMUM_VOLTAGE);
         logERR(tekst);
-       // Off_screen(RTC_OFF_screen);
-        strcpy(RTC_Sleep_txt,"Shut down Low Bat !");
-        Boot_screen();
+        Off_screen(2);//off screen with "shutdown low bat"
         Shut_down();
         vTaskDelete(NULL);//to avoid that screen get new updates !!!!
     }

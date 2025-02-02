@@ -67,6 +67,7 @@ Flip: horizontally
 #define STATS8 56
 #define RUNS_STAT 57
 #define STATSA 65  //asci code for A
+#define STATSB 66  //asci code for B
 #define SPEED1 49
 #define SPEED2 50
 #define SPEED3 51
@@ -137,12 +138,11 @@ extern GPS_time S1800;
 extern GPS_time S3600;
 void Boot_screen(void);
 void Off_screen(int choice);
-//void sleep_screen(void);
 void Sleep_screen(int choice);
 void Update_screen(int screen);
 void Bat_level(int X_offset,int Y_offset);
 void Bat_level_Simon(int offset);
 void Sat_level(int offset);
 void time_print(int time);
-
+void Stats_4lines(String Message1, String Message2, String Message3, String Message4, float Value1, float Value2, float Value3, float Value4);
 #endif

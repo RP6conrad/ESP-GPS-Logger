@@ -4,7 +4,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 5.90beta";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 5.91";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -30,7 +30,7 @@ bool deep_sleep = false;
 bool Wifi_on=true;
 bool SoftAP_connection = false;
 bool GPS_Signal_OK = false;
-bool long_push = false;
+//bool long_push = false;
 bool Field_choice = false;
 bool reset_boot = false;
 int NTP_time_set = 0;
@@ -117,12 +117,12 @@ RTC_DATA_ATTR int RTC_highest_read = STARTVALUE_HIGHEST_READ;
 */
 class Button_push{
             public:
-            Button_push(int GPIO_pin,int push_time,int long_pulse_time,int max_count);//constructor
+            Button_push(int GPIO_pin,int push_time,int long_pulse_time,int max_count, bool default_state);//constructor
             boolean Button_pushed(void);//return true if button is pushed longer then push_time
             boolean long_pulse;
             int button_count;
             private:
-            boolean button_status, old_button_status,return_value;
+            boolean button_status, old_button_status,return_value,Default_state;
             int Input_pin;
             int push_millis; 
             int time_out_millis; 
@@ -148,10 +148,12 @@ Alfa_speed A250(50);
 Alfa_speed A500(50);
 Alfa_speed a500(50);//for  Alfa stats GPIO_12 screens, reset possible !!
 
-Button_push Short_push12 (12,50,15,1); //GPIO12 pull up, 100ms push time, 15s long_pulse, count 1, STAT screen 4&5
-Button_push Long_push12 (12,2000,10,4); //GPIO12 pull up, 2000ms push time, 10s long_pulse, count 4, reset STAT screen 4&5
-Button_push Short_push39 (WAKE_UP_GPIO,10,10,9);//was 39
-Button_push Long_push39 (WAKE_UP_GPIO,1500,10,9);//was 39
+Button_push Short_push12 (12,50,15,1,1); //GPIO12 pull up, 100ms push time, 15s long_pulse, count 1, STAT screen 4&5
+Button_push Long_push12 (12,2000,10,4,1); //GPIO12 pull up, 2000ms push time, 10s long_pulse, count 4, reset STAT screen 4&5
+Button_push Short_push39 (GO_TO_SLEEP_GPIO,10,10,9,1);//was 39 GO_TO_SLEEP_GPIO
+Button_push Long_push39 (GO_TO_SLEEP_GPIO,1700,10,9,1);//was 39 GO_TO_SLEEP_GPIO
+Button_push Short_push19 (GO_TO_SLEEP_PULLDOWN,10,10,9,0);//
+Button_push Long_push19 (GO_TO_SLEEP_PULLDOWN,1700,10,9,0);//
 
 #if defined(_GxDEPG0266BN_H_) //only for screen BN266, Rolzz... !!!
 GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ 19, /*RST=*/4);
@@ -189,15 +191,17 @@ void print_wakeup_reason(){
   switch(wakeup_reason)
   {  
     case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO");
+                                 pinMode(HOLD_PIN, OUTPUT);
+                                 digitalWrite(HOLD_PIN,HIGH);
                                  reset_boot=false; 
-                                 pinMode(WAKE_UP_GPIO,INPUT_PULLUP);
+                                 pinMode(GO_TO_SLEEP_GPIO,INPUT_PULLUP);
                                  while(millis()<200){ //minimal puls length = 200 ms !!!
-                                    if (digitalRead(WAKE_UP_GPIO)==1){
+                                    if (digitalRead(GO_TO_SLEEP_GPIO)==1){
                                       go_to_sleep(TIME_TO_SLEEP);
                                       break;
                                       }
                                     }
-                                 rtc_gpio_deinit(GPIO_NUM_xx);//was 39   
+                                 rtc_gpio_deinit(WAKE_UP_GPIO_NUM);//was 39   
                                  reed=1;   
                                 // esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
                                  if(RTC_voltage_bat<MINIMUM_VOLTAGE){
@@ -221,15 +225,16 @@ void print_wakeup_reason(){
                                   if(abs(RTC_voltage_bat-RTC_old_voltage_bat)>MINIMUM_VOLTAGE_CHANGE){
                                     Sleep_screen(RTC_SLEEP_screen);
                                     display.powerDown();
-                                    delay(100);
+                                   // delay(500);
+                                    //digitalWrite(HOLD_PIN,LOW);
                                     RTC_old_voltage_bat=RTC_voltage_bat;
                                     }
                                   if(RTC_voltage_bat<MINIMUM_VOLTAGE){
                                       Boot_screen();
                                       display.powerDown();
                                       delay(100);
-                                      pinMode(WAKE_UP_GPIO,INPUT_PULLUP);
-                                      esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0);
+                                      pinMode(GO_TO_SLEEP_GPIO,INPUT_PULLUP);
+                                      esp_sleep_enable_ext0_wakeup(WAKE_UP_GPIO_NUM,0);
                                       esp_deep_sleep_start();//sleep forever.....
                                     }
                                   go_to_sleep(sleeping_time); //was 4000
@@ -239,6 +244,8 @@ void print_wakeup_reason(){
     case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); 
                                 break;
     default : Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason);
+              pinMode(HOLD_PIN, OUTPUT);
+              digitalWrite(HOLD_PIN,HIGH);
               break;
     }
 }
@@ -273,7 +280,6 @@ void go_to_sleep(uint64_t sleep_time){
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
   Ublox_off();
-
   Serial.println("Setup ESP32 to sleep for every " + String((int)sleep_time) + " Seconds");
   Serial.println("Going to sleep now");
   Serial.flush();
@@ -282,15 +288,14 @@ void go_to_sleep(uint64_t sleep_time){
   digitalWrite(11, HIGH);//flash in deepsleep, CS stays HIGH!!
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);//sd-card  in deepsleep, CS stays HIGH!!
-  pinMode(WAKE_UP_GPIO,INPUT_PULLUP);
- // gpio_deep_sleep_hold_en();//cost 300 µA !!!
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_xx,0);
+  rtc_gpio_pulldown_en(GPIO_NUM_2);//wzs still floating....
+  pinMode(GO_TO_SLEEP_GPIO,INPUT_PULLUP);
+  esp_sleep_enable_ext0_wakeup(WAKE_UP_GPIO_NUM,0);
   esp_sleep_enable_timer_wakeup( uS_TO_S_FACTOR*sleep_time);
   esp_deep_sleep(uS_TO_S_FACTOR*sleep_time);
 }
 
 void Shut_down(void){
-        long_push=true;
         Ublox_off();
         GPS_Signal_OK=false;
         GPS_delay=0;
@@ -337,10 +342,14 @@ void Shut_down(void){
               Session_results_Alfa(A500,M500);
               Session_gpstc(gpstc_post);
               }
-            delay(100);
+            //delay(3000);// go to sleep screen need some time...
             Close_files();  
             }
-        RTC_old_voltage_bat=0; //to force refresh the sleep screen when shutting down !!!    
+       // RTC_old_voltage_bat=0; //to force refresh the sleep screen when shutting down !!!  
+        Sleep_screen(RTC_SLEEP_screen);
+        delay(1000);
+        display.powerDown();
+        digitalWrite(HOLD_PIN,LOW);  
         go_to_sleep(3);//got to sleep after 5 s, this to prevent booting when GPIO39 is still low !     
 }
 void GPSTC_info(char *GPSTC_post) {
@@ -463,9 +472,11 @@ void IRAM_ATTR isr() {
 * Ook variabele die dan long_pulse_time hoog blijft
 * Ook variabele die optelt tot maw elke keer push
 */
-Button_push::Button_push(int GPIO_pin, int push_time, int long_pulse_time, int max_count) {
-  pinMode(GPIO_pin, INPUT_PULLUP);
+Button_push::Button_push(int GPIO_pin, int push_time, int long_pulse_time, int max_count,bool default_state) {
+  if(default_state==1)pinMode(GPIO_pin, INPUT_PULLUP);
+  if(default_state==0)pinMode(GPIO_pin, INPUT_PULLDOWN);
   Input_pin = GPIO_pin;
+  Default_state = default_state;
   time_out_millis = push_time;
   max_pulse_time = long_pulse_time;
   max_button_count = max_count;
@@ -473,7 +484,7 @@ Button_push::Button_push(int GPIO_pin, int push_time, int long_pulse_time, int m
 boolean Button_push::Button_pushed(void) {
   return_value = false;
   button_status = digitalRead(Input_pin);
-  if (digitalRead(Input_pin) == 1) push_millis = millis();
+  if (digitalRead(Input_pin) == Default_state) push_millis = millis();
   if (((millis() - push_millis) > time_out_millis) & (old_button_status == 0)) {
     button_count++;
     if (button_count > max_button_count) button_count = 0;
@@ -484,7 +495,7 @@ boolean Button_push::Button_pushed(void) {
   } else return_value = false;
   if ((millis() - millis_10s) < (1000 * max_pulse_time)) long_pulse = true;
   else long_pulse = false;
-  if (digitalRead(Input_pin) == 1) old_button_status = 0;
+  if (digitalRead(Input_pin) == Default_state) old_button_status = 0;
   return return_value;
 }
 void Search_for_wifi(void) {

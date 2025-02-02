@@ -473,12 +473,13 @@ int setupGPS(void) {
   Serial.print("XTAL freq  ?= "); Serial.println(Xtal_freq);
   Ublox_on();//beitian bn220 power supply over output 25,26,27
   Serial2.setRxBufferSize(2048); // increasing buffer size ?
+  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2); //default connection to ublox over serial2
+   if((config.ublox_type==M8_115200BD)|(config.ublox_type==M9_115200BD)|(config.ublox_type==M10_115200BD)){
+    Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2  
+    }
   if((config.ublox_type==M8_38400BD)|(config.ublox_type==M9_38400BD)|  (config.ublox_type==M10_38400BD)){
     Serial2.begin(38400, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2  
-    }
-  else{
-   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2
-   }   
+    }  
   Serial.println("Serial2 Txd is on pin: "+String(TXD2));
   Serial.println("Serial2 Rxd is on pin: "+String(RXD2));
   for(int i=0;i<425;i++){//Startup string van ublox to serial, ca 424 char !!
@@ -497,11 +498,19 @@ int setupGPS(void) {
     else{
        Serial.println("Can't detect type and or baudrate of ublox....");
       }  
-    }     
-  if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)){
+    } 
+  if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)|(config.ublox_type==M8_115200BD)){
+     Serial.println("Set ublox bdrate 38.4 + UBX_OUT ");     
+     for(int i = 0; i < sizeof(UBLOX_UBX_BD38400); i++) {                        
+        Serial2.write( pgm_read_byte(UBLOX_UBX_BD38400+i) );
+        }
+      delay(100) ; 
+      Serial2.begin(38400, SERIAL_8N1, RXD2, TXD2);  
+  }      
+  if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)|(config.ublox_type==M8_115200BD)){
     Init_ublox(); //switch to ubx protocol
     }
-  if((config.ublox_type==M9_9600BD)|(config.ublox_type==M9_38400BD)|(config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)){
+  if((config.ublox_type==M9_9600BD)|(config.ublox_type==M9_38400BD)|(config.ublox_type==M9_115200BD)|(config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)|(config.ublox_type==M10_115200BD)){
     Init_ubloxM10(); //switch to ubx protocol, same for M9/M10
     }
   Serial.print("SW Ublox=");
@@ -516,10 +525,10 @@ int setupGPS(void) {
   Serial.println();  
   Serial.println (ubxMessage.monGNSS.default_Gnss);
   Serial.println (ubxMessage.monGNSS.enabled_Gnss);
-  if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)){
+  if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)|(config.ublox_type==M8_115200BD)){
       Set_rate_ublox(config.sample_rate);//after reading config file !! 
   } 
-  if((config.ublox_type==M9_9600BD)|(config.ublox_type==M9_38400BD)|(config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)){
+  if((config.ublox_type==M9_9600BD)|(config.ublox_type==M9_38400BD)|(config.ublox_type==M9_115200BD)|(config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)|(config.ublox_type==M10_115200BD)){
       Set_rate_ubloxM10(config.sample_rate);//after reading config file !! 
   } 
   return 1;

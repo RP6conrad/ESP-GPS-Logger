@@ -113,6 +113,8 @@ void Session_results_S(GPS_time S);
 void Session_results_Alfa(Alfa_speed A,GPS_speed M);
 void Session_gpstc(char* gpstc);
 void TimeZone_env (float timezone);
+uint64_t Free_space(void);
+int Logtime_left (uint64_t);
 /*
 void log_header_SBP(void);
 void log_SBP(void);
