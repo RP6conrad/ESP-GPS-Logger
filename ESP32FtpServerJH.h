@@ -34,7 +34,7 @@
 #ifndef FTP_SERVERESP_H
 #define FTP_SERVERESP_H
 
-#include "SD.h"
+#include "SD_MMC.h"
 #include <FS.h>
 #include <WiFiClient.h>
 

@@ -7,7 +7,7 @@
 #define SD_CARD_H
 #include "Ublox.h"
 #include "GPS_data.h"
-#include <SD.h>
+#include <SD_MMC.h>
 #include "ArduinoJson.h"
 
  

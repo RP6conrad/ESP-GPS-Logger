@@ -1,6 +1,14 @@
+###Changes SW6.00
+* SD in SD_MMC 1bit mode, this is the hardware SDIO bus from the ESP32. Only with dedicated pins possible. 
+* Proposal from Alhop for the SD NAND cards : SD_MMC 1 bit instead SD over SPI
+* Pullup needed on pin 2 before begin.SD_MMC needed for some cards
+* Pullup in deepsleep on pin 2 for minimize leakage current SD cards
+* Bugfix for GPIO 12,19 and 39  init with pulldown/pullup
+* Bugfix Logspace left calculation
+###Changes SW5.91
 * Added 115200 Baud for Beitian Bx122 
 * Bugfix for M8@38400 bd
-* Added estimated logtime left (webserver+display). Calculates logtime with actual settings sample-rate, file selection and free space.
+* Added estimated Logspace left (webserver+display). Calculates logtime with actual settings sample-rate, file selection and free space.
 * GPIO 19 Go to sleep pin PULLDOWN. 
 * GPIO 21 hold HIGH SIDE SWITCH 
 * GPIO2 pulldown in deepsleep, was still floating

@@ -2,7 +2,7 @@
 For OTA without internet access, see : 
 https://github.com/italocjs/ESP32_OTA_APMODE/blob/main/Main.cpp
 */
-#include <SD.h>
+#include <SD_MMC.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <Update.h>
@@ -104,7 +104,7 @@ String Print_time(time_t timestamp) {
 void SD_file_download(String filename) {
   if (sdOK | LITTLEFS_OK) {
     File download;
-    if (sdOK) download = SD.open("/" + filename);
+    if (sdOK) download = SD_MMC.open("/" + filename);
     if (LITTLEFS_OK) download = LITTLEFS.open("/" + filename);
     if (download) {
       downloading_file = true;
@@ -125,7 +125,7 @@ void SD_file_download(String filename) {
 //Prints the directory, it is called in void SD_dir()
 void printDirectory(const char* dirname, uint8_t levels) {
   File root;
-  if (sdOK) root = SD.open(dirname);
+  if (sdOK) root = SD_MMC.open(dirname);
   if (LITTLEFS_OK) root = LITTLEFS.open(dirname);
   if (!root) {
     return;
@@ -152,7 +152,7 @@ void printDirectory(const char* dirname, uint8_t levels) {
       char buffer[40] = "/Archive";                                                                                                                                 //&(file.getLastWrite()>EPOCH_2022)
       strcat(buffer, file.name());                                                                                                                                  //only rename if not Archive listing !!!
       if ((String(file.name()) != "config.txt") & (String(file.name()) != "/config.txt") & (String(file.name()) != "/config_backup.txt") & (String(file.name()) != "config_backup.txt")) {
-        if (sdOK|LITTLEFS_OK) SD.rename(file.name(), buffer);
+        if (sdOK|LITTLEFS_OK) SD_MMC.rename(file.name(), buffer);
       }
     } else {
       String filename = String(file.name());
@@ -200,11 +200,11 @@ void SD_file_delete(String filename) {
   if (sdOK | LITTLEFS_OK) {
     //SendHTML_Header();
     File dataFile;
-    if (sdOK) dataFile = SD.open("/" + filename, FILE_READ);               //Now read data from SD Card
+    if (sdOK) dataFile = SD_MMC.open("/" + filename, FILE_READ);               //Now read data from SD Card
     if (LITTLEFS_OK) dataFile = LITTLEFS.open("/" + filename, FILE_READ);  //Now read data from SD Card
     if (dataFile) {
       if (sdOK) {
-        if (SD.remove("/" + filename)) {
+        if (SD_MMC.remove("/" + filename)) {
           Serial.println(F("SD File deleted successfully"));
         }  //toegevoegd
       }
@@ -277,14 +277,14 @@ void SD_dir(int archive) {
       }
     }
     File root;
-    if (sdOK) root = SD.open("/");
+    if (sdOK) root = SD_MMC.open("/");
     if (LITTLEFS_OK) root = LITTLEFS.open("/");
     /*
     uint64_t free_kbytes=0;
     if(LITTLEFS_OK) free_kbytes = (LITTLEFS.totalBytes() - LITTLEFS.usedBytes())/1024;
     if(sdOK) {
-        uint64_t totalBytes=SD.totalBytes();
-        uint64_t usedBytes=SD.usedBytes();
+        uint64_t totalBytes=SD_MMC.totalBytes();
+        uint64_t usedBytes=SD_MMC.usedBytes();
         free_kbytes=(totalBytes-usedBytes)/1024;
         }   
     int data_rate = (config.logGPY*24+config.logUBX*100+config.logSBP*32)*config.sample_rate+config.logGPX*230;
@@ -297,7 +297,7 @@ void SD_dir(int archive) {
     String font_color_start = "<FONT COLOR=\"RED\">";
     String font_color_end ="</FONT>"; 
     String voltage_percent;
-    String free_space = "Free storage space = " + file_size(Free_space()) + ". Logtime left: "+logtime_left(Logtime_left(Free_space()));
+    String free_space = "Free storage space = " + file_size(Free_space()) + ". Logspace left: "+logtime_left(Logtime_left(Free_space()));
     if(Logtime_left(Free_space())<200)free_space= "<h3>"+ font_color_start+free_space+font_color_end + "</h3>";
     String voltage_lipo = "&emsp;Bat voltage = " + String(RTC_voltage_bat, 2) + " Volt";
     String firmware = "Firmware "+ String(SW_version);
@@ -310,7 +310,7 @@ void SD_dir(int archive) {
     .gpx = 230 byte/sekonde
     .sbp = 32 bytes/datapoint
   Datarate/sek = (sum)*data_rate+ .gpx
-  Free_space/datarate/60 = minutes logtime left
+  Free_space/datarate/60 = minutes Logspace left
 */
     
     
@@ -383,8 +383,8 @@ void handleFileUpload() {
     Serial.print("Upload File Name: ");
     Serial.println(filename);
     if (sdOK) {
-      SD.remove(filename);                         //Remove a previous version, otherwise data is appended the file again
-      UploadFile = SD.open(filename, FILE_WRITE);  //Open the file for writing in SD (create it, if doesn't exist)
+      SD_MMC.remove(filename);                         //Remove a previous version, otherwise data is appended the file again
+      UploadFile = SD_MMC.open(filename, FILE_WRITE);  //Open the file for writing in SD (create it, if doesn't exist)
     }
     if (LITTLEFS_OK) {
       LITTLEFS.remove(filename);                         //Remove a previous version, otherwise data is appended the file again
@@ -430,11 +430,11 @@ void handleConfigUpload() {
   if (sdOK | LITTLEFS_OK) {
     File file;
     if (sdOK) {
-      SD.remove("/config_backup.txt");
-      SD.rename("/config.txt", "/config_backup.txt");
-      SD.remove("/config.txt");
+      SD_MMC.remove("/config_backup.txt");
+      SD_MMC.rename("/config.txt", "/config_backup.txt");
+      SD_MMC.remove("/config.txt");
       // Open file for writing
-      file = SD.open("/config.txt", FILE_WRITE);
+      file = SD_MMC.open("/config.txt", FILE_WRITE);
       if (!file) {
         Serial.println(F("Failed to create file"));
         return;

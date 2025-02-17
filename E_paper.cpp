@@ -196,7 +196,7 @@ void Boot_screen(void) {
     display.println(SW_version);
     sdCardInfo();
     display.setCursor(offset,102);
-    display.printf("Logtime left : %d hour",Logtime_left(Free_space())/60);
+    display.printf("Logspace left : %d hour",Logtime_left(Free_space())/60);
     display.updateWindow(0, 0, displayWidth, displayWidth, true);
     delay(100);
     display.update();
@@ -601,7 +601,7 @@ void sdCardInfo(void) {
   if (sdOK) display.printf("SD : %d Mb\n", freeSpace);
   if (LITTLEFS_OK) display.printf("Local : %d kb\n", (LITTLEFS.totalBytes() - LITTLEFS.usedBytes()) / 1024);
  // display.setCursor(offset,102);
- // display.printf("Logtime left : %d hour",Logtime_left(Free_space())/60);
+ // display.printf("Logspace left : %d hour",Logtime_left(Free_space())/60);
 }
 void Stats_4lines(String Message1, String Message2, String Message3, String Message4, float Value1, float Value2, float Value3, float Value4) {
   #define STAT4_ROW2 150
@@ -697,7 +697,7 @@ void Update_screen(int screen) {
     TOP_LEFT_TITLE_MSG("ESP-GPS connect");
     DEVICE_BOOT_LOG(2);
     display.setCursor(offset,102);
-    display.printf("Logtime left : %d hour",Logtime_left(Free_space())/60);
+    display.printf("Logspace left : %d hour",Logtime_left(Free_space())/60);
 
     if (Wifi_on == 1) {
       display.setFont(&FreeSansBold12pt7b);
@@ -750,7 +750,7 @@ void Update_screen(int screen) {
     TOP_LEFT_TITLE_MSG("ESP-GPS try to connect");
     DEVICE_BOOT_LOG(2);
     display.setCursor(offset,102);
-    display.printf("Logtime left : %d hour",Logtime_left(Free_space())/60);
+    display.printf("Logspace left : %d hour",Logtime_left(Free_space())/60);
     display.setFont(&FreeSansBold12pt7b);
     display.setCursor(offset, (cursor = ROW_3_9PT + ROW_12PT_W_SPACING));
     //display.println("Trying to connect...");

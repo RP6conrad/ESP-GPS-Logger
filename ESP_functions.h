@@ -4,7 +4,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 5.91";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 6.00beta";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -118,6 +118,7 @@ RTC_DATA_ATTR int RTC_highest_read = STARTVALUE_HIGHEST_READ;
 class Button_push{
             public:
             Button_push(int GPIO_pin,int push_time,int long_pulse_time,int max_count, bool default_state);//constructor
+            void begin(int GPIO_pin,bool default_state);//call in setup for init gpio
             boolean Button_pushed(void);//return true if button is pushed longer then push_time
             boolean long_pulse;
             int button_count;
@@ -137,7 +138,6 @@ GPS_speed M100(100);
 GPS_speed M250(250);
 GPS_speed M500(500);
 GPS_speed M1852(1852);
-//GPS_time S1(1); //voor 1s snelheden
 GPS_time S2(2);
 GPS_time s2(2);
 GPS_time S10(10);
@@ -154,6 +154,7 @@ Button_push Short_push39 (GO_TO_SLEEP_GPIO,10,10,9,1);//was 39 GO_TO_SLEEP_GPIO
 Button_push Long_push39 (GO_TO_SLEEP_GPIO,1700,10,9,1);//was 39 GO_TO_SLEEP_GPIO
 Button_push Short_push19 (GO_TO_SLEEP_PULLDOWN,10,10,9,0);//
 Button_push Long_push19 (GO_TO_SLEEP_PULLDOWN,1700,10,9,0);//
+
 
 #if defined(_GxDEPG0266BN_H_) //only for screen BN266, Rolzz... !!!
 GxIO_Class io(SPI, /*CS=5*/ ELINK_SS, /*DC=*/ 19, /*RST=*/4);
@@ -288,7 +289,7 @@ void go_to_sleep(uint64_t sleep_time){
   digitalWrite(11, HIGH);//flash in deepsleep, CS stays HIGH!!
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);//sd-card  in deepsleep, CS stays HIGH!!
-  rtc_gpio_pulldown_en(GPIO_NUM_2);//wzs still floating....
+  rtc_gpio_pullup_en(GPIO_NUM_2);//was still floating....for SD_MMC -> pull up is needed !!!
   pinMode(GO_TO_SLEEP_GPIO,INPUT_PULLUP);
   esp_sleep_enable_ext0_wakeup(WAKE_UP_GPIO_NUM,0);
   esp_sleep_enable_timer_wakeup( uS_TO_S_FACTOR*sleep_time);
@@ -473,14 +474,19 @@ void IRAM_ATTR isr() {
 * Ook variabele die optelt tot maw elke keer push
 */
 Button_push::Button_push(int GPIO_pin, int push_time, int long_pulse_time, int max_count,bool default_state) {
-  if(default_state==1)pinMode(GPIO_pin, INPUT_PULLUP);
-  if(default_state==0)pinMode(GPIO_pin, INPUT_PULLDOWN);
+  //gpio_num_t pin_nr=GPIO_pin;
+ // if(default_state==1){pinMode(GPIO_pin, INPUT_PULLUP);gpio_pullup_en((gpio_num_t)GPIO_pin);}
+ // if(default_state==0){pinMode(GPIO_pin, INPUT_PULLDOWN);gpio_pulldown_en((gpio_num_t)GPIO_pin);}
   Input_pin = GPIO_pin;
   Default_state = default_state;
   time_out_millis = push_time;
   max_pulse_time = long_pulse_time;
   max_button_count = max_count;
 }
+void Button_push::begin(int GPIO_pin,bool default_state){
+  if(default_state==1){pinMode(GPIO_pin, INPUT_PULLUP);}
+  if(default_state==0){pinMode(GPIO_pin, INPUT_PULLDOWN);}
+  }
 boolean Button_push::Button_pushed(void) {
   return_value = false;
   button_status = digitalRead(Input_pin);

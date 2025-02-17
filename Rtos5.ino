@@ -1,4 +1,5 @@
-#include <SD.h>
+//#include <SD.h>
+#include <SD_MMC.h>
 #include <sd_defines.h>
 #include <sd_diskio.h>
 #include <ETH.h>
@@ -49,6 +50,7 @@ extern bool reset_boot;
 void setup() {
   Serial.begin(115200);
   Serial.print("Actual CPU freq @ boot"); Serial.println (getCpuFrequencyMhz());
+  pinMode(2, INPUT_PULLUP);//for SD_MMC mode....
   EEPROM.begin(EEPROM_SIZE);
   config.ublox_type = EEPROM.read(0);
   //print_reset_reason(rtc_get_reset_reason(0));//Find out the reset reason, if no SW-reset-> back to deep sleep !
@@ -72,10 +74,11 @@ void setup() {
   esp_task_wdt_add(NULL); //add current thread to WDT watch
   analog_mean = analogRead(PIN_BAT);//fill FIR filter
   SPI.begin(SPI_CLK, SPI_MISO, SPI_MOSI, ELINK_SS); //SPI is used for SD-card and for E_paper display !
-  sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
+  //sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
   struct timeval tv = { .tv_sec =  0, .tv_usec = 0 };
   settimeofday(&tv, NULL);
-  if (!SD.begin(SDCARD_SS, sdSPI)) {
+  //if (!SD.begin(SDCARD_SS, sdSPI)) {
+  if (!SD_MMC.begin("/sdcard", true)) {  
         sdOK = false;
         Serial.println("No SDCard found!");
         if (!LITTLEFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
@@ -100,9 +103,9 @@ void setup() {
   } 
   else {
         sdOK = true;Serial.println("SDCard found!");
-        uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-        uint64_t totalBytes=SD.totalBytes() / (1024 * 1024);
-        uint64_t usedBytes=SD.usedBytes() / (1024 * 1024);
+        uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
+        uint64_t totalBytes=SD_MMC.totalBytes() / (1024 * 1024);
+        uint64_t usedBytes=SD_MMC.usedBytes() / (1024 * 1024);
         freeSpace=totalBytes-usedBytes;
         //Boot_screen();
         Serial.printf("SD Card Size: %lluMB\n", cardSize); 
@@ -115,6 +118,9 @@ void setup() {
         Serial.print(F("Print config file...")); 
         printFile(filename); 
   } 
+  Short_push12.begin(12,1);
+  Short_push19.begin(19,0);
+  Short_push39.begin(39,1);
   Boot_screen();
    if(RTC_voltage_bat<MINIMUM_VOLTAGE){
       RTC_OFF_screen=1;//Simon screen with info text !!!
@@ -273,8 +279,8 @@ void taskOne( void * parameter )
             printLocalTime();
             NTP_time_set=true;
             }
-          if(!SD.exists("/Archive")&sdOK){
-              SD.mkdir("/Archive");
+          if(!SD_MMC.exists("/Archive")&sdOK){
+              SD_MMC.mkdir("/Archive");
               }
           }
           #if defined USE_AUTO_OTA_UPDATE

@@ -1,5 +1,5 @@
 #include "SD_card.h"
-#include <SD.h>
+#include <SD_MMC.h>
 #include <LITTLEFS.h>
 #include "Definitions.h"
 #include "gpx.h"
@@ -69,7 +69,7 @@ void Open_files(void) {
       // create if does not exist, do not open existing, write, sync after write
 
       if (sdOK) {
-        if (!SD.exists(filenameERR)) {
+        if (!SD_MMC.exists(filenameERR)) {
           break;
         }
       }
@@ -91,30 +91,30 @@ void Open_files(void) {
   strcpy(filenameGPX, filename_NO_EXT);
   strcat(filenameGPX, "gpx");
   if (config.logUBX == true) {
-    if (sdOK) ubxfile = SD.open(filenameUBX, FILE_APPEND);
+    if (sdOK) ubxfile = SD_MMC.open(filenameUBX, FILE_APPEND);
     if (LITTLEFS_OK) ubxfile = LITTLEFS.open(filenameUBX, FILE_APPEND);
     //ubxfile.setBufferSize(4096);
     //if(setvbuf(file, NULL, _IOFBF, 4096) != 0) {}//enlarge buffer SD handle error
   }
 #if defined(GPY_H)
   if (config.logGPY == true) {
-    if (sdOK) gpyfile = SD.open(filenameGPY, FILE_APPEND);
+    if (sdOK) gpyfile = SD_MMC.open(filenameGPY, FILE_APPEND);
     if (LITTLEFS_OK) gpyfile = LITTLEFS.open(filenameGPY, FILE_APPEND);
     log_GPY_Header(gpyfile);
   }
 #endif
   if (config.logSBP == true) {
-    if (sdOK) sbpfile = SD.open(filenameSBP, FILE_APPEND);
+    if (sdOK) sbpfile = SD_MMC.open(filenameSBP, FILE_APPEND);
     if (LITTLEFS_OK) sbpfile = LITTLEFS.open(filenameSBP, FILE_APPEND);
     log_header_SBP(sbpfile);
   }
   if (config.logGPX == true) {
-    if (sdOK) gpxfile = SD.open(filenameGPX, FILE_APPEND);
+    if (sdOK) gpxfile = SD_MMC.open(filenameGPX, FILE_APPEND);
     if (LITTLEFS_OK) gpxfile = LITTLEFS.open(filenameGPX, FILE_APPEND);
     log_GPX(GPX_HEADER, gpxfile);
   }
   if (config.logTXT == true) {
-    if (sdOK) errorfile = SD.open(filenameERR, FILE_APPEND);
+    if (sdOK) errorfile = SD_MMC.open(filenameERR, FILE_APPEND);
     if (LITTLEFS_OK) errorfile = LITTLEFS.open(filenameERR, FILE_APPEND);
   }
 }
@@ -200,12 +200,12 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   // Open file for reading
   File file;
   if (sdOK){
-    if (SD.exists(filename)) {
+    if (SD_MMC.exists(filename)) {
       Serial.println(F("open the config.txt"));
-      file = SD.open(filename);
-    } else if (SD.exists(filename_backup)) {
+      file = SD_MMC.open(filename);
+    } else if (SD_MMC.exists(filename_backup)) {
       Serial.println(F("open the config_backup.txt"));
-      file = SD.open(filename_backup);
+      file = SD_MMC.open(filename_backup);
     } else {
       Serial.println(F("no configuration file found"));
       //wifi_search = 120;  //elongation SoftAP mode to 120s !!!
@@ -329,7 +329,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
 void printFile(const char *filename) {
   // Open file for reading
   File file;
-  if(sdOK) file = SD.open(filename);
+  if(sdOK) file = SD_MMC.open(filename);
   if(LITTLEFS_OK) file = LITTLEFS.open(filename);
   if (!file.available()) {
     Serial.println(F("Failed to read file"));
@@ -571,8 +571,8 @@ uint64_t Free_space(void){
   uint64_t free_kbytes=0;
   if(LITTLEFS_OK) free_kbytes = (LITTLEFS.totalBytes() - LITTLEFS.usedBytes())/1024;
   if(sdOK) {
-    uint64_t totalBytes=SD.totalBytes();
-    uint64_t usedBytes=SD.usedBytes();
+    uint64_t totalBytes=SD_MMC.totalBytes();
+    uint64_t usedBytes=SD_MMC.usedBytes();
     free_kbytes=(totalBytes-usedBytes)/1024;
     }
   return free_kbytes;
@@ -581,12 +581,12 @@ int Logtime_left (uint64_t kbytes){
   uint64_t free_kbytes=0;
     if(LITTLEFS_OK) free_kbytes = (LITTLEFS.totalBytes() - LITTLEFS.usedBytes())/1024;
     if(sdOK) {
-        uint64_t totalBytes=SD.totalBytes();
-        uint64_t usedBytes=SD.usedBytes();
+        uint64_t totalBytes=SD_MMC.totalBytes();
+        uint64_t usedBytes=SD_MMC.usedBytes();
         free_kbytes=(totalBytes-usedBytes)/1024;
         }
     int data_rate = (config.logGPY*24+config.logUBX*100+config.logSBP*32)*config.sample_rate+config.logGPX*230;
-    int logtime_left_sec = free_kbytes/data_rate*1024;
+    uint64_t logtime_left_sec = free_kbytes/data_rate*1024;
     int logtime_left_min = logtime_left_sec/60; 
     return logtime_left_min;   
 }
