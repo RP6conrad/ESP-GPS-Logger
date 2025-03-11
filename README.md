@@ -29,9 +29,12 @@ GPS logger for Speedsurfing, based on ESP32 & Ublox  hardware.  This is a open s
 #### Interface
 SW is written in Arduino IDE (C++). For easy access to the files on the sd, a ftp-server over wifi is integrated. Also OTA (over the air update) of the sw is possible. SW 5.58 : Thanks to the contribution of tritondm, the webserver is now extended and all files on the sd can be downloaded over this webserver. Also the complete configuration can be changed over the webserver !! No need for ftp anymore, but this is still possible. SW 5.75 : Autodetection Ublox M8,M9,M10 is supported. First time @boot, the type of ublox and baudrate is detected and stored in eeprom memory.
 #### Arduino / library versions : 
-- Arduino IDE 2.02
+- Arduino IDE 2.3.0
 - ESP32 version 1.06, but next file need a change : 
 - Change next file for compiling with Arduino IDE 2.02 (SD(esp32) to SD) C:\Users\andre\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.6\libraries\SD\library.properties
+- Adafruit GFX Library 1.12.0
+- GxEPD (by Jean-Marc Zinng) 3.1.3
+- LittleFS (by Lorol) 1.0.6
 - ArduinoJson version 6.17.2
 ##### Building manual / first flashing :
 https://docs.google.com/document/d/1XJD6BV1Xay4nXo0cDuo_IOtxC_f1LyG7DE7X6KGlAB0/edit?usp=sharing
