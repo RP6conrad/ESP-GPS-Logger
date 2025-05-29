@@ -1,4 +1,3 @@
-//#include <SD.h>
 #include <SD_MMC.h>
 #include <sd_defines.h>
 #include <sd_diskio.h>
@@ -36,7 +35,7 @@
 #include <LittleFS.h>
 #include "rom/rtc.h"
 #include "ESP_functions.h"
-//#include "OTA_server.h" 
+
 const char* ssid = config.ssid; //WiFi SSID
 const char* password = config.password; //WiFi Password
 const char* ssid2 = config.ssid2; //WiFi SSID
@@ -52,16 +51,19 @@ void setup() {
   Serial.print("Actual CPU freq @ boot"); Serial.println (getCpuFrequencyMhz());
   pinMode(2, INPUT_PULLUP);//for SD_MMC mode....
   EEPROM.begin(EEPROM_SIZE);
-  config.ublox_type = EEPROM.read(0);
+  config.ublox_type = EEPROM.readByte(0);Serial.print("EEPROM ublox_type=");Serial.println(config.ublox_type);
+  config.M10_high_nav=EEPROM.readByte(1);
+  if(config.M10_high_nav>3){config.M10_high_nav=0;EEPROM.writeByte(1,NO_M10_GPS);EEPROM.commit();} 
+  Serial.print("EEPROM M10_high_nav=");Serial.println(config.M10_high_nav);
   //print_reset_reason(rtc_get_reset_reason(0));//Find out the reset reason, if no SW-reset-> back to deep sleep !
-  if(reset_boot==true) {setCpuFrequencyMhz(20);}
+  if(reset_boot==true) {setCpuFrequencyMhz(80);}
   print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
   Serial.println("setup Serial");
   Serial.println("Serial Txd is on pin: "+String(TX));
   Serial.println("Serial Rxd is on pin: "+String(RX));
-  EEPROM.get(1,RTC_highest_read);
+  RTC_highest_read=EEPROM.readInt(2);
   if((RTC_highest_read<STARTVALUE_HIGHEST_READ)|(RTC_highest_read>MAXVALUE_HIGHEST_READ)){
-    EEPROM.put(1,STARTVALUE_HIGHEST_READ) ;
+    EEPROM.writeInt(2,STARTVALUE_HIGHEST_READ) ;
     EEPROM.commit();
     RTC_highest_read=STARTVALUE_HIGHEST_READ;
     Serial.println("Eeprom highest read set to starting value !!");
@@ -77,8 +79,10 @@ void setup() {
   //sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
   struct timeval tv = { .tv_sec =  0, .tv_usec = 0 };
   settimeofday(&tv, NULL);
-  //if (!SD.begin(SDCARD_SS, sdSPI)) {
-  if (!SD_MMC.begin("/sdcard", true)) {  
+  //if (!SD.begin(SDCARD_SS, sdSPI)) {//was SD.begin
+  //sdmmc_host_t host = SDMMC_HOST_DEFAULT();//SDMMC_HOST_SLOT_1
+  //host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+  if (!SD_MMC.begin("/sdcard", true,true)) {  
         sdOK = false;
         Serial.println("No SDCard found!");
         if (!LITTLEFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
@@ -103,15 +107,18 @@ void setup() {
   } 
   else {
         sdOK = true;Serial.println("SDCard found!");
+        //int *real_freq=0;
+        //sdmmc_host_get_real_freq(SDMMC_HOST_SLOT_1,*real_freq);
         uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
         uint64_t totalBytes=SD_MMC.totalBytes() / (1024 * 1024);
         uint64_t usedBytes=SD_MMC.usedBytes() / (1024 * 1024);
         freeSpace=totalBytes-usedBytes;
-        //Boot_screen();
+       // Serial.printf("SD Card Speed: %d MHz\n", real_freq/1000); 
         Serial.printf("SD Card Size: %lluMB\n", cardSize); 
         Serial.printf("SD Total bytes: %lluMB\n", totalBytes); 
         Serial.printf("SD Used bytes: %lluMB\n", usedBytes); 
         Serial.printf("SD free space: %lluMB\n", totalBytes-usedBytes); 
+        testFileIO(SD_MMC, "/test.txt");
         Serial.println(F("Loading configuration..."));// Should load default config 
         loadConfiguration(filename, filename_backup, config); // load config file
         //Short_push39.button_count=config.field;//set speed_field choice, so counting from correct speed_field !!
@@ -122,16 +129,16 @@ void setup() {
   Short_push19.begin(19,0);
   Short_push39.begin(39,1);
   Boot_screen();
-   if(RTC_voltage_bat<MINIMUM_VOLTAGE){
+   if(RTC_voltage_bat<RTC_minimum_voltage_bat){
       RTC_OFF_screen=1;//Simon screen with info text !!!
       char tekst[32] = "";
-      sprintf(tekst, "Shutdown low bat  @ %d V\n",MINIMUM_VOLTAGE);
+      sprintf(tekst, "Shutdown low bat  @ %.1f V\n",RTC_minimum_voltage_bat);
       logERR(tekst);
       strcpy(RTC_Sleep_txt,"Shut down Low Bat !");
       Shut_down();
    }
   if(reset_boot==true){
-    RTC_OFF_screen=1;//Simon screen with info text !!!
+      RTC_OFF_screen=1;//Simon screen with info text !!!
       char tekst[32] = "";
       sprintf(tekst, "Sleep after reset");
       logERR(tekst);
@@ -394,7 +401,7 @@ void taskTwo( void * parameter)
     stat_count++;//ca 1s per screen update
     if (stat_count>config.screen_count)stat_count=0;//screen_count = 2
     Update_bat();
-    if(RTC_voltage_bat<MINIMUM_VOLTAGE) low_bat_count++;
+    if(RTC_voltage_bat<RTC_minimum_voltage_bat) low_bat_count++;
     else low_bat_count=0;
     if(sleep_mode==true){
         Ublox_off();
@@ -405,9 +412,9 @@ void taskTwo( void * parameter)
         vTaskDelete(NULL);//to avoid that screen get new updates !!!!
     }
     else if(low_bat_count>10){
-        sleep_mode==true;
+        sleep_mode=true;
         char tekst[32] = "";
-        sprintf(tekst, "Shutdown low bat  @ %d V\n",MINIMUM_VOLTAGE);
+        sprintf(tekst, "Shutdown low bat  @ %.1f V\n",RTC_minimum_voltage_bat);
         logERR(tekst);
         Off_screen(2);//off screen with "shutdown low bat"
         Shut_down();

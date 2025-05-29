@@ -1,5 +1,13 @@
 ###Changes SW6.00
+* M10 set permanent to high nav rate possible, at the cost of a higher current draw (+5mA...) (Irreversible !)
+* Added SD_MMC write/read speed, file test.txt of 1MB is used for this
+* Speed measuring SD card, file test.txt 1MB used for measurement, results saved in file.txt
+* Added shutdown_voltage to config : if set to 0, you can force a powercycle by draining the lipo !
+* Added warning in webserver as shutdown_voltage in config  < 3.0 V
+* min cpu freq = 80MHz, is needed for SD_MMC
+* boot @ 240 MHz, as SD_MMC need min 80 MHz
 * SD in SD_MMC 1bit mode, this is the hardware SDIO bus from the ESP32. Only with dedicated pins possible. 
+* As the sd card only wil reset after powerdown, a powercycle is necessary for SPI-mode -> MMC-mode !
 * Proposal from Alhop for the SD NAND cards : SD_MMC 1 bit instead SD over SPI
 * Pullup needed on pin 2 before begin.SD_MMC needed for some cards
 * Pullup in deepsleep on pin 2 for minimize leakage current SD cards
@@ -14,7 +22,7 @@
 * GPIO2 pulldown in deepsleep, was still floating
 * Added statscreen B , last run, best run, slowest run and average
  ###Changes SW5.90beta
-* Stat screen 500m / runs bugfix time reading : time 18:6 -> 18:06
+* Stat screen 500m / runs bugfix time reading : tim 18:6 -> 18:06
 * Adapt FIR filter bat reading 0.1 -> 0.02, more consistent measurement
 * Auto calibration, full lipo 4.2V -> 4.3 V
 * Before Wifi start, min 3.4V

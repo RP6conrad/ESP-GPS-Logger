@@ -2,7 +2,7 @@
 For OTA without internet access, see : 
 https://github.com/italocjs/ESP32_OTA_APMODE/blob/main/Main.cpp
 */
-#include <SD_MMC.h>
+//#include <SD_MMC.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <Update.h>
@@ -304,6 +304,7 @@ void SD_dir(int archive) {
     String gps_warning = "<h3>"+ font_color_start+"Sample-rate too high for the actual gnss setting, possible lost points in the log file !!"+font_color_end + "</h3>";
     String CPU_freq =  "<h3>"+ font_color_start+"For 5 Hz sample_rate, CPU freq of 80 MHz is sufficient. For 10 Hz, CPU freq of 160 MHz gives the maximal performance."+font_color_end + "</h3>";
     String Data_rate_high = "<h3>"+ font_color_start+"Max 2 file types set to ON, otherwise data rate too high and lost points possible !!"+font_color_end + "</h3>";
+    String Shutdown_low = "<h3>"+ font_color_start+"Shutdown voltage in config lower then 3.1V, power down when lipo goes low !!"+font_color_end + "</h3>";
     /*
     .gpy = ca 24 byte/datapoint
     .ubx = 100 byte/datapoint
@@ -316,14 +317,17 @@ void SD_dir(int archive) {
     
     bool GPS_warning=false;
     bool CPU_freq_warning = false;
+    bool Shutdown_warning = false;
     bool Data_rate_overload = false;
     if(bat_perc<VOLTAGE_LOW) voltage_percent = "&emsp;"+font_color_start+"Bat = " + String(bat_perc,0)+" % &emsp;"+font_color_end;
     else voltage_percent = "&emsp;Bat % = " + String(bat_perc,0)+" % &emsp;";
-    if ((config.ublox_type == M10_9600BD) | (config.ublox_type == M10_38400BD) | (config.ublox_type == AUTO_DETECT)) {  //limit sample rate for 3/4 GNSS M10, prevent lost points
+    if ((config.ublox_type == M10_9600BD) | (config.ublox_type == M10_38400BD) | (config.ublox_type == M10_115200BD)|(config.ublox_type == AUTO_DETECT)) {  //limit sample rate for 3/4 GNSS M10, prevent lost points
       if (((config.gnss == 3) & (config.sample_rate> 5)) | ((config.gnss== 4) & (config.sample_rate > 8)) | ((config.gnss== 5) & (config.sample_rate > 4))) {GPS_warning=true;}
        }
+    if(config.M10_high_nav) {GPS_warning=false;} 
     if(((config.sample_rate==5)&!(config.cpu_freq==80))|((config.sample_rate==10)&!(config.cpu_freq==160)))CPU_freq_warning=true;
    // if((config.logSBP+config.logUBX+config.logGPY+config.logGPX)>2)Data_rate_overload = true;
+    if(config.shutdown_voltage<3.1) Shutdown_warning=true;
     if (root) {
       root.rewindDirectory();
       SendHTML_Header();
@@ -332,6 +336,7 @@ void SD_dir(int archive) {
       if(GPS_warning) webpage += gps_warning;
       if(CPU_freq_warning) webpage += CPU_freq;
       if(Data_rate_overload)webpage += Data_rate_high;
+      if(Shutdown_warning)webpage += Shutdown_low;
       webpage += F("<tr><th>Name</th><th>Size</th><th>Timestamp</th><th>Download</th><th>Delete</th></tr>");
       printDirectory("/", archive);
       webpage += F("\n</table>");
@@ -451,7 +456,7 @@ void handleConfigUpload() {
         return;
       }
     }
-    StaticJsonDocument<1024> doc;
+    StaticJsonDocument<1536> doc;
     // Set the values in the document
     //Serial.println("calspeed:"+server.arg("cal_speed"));
     //gnss 4 = GPS + GALILEO + BEIDOU_B1C
@@ -460,7 +465,7 @@ void handleConfigUpload() {
     //gnss 2 = GPS + GLONAS (default M8 ROM 2)
     //gnss 1 = GPS + GALILEO (not working for M8)
     //gnss 0 = GPS + BEIDOU
-    //EEPROM.get(1,RTC_highest_read);
+    //EEPROM.readInt(2,RTC_highest_read);
     //RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
     //doc["cal_bat"] = RTC_calibration_bat;
     doc["cal_bat"] = serialized(server.arg("cal_bat"));
@@ -502,15 +507,24 @@ void handleConfigUpload() {
     doc["password"] = server.arg("password");
     doc["ssid2"] = server.arg("ssid2");
     doc["password2"] = server.arg("password2");
+    doc["shutdown_voltage"] = serialized(server.arg("shutdown_voltage"));
+    config.shutdown_voltage = server.arg("shutdown_voltage").toFloat();
     int Ublox_type = server.arg("GPS_Type").toInt();
     if(Ublox_type == 0xFF) {  //not in config.txt but saved in EEPROM !!!)
-      EEPROM.write(0, Ublox_type);
+      EEPROM.writeByte(0, Ublox_type);
       EEPROM.commit();
-    }// RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
+    }
+    config.M10_high_nav = server.arg("M10_high_nav").toInt();
+    if( config.M10_high_nav == SET_M10_HIGH_NAV) {  //not in config.txt but saved in EEPROM !!!)
+      EEPROM.writeByte(1,SET_M10_HIGH_NAV);
+      EEPROM.commit();
+      //config.M10_high_nav=SET_M10_HIGH_NAV;
+    }
+    // RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
     if(abs(RTC_calibration_bat-config.cal_bat)>0.02){
       int new_calibration=FULLY_CHARGED_LIPO_VOLTAGE/config.cal_bat;
       Serial.printf("New calibration in EEPROM = %d, %f",new_calibration,config.cal_bat);
-      EEPROM.put(1,new_calibration);
+      EEPROM.writeInt(2,new_calibration);
       EEPROM.commit();
       } 
     // Pretty Serialize JSON to file

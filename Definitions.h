@@ -21,6 +21,11 @@
 #define M9_115200BD 8
 #define M10_115200BD 9
 
+#define NO_M10_GPS  0
+#define M10_DEFAULT_NAV  1
+#define SET_M10_HIGH_NAV 2
+#define M10_HIGH_NAV_RATE 3
+
 #define AUTO_DETECT 0xFF
 /*Pin definitions**************************************************************************/
 #define SPI_MOSI 23
@@ -48,7 +53,7 @@
 #define VOLTAGE_100 4.15     //reading 100% bat, after end charging voltage drops to 4.15 V
 #define VOLTAGE_0 3.4       //reading 0% bat
 #define VOLTAGE_LOW 25      //reading 25% bat
-#define MINIMUM_VOLTAGE 3.2     // if lower then minimum_voltage, back to sleep.....was 3.2
+#define MINIMUM_VOLTAGE 0   // if lower then minimum_voltage, back to sleep.....was 3.2
 #define MINIMUM_VOLTAGE_CHANGE  0.1  //refresh screen if change > 0.01
 #define STARTVALUE_HIGHEST_READ 2300  //12 bit ADC, 4.2 V over voltagedivider
 #define MAXVALUE_HIGHEST_READ 2700

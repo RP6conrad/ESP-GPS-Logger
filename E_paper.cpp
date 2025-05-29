@@ -179,7 +179,7 @@ void Boot_screen(void) {
   InfoBarRtc(offset);
   display.setFont(&FreeSansBold9pt7b);                                         \
   display.setCursor(offset,14);
-  if (RTC_voltage_bat < MINIMUM_VOLTAGE) {
+  if (RTC_voltage_bat < RTC_minimum_voltage_bat) {
     //int cursor = ROW_2_9PT;
     display.println("EPS-GPS sleeping");
     display.print("Go back to sleep...");
@@ -683,8 +683,10 @@ void Update_screen(int screen) {
       }
     else if (!ubxMessage.monVER.hwVersion[0]) {
       display.setFont(&FreeSansBold12pt7b);
-      display.setCursor(offset, (cursor = ROW_4_9PT + ROW_12PT_W_SPACING));
-      display.print("Gps initializing");
+      display.setCursor(offset, (cursor = ROW_3_9PT + ROW_12PT_W_SPACING));
+      display.println("Gps initializing");
+      if(config.M10_high_nav==M10_HIGH_NAV_RATE) display.println("M10 high nav mode !");
+      if(config.M10_high_nav==M10_DEFAULT_NAV) display.println("M10 default nav mode");
       }
     if (screen != old_screen) count = 0;  //eerste keer full update
     Speed_in_Unit(offset);
@@ -696,9 +698,10 @@ void Update_screen(int screen) {
     ESP_GPS_LOGO_40
     TOP_LEFT_TITLE_MSG("ESP-GPS connect");
     DEVICE_BOOT_LOG(2);
-    display.setCursor(offset,102);
-    display.printf("Logspace left : %d hour",Logtime_left(Free_space())/60);
-
+    if (SoftAP_connection != true) {
+      display.setCursor(offset,102);
+      display.printf("Logspace left : %d hour",Logtime_left(Free_space())/60);
+      }
     if (Wifi_on == 1) {
       display.setFont(&FreeSansBold12pt7b);
       display.setCursor(offset, (cursor = ROW_3_9PT + ROW_12PT_W_SPACING));

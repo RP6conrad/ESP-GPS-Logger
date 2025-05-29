@@ -4,7 +4,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 6.00beta";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 6.00";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -107,6 +107,7 @@ RTC_DATA_ATTR int RTC_counter=0;
 RTC_DATA_ATTR float RTC_calibration_bat=1.75;//bij ontwaken uit deepsleep niet noodzakelijk config file lezen
 RTC_DATA_ATTR float RTC_voltage_bat=3.6;
 RTC_DATA_ATTR float RTC_old_voltage_bat=3.6;
+RTC_DATA_ATTR float RTC_minimum_voltage_bat=MINIMUM_VOLTAGE;
 RTC_DATA_ATTR int RTC_bat_choice = 0;
 RTC_DATA_ATTR int RTC_highest_read = STARTVALUE_HIGHEST_READ;
 
@@ -169,7 +170,7 @@ SPIClass sdSPI(VSPI);//was VSPI
 const char *filename = "/config.txt";
 const char *filename_backup = "/config_backup.txt"; 
 
-void go_to_sleep(uint64_t sleep_time);
+void go_to_sleep(uint64_t sleep_time,bool refresh_screen);
 void Update_bat(void);
 void taskOne( void * parameter );
 void taskTwo( void * parameter);  
@@ -198,17 +199,17 @@ void print_wakeup_reason(){
                                  pinMode(GO_TO_SLEEP_GPIO,INPUT_PULLUP);
                                  while(millis()<200){ //minimal puls length = 200 ms !!!
                                     if (digitalRead(GO_TO_SLEEP_GPIO)==1){
-                                      go_to_sleep(TIME_TO_SLEEP);
+                                      go_to_sleep(TIME_TO_SLEEP,0);
                                       break;
                                       }
                                     }
                                  rtc_gpio_deinit(WAKE_UP_GPIO_NUM);//was 39   
                                  reed=1;   
-                                // esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
-                                 if(RTC_voltage_bat<MINIMUM_VOLTAGE){
+                                // esp_sleep_disableRTC_minimum_voltage_batESP_SLEEP_WAKEUP_ALL);
+                                 if(RTC_voltage_bat<RTC_minimum_voltage_bat){
                                       Boot_screen();
                                       sleeping_time=40000;//sleep much longer
-                                      go_to_sleep(sleeping_time); //was 4000
+                                      go_to_sleep(sleeping_time,1); //was 4000
                                     }
                                  Boot_screen();
                                  break;
@@ -217,7 +218,7 @@ void print_wakeup_reason(){
     case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer");                                 
                                   if((int)analog_mean>(RTC_highest_read+TOLERANCE)){ 
                                     RTC_highest_read=(int)analog_mean; 
-                                    EEPROM.put(1,RTC_highest_read) ;
+                                    EEPROM.writeInt(2,RTC_highest_read) ;
                                     EEPROM.commit();
                                     RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
                                     Serial.print("New RTC_highest_read = ");
@@ -230,7 +231,7 @@ void print_wakeup_reason(){
                                     //digitalWrite(HOLD_PIN,LOW);
                                     RTC_old_voltage_bat=RTC_voltage_bat;
                                     }
-                                  if(RTC_voltage_bat<MINIMUM_VOLTAGE){
+                                  if(RTC_voltage_bat<RTC_minimum_voltage_bat){
                                       Boot_screen();
                                       display.powerDown();
                                       delay(100);
@@ -238,7 +239,7 @@ void print_wakeup_reason(){
                                       esp_sleep_enable_ext0_wakeup(WAKE_UP_GPIO_NUM,0);
                                       esp_deep_sleep_start();//sleep forever.....
                                     }
-                                  go_to_sleep(sleeping_time); //was 4000
+                                  go_to_sleep(sleeping_time,0); //was 4000
                                   break;                               
     case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); 
                                      break;
@@ -276,7 +277,7 @@ void print_reset_reason(int reason)
     default : Serial.println ("NO_MEAN, always back to sleep after bootscreen()!!!");reset_boot=true; 
   }
 }
-void go_to_sleep(uint64_t sleep_time){
+void go_to_sleep(uint64_t sleep_time,bool refresh_screen){
   deep_sleep=true;
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
@@ -287,9 +288,32 @@ void go_to_sleep(uint64_t sleep_time){
   if(reset_boot==false) delay(3000);//time needed for showing go to sleep screen
   pinMode(11, OUTPUT);
   digitalWrite(11, HIGH);//flash in deepsleep, CS stays HIGH!!
+  //test Andres
+ // SD_MMC.end();
   pinMode(13, OUTPUT);
-  digitalWrite(13, HIGH);//sd-card  in deepsleep, CS stays HIGH!!
-  rtc_gpio_pullup_en(GPIO_NUM_2);//was still floating....for SD_MMC -> pull up is needed !!!
+  digitalWrite(13, HIGH);
+  pinMode(2, OUTPUT);
+  digitalWrite(2, HIGH);
+/*
+  pinMode(12, OUTPUT);
+  digitalWrite(12, HIGH);
+  pinMode(14, OUTPUT);
+  digitalWrite(14, HIGH);//sd-card  in deepsleep, CS stays HIGH!!
+  pinMode(15, OUTPUT);
+  digitalWrite(15, HIGH);
+  rtc_gpio_pullup_en(GPIO_NUM_12);
+  
+  rtc_gpio_pullup_en(GPIO_NUM_14);
+  rtc_gpio_pullup_en(GPIO_NUM_15);
+*/
+ // rtc_gpio_pullup_en(GPIO_NUM_13);//0.16 mA rtc 2 en 13
+ // rtc_gpio_pullup_en(GPIO_NUM_2);//was still floating....for SD_MMC -> pull up is needed !!!
+  if(refresh_screen==1){
+    Sleep_screen(RTC_SLEEP_screen);
+    delay(1000);
+    display.powerDown();
+    }
+  digitalWrite(HOLD_PIN,LOW);  
   pinMode(GO_TO_SLEEP_GPIO,INPUT_PULLUP);
   esp_sleep_enable_ext0_wakeup(WAKE_UP_GPIO_NUM,0);
   esp_sleep_enable_timer_wakeup( uS_TO_S_FACTOR*sleep_time);
@@ -346,12 +370,12 @@ void Shut_down(void){
             //delay(3000);// go to sleep screen need some time...
             Close_files();  
             }
-       // RTC_old_voltage_bat=0; //to force refresh the sleep screen when shutting down !!!  
-        Sleep_screen(RTC_SLEEP_screen);
-        delay(1000);
-        display.powerDown();
-        digitalWrite(HOLD_PIN,LOW);  
-        go_to_sleep(3);//got to sleep after 5 s, this to prevent booting when GPIO39 is still low !     
+       // RTC_old_voltage_bat=0; //to force refresh the sleep screen when shutting down !!!   Off_screen(RTC_OFF_screen);eerst 2s dit scherm
+       // Sleep_screen(RTC_SLEEP_screen);
+      //  delay(1000);
+      //  display.powerDown();
+      //  digitalWrite(HOLD_PIN,LOW);  
+        go_to_sleep(TIME_TO_SLEEP,1);//got to sleep after 5 s, this to prevent booting when GPIO39 is still low !     
 }
 void GPSTC_info(char *GPSTC_post) {
   char tekst[160] ="<html><hr><h2>GPS Team Challenge Category Results:</h2>\r";

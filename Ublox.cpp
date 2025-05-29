@@ -1,12 +1,14 @@
 #include "Ublox.h"
 #include "Definitions.h"
+#include <EEPROM.h>
 int Time_Set_OK;
+bool Nav_rate_NACK = false;
+bool High_nav_rate_ACK = false;
+bool check_M10_nav_rate = false;
 //extern File errorfile;
 UBXMessage ubxMessage = {000000000000};//definition here, declaration in ublox.h !!
 struct tm tmstruct ;
-
 struct tm my_time;  // time elements structure
-
 time_t unix_timestamp; // a timestamp
 
 void Ublox_on(){
@@ -36,11 +38,13 @@ void Ublox_serial2(int delay_ms){
           Serial.print(" ACK ");
           Serial.print (ubxMessage.navAck.msg_cls);
           Serial.println (ubxMessage.navAck.msg_id);
+          if(Check_M10_nav_rate) High_nav_rate_ACK = true;
           }
      if ( msgType == MT_NAV_NACK){
           Serial.print(" NACK ");
           Serial.print (ubxMessage.navNack.msg_cls);
           Serial.println (ubxMessage.navNack.msg_id);
+          if(Check_M10_nav_rate) Nav_rate_NACK = true;
           }          
      if ( msgType == MT_NAV_ID){
           Serial.print("ID= :");
@@ -186,18 +190,27 @@ void Init_ubloxM10(void){
   int wait=250;
   char M9_9600_bd[20]="Ublox M9 9600bd";
   char M9_38400_bd[20]="Ublox M9 38400bd";
+  char M9_115200_bd[20]="Ublox M9 115200bd";
   char M10_9600_bd[20]="Ublox M10 9600bd";
   char M10_38400_bd[20]="Ublox M10 38400bd";
+  char M10_115200_bd[20]="Ublox M10 115200bd";
   if(config.ublox_type==M9_9600BD) strcpy(Ublox_type,M9_9600_bd);
   if(config.ublox_type==M9_38400BD) strcpy(Ublox_type,M9_38400_bd);
+  if(config.ublox_type==M9_115200BD) strcpy(Ublox_type,M9_115200_bd);
   if(config.ublox_type==M10_9600BD) strcpy(Ublox_type,M10_9600_bd);
   if(config.ublox_type==M10_38400BD) strcpy(Ublox_type,M10_38400_bd);
+  if(config.ublox_type==M10_115200BD) strcpy(Ublox_type,M10_115200_bd);
   //send configuration data in UBX protocol 
   Serial.println("Set ublox M10 NMEA OFF ");     
   for(int i = 0; i < sizeof(UBLOX_M10_NMEA_OFF); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_M10_NMEA_OFF+i) );
         }
   Ublox_serial2(wait); 
+  if((config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD)|(config.ublox_type == M10_115200BD)){
+    if(config.M10_high_nav == SET_M10_HIGH_NAV){ Set_M10_high_nav_rate();}//reboot noodzakelijk ????
+    //config.M10_high_nav=Check_M10_nav_rate();
+    }
+   
   if(config.dynamic_model==1){
       Serial.println("Set ublox UBX_M10_SEA ");
       for(int i = 0; i < sizeof(UBX_M10_SEA); i++) {                        
@@ -236,10 +249,8 @@ void Init_ubloxM10(void){
               Serial2.write( pgm_read_byte(UBLOX_M10_BEIDOU_B1C_ON+i) );
               }
         Ublox_serial2(wait);
-
-
         }     
-  if(((config.gnss==5)&(config.sample_rate<10)&((config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD)))){  
+  if(((config.gnss==5)&(config.sample_rate<10)&((config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD)|(config.ublox_type == M10_115200BD)))){  
         Serial.println("Set ublox M10 4 GNSS ");     
         for(int i = 0; i < sizeof(UBLOX_M10_4GNSS); i++) {                        
               Serial2.write( pgm_read_byte(UBLOX_M10_4GNSS+i) );
@@ -606,6 +617,7 @@ int processGPS() {
 }
 int Auto_detect_ublox(){
   config.ublox_type=0;
+  bool Ublox_M10=false;
   Serial.println("Check UBX_MON_VER @9600bd ");  //check for 9600 bd ??   
   for(int i = 0; i < sizeof(UBX_MON_VER); i++) {                        
         Serial2.write( pgm_read_byte(UBX_MON_VER+i) );        
@@ -623,6 +635,7 @@ int Auto_detect_ublox(){
   if(ubxMessage.monVER.hwVersion[3]=='A'){
     config.ublox_type=M10_9600BD;
     Serial.println("Ublox M10 @9600bd ");
+    Ublox_M10=true;
     }//M10@9600 bd
   if(config.ublox_type==0){//no ublox @9600 bd detected
       //Serial2.flush();
@@ -645,7 +658,8 @@ int Auto_detect_ublox(){
       if(ubxMessage.monVER.hwVersion[3]=='A'){
         config.ublox_type=M10_38400BD;
         Serial.println("Ublox M10 @38400bd ");
-        }//M10@384000 bd
+        Ublox_M10=true;
+        }
       }
     if(config.ublox_type==0){//no ublox @9600 bd detected
       Serial2.begin(115200,SERIAL_8N1, RXD2, TXD2);// Change baudrate to 38400 for new test
@@ -667,9 +681,48 @@ int Auto_detect_ublox(){
       if(ubxMessage.monVER.hwVersion[3]=='A'){
         config.ublox_type=M10_115200BD;
         Serial.println("Ublox M10 @115200bd ");
+        Ublox_M10=true;
         }
       }  
     Serial.println(ubxMessage.monVER.hwVersion[3]) ; 
+    if(Ublox_M10==true){
+    config.M10_high_nav=Check_M10_nav_rate();
+    EEPROM.write(1,config.M10_high_nav);EEPROM.commit();
+    }
     return config.ublox_type;  
 }
-
+int Check_M10_nav_rate(void){
+  int result=NO_M10_GPS;
+  check_M10_nav_rate=true;
+  Serial.println("Get M10 NAV Rate ");
+    for(int i = 0; i < sizeof(UBX_M10_GET_NAV_RATE); i++) {                        
+    Serial2.write( pgm_read_byte(UBX_M10_GET_NAV_RATE+i) );
+    }
+  Nav_rate_NACK = false;
+  High_nav_rate_ACK = false;      
+  Ublox_serial2(500);
+  check_M10_nav_rate = false;
+  if(Nav_rate_NACK){ 
+    Serial.println("M10 Default Nav Rate");
+    result=M10_DEFAULT_NAV;
+    if(EEPROM.readByte(1)!=M10_DEFAULT_NAV)EEPROM.writeByte(1,M10_DEFAULT_NAV); EEPROM.commit();
+  }
+  if(High_nav_rate_ACK){
+    Serial.println("M10 High Nav Rate set");
+    result=M10_HIGH_NAV_RATE;
+    if(EEPROM.readByte(1)!=M10_HIGH_NAV_RATE)EEPROM.writeByte(1,M10_HIGH_NAV_RATE); EEPROM.commit();
+    } 
+    return result;       
+  }
+int Set_M10_high_nav_rate(void){
+  Serial.println("Set ublox UBX_M10 High Nav Rate");
+  for(int i = 0; i < sizeof(UBX_M10_SET_HIGH_NAV_RATE); i++) {                        
+     Serial2.write( pgm_read_byte(UBX_M10_SET_HIGH_NAV_RATE+i) );
+     }
+  Ublox_serial2(500); 
+  config.ublox_type= UBLOX_TYPE_UNKNOWN;
+  config.M10_high_nav= M10_HIGH_NAV_RATE;
+  EEPROM.writeByte(0,UBLOX_TYPE_UNKNOWN);
+  EEPROM.writeByte(1,M10_HIGH_NAV_RATE); EEPROM.commit();//always set EEPROM to default nav rate.....
+  return config.M10_high_nav;
+}  

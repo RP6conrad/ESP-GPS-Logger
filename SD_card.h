@@ -8,6 +8,7 @@
 #include "Ublox.h"
 #include "GPS_data.h"
 #include <SD_MMC.h>
+#include <SD.h>
 #include "ArduinoJson.h"
 
  
@@ -49,9 +50,11 @@ extern int RTC_Sail_Logo;
 extern int RTC_bat_choice;
 extern int RTC_SLEEP_screen;
 extern int RTC_OFF_screen;
+extern float RTC_minimum_voltage_bat;
 
 struct Config {
   float cal_bat=1.74;//calibration for read out bat voltage
+  float shutdown_voltage=3.2;
   float cal_speed=3.6;//conversion m/s to km/h, for knots use 1.944
   int sample_rate=5;//gps_rate in Hz, 1, 5 or 10Hz !!!
   int gnss=3;//default setting 2 GNSS, GPS & GLONAS
@@ -94,8 +97,9 @@ struct Config {
   char ssid2[32]="ESP_GPS";//your SSID
   char password2[32]="password2";//your password
   int config_fail=0;
-  int ublox_type=0;
-  int cpu_freq = 40;
+  uint8_t ublox_type=0;
+  uint8_t M10_high_nav=0;
+  int cpu_freq = 80;
   } ;
 extern Config config;
 void AddString();
@@ -115,6 +119,7 @@ void Session_gpstc(char* gpstc);
 void TimeZone_env (float timezone);
 uint64_t Free_space(void);
 int Logtime_left (uint64_t);
+void testFileIO(fs::FS &fs, const char * path);
 /*
 void log_header_SBP(void);
 void log_SBP(void);

@@ -360,8 +360,12 @@ void html_config(String& webpage){
   //cal_bat
   webpage += "<tr>\n<td>cal_bat</td><td>\n";
   webpage += "<input size='4' type='number' required name='cal_bat' min='1.6' max='1.89' value="+String(RTC_calibration_bat)+" step='0.01'>\n";
-  webpage += "</select>\n</td><td>cal_bat: is the calibration <br> of the battery voltage measurement (1.6-1.89) Only info, auto-calibrate after full load of lipo !.</td>\n</tr>\n"; 
-  //cal_speed 
+  webpage += "</select>\n</td><td>cal_bat: is the calibration <br> of the battery voltage measurement (1.6-1.89).</td>\n</tr>\n"; 
+  //shutdown_voltage
+  webpage += "<tr>\n<td>shutdown_voltage</td><td>\n";
+  webpage += "<input size='4' type='number' required name='shutdown_voltage' min='0' max='3.5' value="+String(config.shutdown_voltage)+" step='0.01'>\n";
+  webpage += "</select>\n</td><td>shutdown_voltage : shutdown if lipo voltage is lower then this value.<br> Set to 0 if you want to force a power cycle !!</td>\n</tr>\n"; 
+ //cal_speed 
   webpage += "<tr><td>cal_speed</td><td>\n<select id='cal_speed' name='cal_speed' type='number'>\n";
   if(config.cal_speed == 3.6) webpage += "<option value='3.60' selected>3.6 km/h</option>\n"; else webpage += "<option value=3.60>3.6 km/h</option>\n";
   if(config.cal_speed <2) webpage += "<option value='1.9438' selected>1.9438 knots</option>\n"; else webpage += "<option value=1.9438>1.9438 knots</option>\n";
@@ -378,7 +382,17 @@ void html_config(String& webpage){
   Drop_down_menu(config.ublox_type,M10_9600BD,"M10@9600BD",webpage);
   Drop_down_menu(config.ublox_type,M10_38400BD,"M10@38400BD",webpage);
   Drop_down_menu(config.ublox_type,M10_115200BD,"M10@115200BD",webpage);
-  webpage += "</select>\n</td><td>GPS type : If auto detect ON, the type of GPS will be identified when booting. </td>\n</tr>\n";
+  webpage += "</select>\n</td><td>GPS type : If auto detect ON, the type of GPS will be identified when booting. If a M10 gps, you can select high navigation rate.<br>This is irreversible !!</td>\n</tr>\n";
+  //Set M10 to high nav rate
+  if((config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)|(config.ublox_type==M10_115200BD)){
+    webpage += "<tr>\n<td>M10_high_nav</td><td>\n<select id='M10_high_nav' name='M10_high_nav'>";
+    if(config.M10_high_nav==M10_DEFAULT_NAV) {
+        Drop_down_menu(config.M10_high_nav,M10_DEFAULT_NAV,"M10 default nav",webpage);
+        Drop_down_menu(config.M10_high_nav,SET_M10_HIGH_NAV,"set M10 to high nav rate",webpage);
+        }
+    if(config.M10_high_nav==M10_HIGH_NAV_RATE) Drop_down_menu(config.M10_high_nav,M10_HIGH_NAV_RATE,"M10 high nav rate",webpage);
+    webpage += "</select>\n</td><td>If a M10 gps, you can select high navigation rate.<br>Battery last about 10% shorter. This is irreversible !!</td>\n</tr>\n";
+    }
   //sample_rate
   webpage += "<tr>\n<td>sample_rate(Hz)</td><td>\n<select id='sample_rate' name='sample_rate'>";
   Drop_down_menu(config.sample_rate,1,"1 Hz",webpage);
@@ -388,20 +402,20 @@ void html_config(String& webpage){
   Drop_down_menu(config.sample_rate,8,"8 Hz",webpage);
   Drop_down_menu(config.sample_rate,10,"10 Hz",webpage);
   int ublox_type =0;
-  if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)|(config.ublox_type == M9_115200BD)) ublox_type=2;
   if((config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD)|(config.ublox_type == M10_115200BD))ublox_type=3;
+  if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)|(config.ublox_type == M9_115200BD)|(config.M10_high_nav==M10_HIGH_NAV_RATE)) ublox_type=2;
   if((ublox_type==2)|((config.gnss==1)&(ublox_type==3))){
     Drop_down_menu(config.sample_rate,15,"15 Hz",webpage);
     Drop_down_menu(config.sample_rate,20,"20 Hz",webpage);
     }
-  webpage += "</select>\n</td><td>sample_rate: can be 1,2,4,5,8,10 (M8,M9,M10) 15Hz,20Hz (only M9!). The higher, the more accurate, but also the larger the files become!<br> One UBX NavPVT message is 100byte, so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!<br>For the M10, max. sample-rate depends on GNSS settings ! 4 GNSS : max  4 Hz, 3 GNSS : max 5 Hz, 2 GNSS : max 10 Hz !</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>sample_rate: can be 1,2,4,5,8,10 (M8,M9,M10) 15Hz,20Hz (only M9/M10 High nav rate !). The higher, the more accurate, but also the larger the files become!<br> One UBX NavPVT message is 100byte, so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!<br>For the M10, max. sample-rate depends on GNSS settings ! 4 GNSS : max  4 Hz, 3 GNSS : max 5 Hz, 2 GNSS : max 10 Hz !</td>\n</tr>\n";
   //cpu_freq
   webpage += "<tr>\n<td>CPU freq(MHz)</td><td>\n<select id='CPU_freq' name='CPU_freq'>";
-  Drop_down_menu(config.cpu_freq,40,"40 MHz",webpage);
+  //Drop_down_menu(config.cpu_freq,40,"40 MHz",webpage);
   Drop_down_menu(config.cpu_freq,80,"80 MHz",webpage);
   Drop_down_menu(config.cpu_freq,160,"160 MHz",webpage);
   Drop_down_menu(config.cpu_freq,240,"240 MHz",webpage);
-  webpage += "</select>\n</td><td>CPU freq: can be 40 MHz (2 Hz), 80 MHz (5 Hz),160 MHz(10hz) or 240 MHz(20Hz). Longest battery live @ 40 Mhz ! 20 Hz (M9) needs possible 160 MHz. </td>\n</tr>\n";
+  webpage += "</select>\n</td><td>CPU freq: can be 80 MHz (5 Hz),160 MHz(10hz) or 240 MHz(20Hz). Longest battery live @ 80 Mhz ! 20 Hz (M9) needs possible 160 MHz. </td>\n</tr>\n";
   //gnss
   webpage += "<tr><td>gnss</td><td>\n<select id='gnss' name='gnss'>\n";
   if((config.ublox_type == M8_9600BD)|(config.ublox_type == M8_38400BD)|(config.ublox_type == M8_115200BD)){

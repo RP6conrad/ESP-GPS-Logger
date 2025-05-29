@@ -488,11 +488,11 @@ int setupGPS(void) {
               }
      delay(2);   //was delay (1)
      }
-  config.ublox_type = EEPROM.read(0);
+  config.ublox_type = EEPROM.readByte(0);
   if(config.ublox_type==0xFF) {
     Auto_detect_ublox();//only test for ublox type and baudrate if unknown in configuration
     if(config.ublox_type!=UBLOX_TYPE_UNKNOWN){
-      EEPROM.write(0, config.ublox_type);
+      EEPROM.writeByte(0, config.ublox_type);
       EEPROM.commit();
       }
     else{

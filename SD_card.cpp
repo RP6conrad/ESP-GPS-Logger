@@ -1,5 +1,5 @@
-#include "SD_card.h"
-#include <SD_MMC.h>
+//#include "SD_card.h"
+//#include <SD_MMC.h>
 #include <LITTLEFS.h>
 #include "Definitions.h"
 #include "gpx.h"
@@ -19,6 +19,8 @@ char filenameGPX[64] = "/";
 char dataStr[255] = "";  //string for logging  !!
 char Buffer[50] = "";    //string for logging
 uint64_t GPS_UTC_ms;     //Absolute UTC timewith ms resolution @start logging
+int SD_MMC_read_speed;
+int SD_MMC_write_speed;
 
 struct Config config;
 
@@ -49,7 +51,7 @@ void Open_files(void) {
     }
     if (config.file_date_time == 3) {
       sprintf(timestamp, "_%u%02u%02u%02u%02u", tmstruct.tm_year - 100, tmstruct.tm_mon + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
-      sprintf(macAddr, "_2X%2X%2X", mac[3], mac[4], mac[5]);  //3 last bytes from MAC
+      sprintf(macAddr, "_%2X%2X%2X", mac[3], mac[4], mac[5]);  //3 last bytes from MAC
       strcat(filenameERR, config.UBXfile);                    //copy filename from config
       strcat(filenameERR, timestamp);                         //add timestamp
       strcat(filenameERR, macAddr);
@@ -223,7 +225,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
       //wifi_search = 120;  //elongation SoftAP mode to 120s !!!
     }
   }
-  StaticJsonDocument<1280> doc;
+  StaticJsonDocument<1536> doc;
   // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
   if (error) {
@@ -233,6 +235,8 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   }
   // Copy values from the JsonDocument to the Config
   config.cal_bat = doc["cal_bat"] | 1.75;
+  config.shutdown_voltage = doc["shutdown_voltage"] | 3.2;
+  RTC_minimum_voltage_bat=config.shutdown_voltage;
   config.cal_speed = doc["cal_speed"] | 3.6;
   config.sample_rate = doc["sample_rate"] | 5;
   config.cpu_freq = doc["cpu_freq"] | 80;
@@ -254,9 +258,6 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.stat_speed = doc["stat_speed"] | 1;
   config.start_logging_speed = doc["start_logging_speed"] | 1;
   config.archive_days = doc["archive_days"] | 10;
-  //config.Stat_screens_persist = config.Stat_screens;
-  //config.GPIO12_screens = doc["GPIO12_screens"] | 12;
-  //config.GPIO12_screens_persist = config.GPIO12_screens;
   config.Board_Logo = doc["Board_Logo"] | 1;
   config.Sail_Logo = doc["Sail_Logo"] | 1;
   config.sleep_off_screen = doc["sleep_off_screen"] | 11;
@@ -362,12 +363,16 @@ void Model_info(int model) {
   }
 }
 void Session_info(GPS_data G) {
-  char tekst[32] = "";
+  char tekst[64] = "";
   char message[512] = "";
   errorfile.print("T5 MAC adress: ");
   for (int i = 0; i < 6; i++) errorfile.print(mac[i], HEX);
   errorfile.println(" ");
   errorfile.println(SW_version);
+  if(sdOK){
+    sprintf(tekst,"SD_MMC Read speed= %d ms/MB Write speed= %d ms/MB s\n",SD_MMC_read_speed,SD_MMC_write_speed);
+    strcat(message, tekst);
+    }
   sprintf(tekst, "First fix : %d s\n", first_fix_GPS);
   strcat(message, tekst);
   sprintf(tekst, "Total time : %lu s\n", (millis() - start_logging_millis) / 1000);
@@ -589,4 +594,45 @@ int Logtime_left (uint64_t kbytes){
     uint64_t logtime_left_sec = free_kbytes/data_rate*1024;
     int logtime_left_min = logtime_left_sec/60; 
     return logtime_left_min;   
+}
+void testFileIO(fs::FS &fs, const char * path){
+  File file = fs.open(path);
+  static uint8_t buf[512];
+  size_t len = 0;
+  uint32_t start = millis();
+  uint32_t end = start;
+  if(file){
+    len = file.size();
+    size_t flen = len;
+    start = millis();
+    while(len){
+      size_t toRead = len;
+      if(toRead > 512){
+        toRead = 512;
+      }
+      file.read(buf, toRead);
+      len -= toRead;
+    }
+    end = millis() - start;
+    SD_MMC_read_speed=end;
+    Serial.printf("%u bytes read for %u ms\n", flen, end);
+    file.close();
+  } else {
+    Serial.println("Failed to open file for reading");
+  }
+  file = fs.open(path, FILE_WRITE);
+  if(!file){
+    Serial.println("Failed to open file for writing");
+    return;
+  }
+
+  size_t i;
+  start = millis();
+  for(i=0; i<2048; i++){
+    file.write(buf, 512);
+  }
+  end = millis() - start;
+  SD_MMC_write_speed=end;
+  Serial.printf("%u bytes written for %u ms\n", 2048 * 512, end);
+  file.close();
 }
