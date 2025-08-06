@@ -509,6 +509,23 @@ void handleConfigUpload() {
     doc["password2"] = server.arg("password2");
     doc["shutdown_voltage"] = serialized(server.arg("shutdown_voltage"));
     config.shutdown_voltage = server.arg("shutdown_voltage").toFloat();
+    doc["track_distance"] = server.arg("track_distance").toInt();
+    doc["p1_lon"] = serialized(server.arg("p1_lon"));
+    config.p1_lon = server.arg("p1_lon").toDouble();
+    doc["p1_lat"] = serialized(server.arg("p1_lat"));
+    config.p1_lat = server.arg("p1_lat").toDouble();
+    doc["p2_lon"] = serialized(server.arg("p2_lon"));
+    config.p2_lon = server.arg("p2_lon").toDouble();
+    doc["p2_lat"] = serialized(server.arg("p2_lat"));
+    config.p2_lat = server.arg("p2_lat").toDouble();
+    doc["p3_lon"] = serialized(server.arg("p3_lon"));
+    config.p3_lon = server.arg("p3_lon").toDouble();
+    doc["p3_lat"] = serialized(server.arg("p3_lat"));
+    config.p3_lat = server.arg("p3_lat").toDouble();
+    doc["p4_lon"] = serialized(server.arg("p4_lon"));
+    config.p4_lon = server.arg("p4_lon").toDouble();
+    doc["p4_lat"] = serialized(server.arg("p4_lat"));
+    config.p4_lat = server.arg("p4_lat").toDouble();
     int Ublox_type = server.arg("GPS_Type").toInt();
     if(Ublox_type == 0xFF) {  //not in config.txt but saved in EEPROM !!!)
       EEPROM.writeByte(0, Ublox_type);

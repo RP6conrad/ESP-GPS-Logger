@@ -8,8 +8,8 @@
 //  if it is successful then it belongs to the model of the file name
 // The 2.66 screen has other SPI pins, and more pixels. Partof the pixels are now unused.
 //#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen, 212*104
-#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen, 212*104
-//#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", 212*104 
+//#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen, 212*104
+#include <GxGDEM0213B74/GxGDEM0213B74.h>  // 2.13", 212*104 
 //#include <GxDEPG0266BN/GxDEPG0266BN.h>  //2.66 screen for rollz...
 //#include <GxGDEW0213M21/GxGDEW0213M21.h>  //nog een andere versie, resolutie NIET OK vanwege resolutie !!!
 //#include <GxGDEP015OC1/GxGDEP015OC1.h>    //  GDEH015OC1 1.54" screen for Jeff Turner !!!
@@ -65,9 +65,11 @@ Flip: horizontally
 #define STATS6 54    //simon stat screen
 #define STATS7 55    //bar graph screen 10s run
 #define STATS8 56
-#define RUNS_STAT 57
+#define STATS9 57
 #define STATSA 65  //asci code for A
 #define STATSB 66  //asci code for B
+#define STATSC 67  //asci code for C
+#define STATSD 68  //asci code for D
 #define SPEED1 49
 #define SPEED2 50
 #define SPEED3 51
@@ -108,6 +110,13 @@ extern const char SW_version[16];
 extern UBXMessage ubxMessage;
 static int update_epaper = 2;
 extern int freeSpace;
+/*
+extern float Afstand_lijn;
+extern float Afstand_lijn2;
+extern float Afstand_sec;
+extern float Afstand_sec2;
+extern float Afstand_gps;
+*/
 extern RTC_DATA_ATTR int offset;
 extern RTC_DATA_ATTR float RTC_distance;
 extern RTC_DATA_ATTR float RTC_avg_10s;
@@ -137,6 +146,7 @@ extern Alfa_speed A500;
 extern Alfa_speed a500;
 extern GPS_time S1800;
 extern GPS_time S3600;
+extern GPS_Track M_500;
 void Boot_screen(void);
 void Off_screen(int choice);
 void Sleep_screen(int choice);

@@ -459,13 +459,13 @@ void html_config(String& webpage){
   webpage += "</select>\n</td><td>bar_length: Default length = 1852 m for 100% bar (=Nautical mile)</td>\n</tr>\n";
   //stat_screen
   webpage += "<tr>\n<td>stat_screen</td><td>\n";
-  webpage += "<input size='9' type='text' required name='stat_screen' value="+String(config.stat_screen)+">\n";//input size 9
+  webpage += "<input size='20' type='text' required name='stat_screen' value="+String(config.stat_screen)+">\n";//input size 20
   webpage += "</select>\n</td><td>Stat_screens choice : every character shows the according stat_screen after each other</td>\n</tr>\n";  
   
   //Stat_screens_time
   webpage += "<tr>\n<td>Stat_screens_time</td><td>\n";
-  webpage += "<input size='8' type='number' required name='Stat_screens_time' min='2' max='10' value="+String(config.Stat_screens_time)+" step='1'>\n";
-  webpage += "</select>\n</td><td>The time between toggle the different stat screens</td>\n</tr>\n";
+  webpage += "<input size='8' type='number' required name='Stat_screens_time' min='0' max='10' value="+String(config.Stat_screens_time)+" step='1'>\n";
+  webpage += "</select>\n</td><td>The time between toggle the different stat screens. If set to 0, stat screens can be toggled with short push ON/OFF GPIO39</td>\n</tr>\n";
   //Stat_speed
   webpage += "<tr>\n<td>stat_speed</td><td>\n";
   webpage += "<input size='8' type='number' required name='stat_speed' min='0' max='10' value="+String(config.stat_speed)+" step='1'>\n";
@@ -627,6 +627,37 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>Sleep_info</td><td>\n";
   webpage += "<input size='21' type='text' required name='Sleep_info' value="+Sleep_info+">\n";//size 20 -> 21
   webpage += "</select>\n</td><td>Sleep_info:  Text appears in sleep_screen.</td>\n</tr>\n";
+  //Track distance
+  #ifdef TRACKSPEED
+  webpage += "<tr>\n<td>Track_distance</td><td>\n";
+  webpage += "<input size='8' type='number' required name='track_distance' min='0' max='10000' value="+String(config.track_distance)+" step='1'>\n";
+  webpage += "</select>\n</td><td>Theoretical Track distance between start and finish line. GPS-Distance p1-p3= "+String(M_500.distance_p1p3)+" m, GPS-Distance p2-p4= "+String(M_500.distance_p2p4)+" m</td>\n</tr>\n";
+  //Coordinates 
+  webpage += "<tr>\n<td>Startline lon1</td><td>\n";
+  webpage += "<input size='9' type='text' required name='p1_lon' value="+String(config.p1_lon,6)+">\n";
+  webpage += "</select>\n</td><td>Coördinate 1 longitude.</td>\n</tr>\n"; 
+  webpage += "<tr>\n<td>Startline lat1</td><td>\n";
+  webpage += "<input size='9' type='text' required name='p1_lat' value="+String(config.p1_lat,6)+">\n";
+  webpage += "</select>\n</td><td>Coördinate 1 latitude.</td>\n</tr>\n";
+  webpage += "<tr>\n<td>Startline lon2</td><td>\n";
+  webpage += "<input size='9' type='text' required name='p2_lon' value="+String(config.p2_lon,6)+">\n";
+  webpage += "</select>\n</td><td>Coördinate 2 longitude.</td>\n</tr>\n"; 
+  webpage += "<tr>\n<td>Startline lat2</td><td>\n";
+  webpage += "<input size='9' type='text' required name='p2_lat' value="+String(config.p2_lat,6)+">\n";
+  webpage += "</select>\n</td><td>Coördinate 2 latitude.</td>\n</tr>\n"; 
+  webpage += "<tr>\n<td>Finishline lon3</td><td>\n";
+  webpage += "<input size='9' type='text' required name='p3_lon' value="+String(config.p3_lon,6)+">\n";
+  webpage += "</select>\n</td><td>Coördinate 3 longitude.</td>\n</tr>\n"; 
+  webpage += "<tr>\n<td>Finishline lat3</td><td>\n";
+  webpage += "<input size='9' type='text' required name='p3_lat' value="+String(config.p3_lat,6)+">\n";
+  webpage += "</select>\n</td><td>Coördinate 3 latitude.</td>\n</tr>\n";
+  webpage += "<tr>\n<td>Finishline lon4</td><td>\n";
+  webpage += "<input size='9' type='text' required name='p4_lon' value="+String(config.p4_lon,6)+">\n";
+  webpage += "</select>\n</td><td>Coördinate 4 longitude.</td>\n</tr>\n"; 
+  webpage += "<tr>\n<td>Finishline lat4</td><td>\n";
+  webpage += "<input size='9' type='text' required name='p4_lat' value="+String(config.p4_lat,6)+">\n";
+  webpage += "</select>\n</td><td>Coördinate 4 latitude.</td>\n</tr>\n";
+  #endif
   //reboot the esp
   webpage += "<tr><td>reboot</td><td>\n<select id='reboot' name='reboot'>\n";
   webpage += "<option value='yes' selected>yes</option>\n";

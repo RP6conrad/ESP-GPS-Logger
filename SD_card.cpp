@@ -276,6 +276,15 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.dynamic_model = doc["dynamic_model"] | 0;  //sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
   config.timezone = doc["timezone"] | 1.0;
   config.timezone_DST = doc["timezone_DST"]|1;
+  config.track_distance = doc["track_distance"] | 1852;
+  config.p1_lon = doc["p1_lon"];
+  config.p1_lat = doc["p1_lat"];
+  config.p2_lon = doc["p2_lon"];
+  config.p2_lat = doc["p2_lat"];
+  config.p3_lon = doc["p3_lon"];
+  config.p3_lat = doc["p3_lat"];
+  config.p4_lon = doc["p4_lon"];
+  config.p4_lat = doc["p4_lat"];
   strlcpy(config.UBXfile,                      // <- destination
           doc["UBXfile"] | "/ubxGPS",          // <- source
           sizeof(config.UBXfile));             // <- destination's capacity

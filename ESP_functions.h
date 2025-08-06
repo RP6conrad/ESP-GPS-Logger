@@ -4,7 +4,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 6.00";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="Ver 6.01";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -62,6 +62,13 @@ float Mean_heading,heading_SD;
 int wdt_task0,wdt_task1;
 int max_count_wdt_task0;
 int freeSpace;
+/*
+float Afstand_lijn=0;
+float Afstand_lijn2=0;
+float Afstand_sec=61.61;
+float Afstand_sec2=71.71;
+float Afstand_gps=0;
+*/
 String actual_ssid="_ssid_";
  /* variables to hold instances of tasks*/
 TaskHandle_t t1 = NULL;
@@ -148,7 +155,7 @@ GPS_time S3600(3600);
 Alfa_speed A250(50);
 Alfa_speed A500(50);
 Alfa_speed a500(50);//for  Alfa stats GPIO_12 screens, reset possible !!
-
+GPS_Track M_500;
 Button_push Short_push12 (12,50,15,1,1); //GPIO12 pull up, 100ms push time, 15s long_pulse, count 1, STAT screen 4&5
 Button_push Long_push12 (12,2000,10,4,1); //GPIO12 pull up, 2000ms push time, 10s long_pulse, count 4, reset STAT screen 4&5
 Button_push Short_push39 (GO_TO_SLEEP_GPIO,10,10,9,1);//was 39 GO_TO_SLEEP_GPIO
@@ -329,15 +336,15 @@ void Shut_down(void){
             RTC_distance=Ublox.total_distance/1000000;
             RTC_max_2s= S2.avg_speed[9]*calibration_speed;
             RTC_avg_10s=S10.avg_5runs*calibration_speed;
-            RTC_mile=M1852.display_max_speed*calibration_speed;
+            RTC_mile=M1852.display_speed[9]*calibration_speed;
             RTC_alp=A500.display_max_speed*calibration_speed;
             RTC_1h=S3600.display_max_speed*calibration_speed; 
             RTC_500m=M500.avg_speed[9]*calibration_speed;
 
             RTC_max_2s_knots= S2.avg_speed[9]*1.9438/1000;
             RTC_avg_10s_knots=S10.avg_5runs*1.9438/1000;
-            RTC_1h_knots=S3600.display_max_speed*1.9438/1000;               
-            RTC_mile_knots=M1852.display_max_speed*1.9438/1000;
+            RTC_1h_knots=S3600.display_speed[9]*1.9438/1000;               
+            RTC_mile_knots=M1852.display_speed[9]*1.9438/1000;
             RTC_alp_knots=A500.display_max_speed*1.9438/1000;
             
             RTC_R1_10s=S10.avg_speed[9]*calibration_speed;
@@ -369,6 +376,7 @@ void Shut_down(void){
               }
             //delay(3000);// go to sleep screen need some time...
             Close_files();  
+            delay(500);//jh test lost files
             }
        // RTC_old_voltage_bat=0; //to force refresh the sleep screen when shutting down !!!   Off_screen(RTC_OFF_screen);eerst 2s dit scherm
        // Sleep_screen(RTC_SLEEP_screen);
@@ -530,7 +538,7 @@ boolean Button_push::Button_pushed(void) {
 }
 void Search_for_wifi(void) {
   while ((WiFi.status() != WL_CONNECTED)&(SoftAP_connection==false)){  
-    if(Short_push39.Button_pushed()){ap_mode=true;esp_task_wdt_reset();break;}
+    if(Short_push39.Button_pushed()|Short_push19.Button_pushed()){ap_mode=true;esp_task_wdt_reset();break;}
     Update_bat();        
     if(ap_mode==false)Update_screen(WIFI_STATION);
     else Update_screen(WIFI_SOFT_AP);

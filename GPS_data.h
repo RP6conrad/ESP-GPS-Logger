@@ -59,7 +59,7 @@ int New_run_detection(float actual_heading, float S2_speed);
     double m_speed;//speed over de gewenste afstand
     double m_speed_alfa;//speed over de gewenste afstand
     double m_max_speed;//max speed van de laatste run
-    float display_max_speed;//Om update on the fly op display
+    //float display_max_speed;//Om update on the fly op display
     double avg_speed[10];
     double display_speed[10];
     int m_Distance[10];
@@ -78,6 +78,39 @@ int New_run_detection(float actual_heading, float S2_speed);
   private:      
     int old_run;
  };
+//berekening van gemiddelde snelheid over een track gegeven door 2 rechten, vb 500m afstand startlijn / aankomstlijn 
+//Globale gps-data wordt gebruikt
+class GPS_Track{
+  public:
+    GPS_Track(void);
+    void Set_course(double lon_1,double lat_1,double lon_2,double lat_2,double lon_3,double lat_3,double lon_4,double lat_4,int distance);
+    float Update_Track(void);
+    double lon1,lat1,lon2,lat2,lon3,lat3,lon4,lat4;
+    double Start_lon,Start_lat,End_lon,End_lat;
+    float set_distance;
+    int Start_iTOW_ms;
+    int End_iTOW_ms;
+    int Track_time_ms;
+    float Track_speed;
+    float distance_startline;
+    float distance_endline;
+    float track_distance;
+    int theoretical_track_distance;
+    float distance_p1p3;
+    float distance_p2p4;
+    double avg_speed[10];
+    double display_speed[10];
+    int m_Distance[10];
+    uint8_t time_hour[10];
+    uint8_t time_min[10];
+    uint8_t time_sec[10];
+    uint8_t dummy[10];
+    int dummy_int[10];
+  private: 
+    float Old_distance_start;
+    float Old_distance_end; 
+    bool Run_started;
+} ;
 //berekening van gemiddelde snelheid over een tijdvenster (2s, 10s, 1800s...)****************************************************************
 class GPS_time{
   public:
@@ -132,7 +165,12 @@ class Alfa_speed{
     int alfa_count;
     int old_run_count; 
 };
-float Dis_point_line(float long_act,float lat_act,float long_1,float lat_1,float long_2,float lat_2);
+//float Dis_point_line(float long_act,float lat_act,float long_1,float lat_1,float long_2,float lat_2);
+double Dis_point_line(double lambda0, double phi0,
+                      double lambda1, double phi1,
+                      double lambda2, double phi2  
+                      ) ;
+double afstandPunten(double lambda1, double phi1, double lambda2, double phi2) ;
 float Alfa_indicator(GPS_speed M250,GPS_speed M100,float actual_heading);
 int setupGPS(void);
 #endif

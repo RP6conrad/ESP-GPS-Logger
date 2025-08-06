@@ -1,3 +1,8 @@
+###Changes SW6.01
+* Added sign to Dist point to line ()
+* Added GPIO19 for switch to AP-mode
+* New run detection after stop delayed until speed > 4 m/s
+* Statscreens can be switched by GPIO39 short push if Stat screen time is set to 0. No speed screen choice then with GPIO39 short push !
 ###Changes SW6.00
 * M10 set permanent to high nav rate possible, at the cost of a higher current draw (+5mA...) (Irreversible !)
 * Added SD_MMC write/read speed, file test.txt of 1MB is used for this

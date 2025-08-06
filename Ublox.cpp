@@ -38,13 +38,13 @@ void Ublox_serial2(int delay_ms){
           Serial.print(" ACK ");
           Serial.print (ubxMessage.navAck.msg_cls);
           Serial.println (ubxMessage.navAck.msg_id);
-          if(Check_M10_nav_rate) High_nav_rate_ACK = true;
+          if(check_M10_nav_rate) High_nav_rate_ACK = true;
           }
      if ( msgType == MT_NAV_NACK){
           Serial.print(" NACK ");
           Serial.print (ubxMessage.navNack.msg_cls);
           Serial.println (ubxMessage.navNack.msg_id);
-          if(Check_M10_nav_rate) Nav_rate_NACK = true;
+          if(check_M10_nav_rate) Nav_rate_NACK = true;
           }          
      if ( msgType == MT_NAV_ID){
           Serial.print("ID= :");

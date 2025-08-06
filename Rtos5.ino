@@ -82,7 +82,7 @@ void setup() {
   //if (!SD.begin(SDCARD_SS, sdSPI)) {//was SD.begin
   //sdmmc_host_t host = SDMMC_HOST_DEFAULT();//SDMMC_HOST_SLOT_1
   //host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
-  if (!SD_MMC.begin("/sdcard", true,true)) {  
+  if (!SD_MMC.begin("/sdcard", true)) {  
         sdOK = false;
         Serial.println("No SDCard found!");
         if (!LITTLEFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
@@ -128,6 +128,7 @@ void setup() {
   Short_push12.begin(12,1);
   Short_push19.begin(19,0);
   Short_push39.begin(39,1);
+  M_500.Set_course(config.p1_lon,config.p1_lat,config.p2_lon,config.p2_lat,config.p3_lon,config.p3_lat,config.p4_lon,config.p4_lat,config.track_distance);
   Boot_screen();
    if(RTC_voltage_bat<RTC_minimum_voltage_bat){
       RTC_OFF_screen=1;//Simon screen with info text !!!
@@ -256,10 +257,14 @@ void taskOne( void * parameter )
       Serial.println("task one delete");vTaskDelete(NULL);
       }//to prevent gps boot in task one....
     static int actual_speed_field=0;  
-    if (Short_push39.Button_pushed()|Short_push19.Button_pushed()){actual_speed_field++;}
+    if (Short_push39.Button_pushed()|Short_push19.Button_pushed()){  
+      if(config.Stat_screens_time==0)stat_count++;
+      else actual_speed_field++;
+      }
     if (actual_speed_field>config.speed_count) actual_speed_field=0;
+    if (stat_count>config.screen_count)stat_count=0;
     config.field_actual=config.speed_screen[actual_speed_field];
-    Field_choice=Short_push39.long_pulse|Short_push19.long_pulse;//10s wachttijd voor menu field keuze....
+    Field_choice=((Short_push39.long_pulse|Short_push19.long_pulse)&(config.Stat_screens_time!=0));//10s wachttijd voor menu field keuze....
    if((WiFi.status() != WL_CONNECTED)&(Wifi_on==true)&(SoftAP_connection==false)){
         Serial.println("No Wifi connection !");
         server.close();
@@ -363,6 +368,7 @@ void taskOne( void * parameter )
                   A250.Update_Alfa(M250);
                   A500.Update_Alfa(M500);
                   a500.Update_Alfa(M500);
+                  M_500.Update_Track();
                   if(S2.avg_s>4000) S10_previous_run=S10.s_max_speed;//only update to new run value if actual speed > 4 m/s
                   }     
       } 
@@ -398,7 +404,7 @@ void taskTwo( void * parameter)
 {
   while(true){ 
     wdt_task1=millis();
-    stat_count++;//ca 1s per screen update
+    if(config.Stat_screens_time!=0)stat_count++;//alleen auto switch stat screen als time>0 !!
     if (stat_count>config.screen_count)stat_count=0;//screen_count = 2
     Update_bat();
     if(RTC_voltage_bat<RTC_minimum_voltage_bat) low_bat_count++;
@@ -409,6 +415,7 @@ void taskTwo( void * parameter)
         Serial.println("RTC_OFF_screen");
         delay(2000);
         Shut_down();
+        delay(100);
         vTaskDelete(NULL);//to avoid that screen get new updates !!!!
     }
     else if(low_bat_count>10){
@@ -417,7 +424,9 @@ void taskTwo( void * parameter)
         sprintf(tekst, "Shutdown low bat  @ %.1f V\n",RTC_minimum_voltage_bat);
         logERR(tekst);
         Off_screen(2);//off screen with "shutdown low bat"
+        delay(2000);
         Shut_down();
+        delay(100);
         vTaskDelete(NULL);//to avoid that screen get new updates !!!!
     }
     else if(millis()<2000)Update_screen(BOOT_SCREEN);
@@ -433,7 +442,7 @@ void taskTwo( void * parameter)
           }
     else {
           Update_screen(SPEED);
-          stat_count=0;
+          if(config.Stat_screens_time!=0)stat_count=0;
           }
   }
 }

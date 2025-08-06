@@ -151,6 +151,72 @@ void sort_run_alfa(double a[], int dis[],int message[],uint8_t hour[], uint8_t m
         }
     }
 }
+GPS_Track:: GPS_Track(void){
+  
+}
+void GPS_Track::Set_course(double lon_1,double lat_1,double lon_2,double lat_2,double lon_3,double lat_3,double lon_4,double lat_4,int distance){
+  double midpoint_lat=(lat_1+lat_3)/2;
+  double midpoint_lon=(lon_1+lon_3)/2;
+  float distance_midpoint=Dis_point_line(midpoint_lon,midpoint_lat,lon_1,lat_1,lon_2,lat_2);
+  if(distance_midpoint>0){
+    lon1=lon_1;
+    lat1=lat_1;
+    lon2=lon_2;
+    lat2=lat_2;
+    }
+  else{
+    lon2=lon_1;
+    lat2=lat_1;
+    lon1=lon_2;
+    lat1=lat_2; 
+    }
+  distance_midpoint=Dis_point_line(midpoint_lon,midpoint_lat,lon_3,lat_3,lon_4,lat_4);  
+  if(distance_midpoint<0){
+    lon3=lon_3;
+    lat3=lat_3;
+    lon4=lon_4;
+    lat4=lat_4;
+    }
+  else{
+    lon4=lon_3;
+    lat4=lat_3;
+    lon3=lon_4;
+    lat3=lat_4; 
+    }
+  theoretical_track_distance=distance;
+  distance_p1p3=afstandPunten(lon1,lat1,lon3,lat3);
+  distance_p2p4=afstandPunten(lon2,lat2,lon4,lat4);
+}
+float GPS_Track::Update_Track(void){
+  distance_startline= Dis_point_line(ubxMessage.navPvt.lon/10000000.0f,ubxMessage.navPvt.lat/10000000.0f,lon1,lat1,lon2,lat2);
+  if((distance_startline>0)&(Old_distance_start<0)){//lijn gepasseerd in van + naar -
+    getLocalTime(&tmstruct, 0);
+    Start_lon=ubxMessage.navPvt.lon/10000000.0f;
+    Start_lat=ubxMessage.navPvt.lat/10000000.0f;
+    Start_iTOW_ms= ubxMessage.navPvt.iTOW;
+    Run_started=true;
+    }
+    Old_distance_start=distance_startline;
+  distance_endline= Dis_point_line(ubxMessage.navPvt.lon/10000000.0f,ubxMessage.navPvt.lat/10000000.0f,lon3,lat3,lon4,lat4);
+  if((distance_endline>0)&(Old_distance_end<0)&Run_started){//lijn gepasseerd in van + naar -
+    getLocalTime(&tmstruct, 0);
+    End_lon=ubxMessage.navPvt.lon/10000000.0f;// _lon[(index_GPS-1)%BUFFER_ALFA] = vorige positie
+    End_lat=ubxMessage.navPvt.lat/10000000.0f; //_lat[(index_GPS-1)%BUFFER_ALFA] = vorige positie
+    track_distance=afstandPunten(Start_lon,Start_lat,End_lon,End_lat);
+    End_iTOW_ms= ubxMessage.navPvt.iTOW;
+    Track_time_ms=End_iTOW_ms-Start_iTOW_ms;
+    float track_dis=(float)theoretical_track_distance;
+    Track_speed=track_dis*1000/Track_time_ms*config.cal_speed;
+    time_hour[0]=tmstruct.tm_hour;
+    time_min[0]=tmstruct.tm_min;
+    time_sec[0]=tmstruct.tm_sec;
+    avg_speed[0]=track_distance*1000/Track_time_ms;
+    Run_started=false;
+    sort_run(avg_speed,time_hour,time_min,time_sec,dummy,dummy,dummy,dummy,dummy_int,10);
+        }
+    Old_distance_end=distance_endline;  
+    return distance_endline;
+}
 /*Instantie om gemiddelde snelheid over een bepaalde afstand te bepalen, bij een nieuwe run opslaan hoogste snelheid van de vorige run*****************/
 GPS_speed::GPS_speed(int afstand){
   m_set_distance=afstand;  
@@ -193,9 +259,12 @@ double GPS_speed::Update_distance(int actual_run){
         m_Distance[0]=m_distance;
         nr_samples[0]=m_sample;
         message_nr[0]=nav_pvt_message;
-        }
-   if(m_max_speed>avg_speed[9])display_max_speed=m_max_speed;//update on the fly, dat klopt hier niet !!!
-   else display_max_speed=avg_speed[9];      
+        //Om de avg te actualiseren tijdens de run, gemiddelde berekenen gekopieerde array  !
+        for(int i=0;i<10;i++){
+          display_speed[i]=avg_speed[i];
+          }
+        sort_display(display_speed,10);
+        }    
   if((actual_run!=old_run)&(this_run[0]==old_run)){              //opslaan hoogste snelheid van run + sorteren
       sort_run_alfa(avg_speed,m_Distance,message_nr,time_hour,time_min,time_sec,this_run,nr_samples,10);
       avg_speed[0]=0;
@@ -236,29 +305,21 @@ float GPS_time::Update_speed(int actual_run){
               Max_cno[0]=Ublox_Sat.sat_info.Mean_max_cno;
               Min_cno[0]=Ublox_Sat.sat_info.Mean_min_cno;
               Mean_numSat[0]=Ublox_Sat.sat_info.Mean_numSV;
-              //Om de avg te actualiseren tijdens de run, gemiddelde berekenen van niet gesorteerde array  !
-              if(s_max_speed>avg_speed[5]){
-                  avg_5runs=0;
-                  for(int i=6;i<10;i++){
-                    avg_5runs=avg_5runs+avg_speed[i];
-                    }
-                  avg_5runs=avg_5runs+avg_speed[0]; 
-                  avg_5runs=avg_5runs/5;
-                  display_speed[5]=s_max_speed;//actuele run is sneller dan run[5] !!
-                  for (int i=9;i>5;i--){        //andere runs kopieren
-                     display_speed[i]=avg_speed[i];
-                    }
-                  sort_display(display_speed,10);  
-                }
-               if(s_max_speed>avg_speed[9])display_max_speed=s_max_speed;//update on the fly, dat klopt hier niet !!!
-               else display_max_speed=avg_speed[9];
+              //Om de avg te actualiseren tijdens de run, gemiddelde berekenen gekopieerde array  !
+              for(int i=0;i<10;i++){
+                display_speed[i]=avg_speed[i];
               }
+              //sort display_speed
+              sort_display(display_speed,10);
+              avg_5runs=0;
+              for(int i=6;i<10;i++){
+                avg_5runs=avg_5runs+display_speed[i];
+              }
+              avg_5runs=avg_5runs/5;
+            }
             if((actual_run!=old_run)&(this_run[0]==old_run)){          //sorting only if new max during this run !!!
               sort_run(avg_speed,time_hour,time_min,time_sec,Mean_cno,Max_cno,Min_cno,Mean_numSat,this_run,10);
               if(s_max_speed>5000)speed_run_counter ++;//changes SW5.51 min speed bar graph = 5 m/s
-              for(int i=0;i<10;i++){
-                  display_speed[i]=avg_speed[i];//om een directe update op het scherm mogelijk te maken
-                  }
               speed_run[actual_run%NR_OF_BAR]=avg_speed[0];    //SW 5.5
               avg_speed[0]=0;
               s_max_speed=0;
@@ -395,11 +456,12 @@ int New_run_detection(float actual_heading, float S2_speed){
    /*detection stand still, more then 2s with velocity<1m/s**************************************************************************************************/
    if(S2_speed>speed_detection_min)velocity_5=1;    //snelheid was hoger dan 4m/s        
    if((S2_speed<standstill_detection_max)&(velocity_5==1))velocity_0=1;//snelheid is kleiner dan 1m/s
-   else velocity_0=0;
+   //else velocity_0=0;
    /*Nieuwe run gedetecteerd omwille stilstand **********************************************************************************************************************/
-   if(velocity_0==1){
+   if((velocity_0==1)&(S2_speed>speed_detection_min)){
      velocity_5=0;
-     delay_counter=0;
+     velocity_0=0;
+     delay_counter=(time_delay_new_run-1)*config.sample_rate;//delay only 1 s after standstill + speed> min speed !!
     }
    /*Nieuwe run gedetecteerd omwille heading change*****************************************************************************************************************/
    static bool straight_course;
@@ -437,31 +499,83 @@ float Alfa_indicator(GPS_speed M250,GPS_speed M100,float actual_heading){
   old_alfa_counter=alfa_counter;  
   P_lat=_lat[index_GPS%BUFFER_ALFA];//actuele positie lat
   P_long=_long[index_GPS%BUFFER_ALFA];//actuele positie long
-  /*
-  float corr_lat=111120;
-  float corr_long=111120*cos(DEG2RAD*_lat[index_GPS%BUFFER_ALFA]);
-  lambda_T=(P2_lat-P1_lat)*(P_lat-P1_lat)*corr_lat*corr_lat+(P2_long-P1_long)*(P_long-P1_long)*corr_long*corr_long;
-  lambda_N= pow((P2_lat-P1_lat)*corr_lat,2)+pow((P2_long-P1_long)*corr_long,2);
-  lambda=lambda_T/lambda_N;
-  alfa_afstand=sqrt(pow((P_lat-P1_lat-lambda*(P2_lat-P1_lat))*corr_lat,2)+pow((P_long-P1_long-lambda*(P2_long-P1_long))*corr_long,2));
-  */
   P_lat_heading= _lat[(index_GPS-2*config.sample_rate)%BUFFER_ALFA];//-2s  positie lat         //cos(ubxMessage.navPvt.heading*PI/180.0f/100000.0f)*111120+P_lat;//was eerst sin,extra punt berekenen heading, berekenen met afstand/lengte graad !!
   P_long_heading=_long[(index_GPS-2*config.sample_rate)%BUFFER_ALFA];//-2s  positie long//sin(ubxMessage.navPvt.heading*PI/180.0f/100000.0f)*111120*cos(DEG2RAD*P_lat)+P_long;//berekenen met afstand/lengte graad!!
-  alfa_exit=Dis_point_line(P1_long,P1_lat,P_long,P_lat,P_long_heading,P_lat_heading);//
+  alfa_exit= Dis_point_line(P1_long,P1_lat,P_long,P_lat,P_long_heading,P_lat_heading);//
   alfa_afstand=Dis_point_line(P_long,P_lat,P1_long,P1_lat,P2_long,P2_lat);
   return alfa_afstand;  //actuele loodrechte afstand tov de lijn P2-P1, mag max 50m zijn voor een geldige alfa !!
 }
-/*Calculates distance from point with coör lat/long to line which passes points lat_1/long_1 and lat_2/long_2**************************************/
-float Dis_point_line(float long_act,float lat_act,float long_1,float lat_1,float long_2,float lat_2){
-  float corr_lat=111195;            //meter per breedtegraad
-  float corr_long=111195*cos(DEG2RAD*lat_act);//meter per lengtegraad, dit is f(breedtegraad) !
-  float lambda_T,lambda_N,lambda,alfa_distance;
-  lambda_T=(lat_2-lat_1)*(lat_act-lat_1)*corr_lat*corr_lat+(long_2-long_1)*(long_act-long_1)*corr_long*corr_long;
-  lambda_N= pow((lat_2-lat_1)*corr_lat,2)+pow((long_2-long_1)*corr_long,2);
-  lambda=lambda_T/lambda_N;
-  alfa_distance=sqrt(pow((lat_act-lat_1-lambda*(lat_2-lat_1))*corr_lat,2)+pow((long_act-long_1-lambda*(long_2-long_1))*corr_long,2));
-  return alfa_distance;
+
+/**
+ * Bereken de afstand in meters en bepaal de zijde van punt P ten opzichte van lijn AB.
+ * Dit is de versie van chatgpt, hier komt ook een teken uit aan welke zijde het punt zich bevindt !
+ * @param lambda1 lengtegraad van punt A (longitude)
+ * @param phi1 breedtegraad van punt A  (latitude)
+ * @param lambda2 lengtegraad van punt B
+ * @param phi2 breedtegraad van punt B
+ * @param lambda0 lengtegraad van punt P
+ * @param phi0 breedtegraad van punt P
+ * @param zijde pointer naar string pointer om de zijde te retourneren ("links", "rechts" of "op de lijn")
+ * @return afstand in meters
+ */
+double Dis_point_line(double lambda0, double phi0,
+                      double lambda1, double phi1,
+                      double lambda2, double phi2
+                      ) {
+                        // Schaalfactoren
+    #define DEGREE_TO_METER_LONG 111320.0
+    #define DEGREE_TO_METER_LAT 110540.0
+    //#define DEGREE_TO_METER_LAT 111132.92
+   // #define DEGREE_TO_METER_LONG_AT_EQUATOR 111319.49
+    // Gemiddelde breedtegraad voor cosinuscorrectie
+    double phi_m = (phi1 + phi2 + phi0) / 3.0;
+    double phi_m_rad = phi_m * M_PI / 180.0;
+    // Referentiepunt (bijvoorbeeld punt A)
+    double lambda_ref = lambda1;
+    double phi_ref = phi1;
+    // Omrekenen naar lokale vlakke coördinaten (in meters)
+    double x1 = (lambda1 - lambda_ref) * cos(phi_m_rad) * DEGREE_TO_METER_LONG;
+    double y1 = (phi1 - phi_ref) * DEGREE_TO_METER_LAT;
+    double x2 = (lambda2 - lambda_ref) * cos(phi_m_rad) * DEGREE_TO_METER_LONG;
+    double y2 = (phi2 - phi_ref) * DEGREE_TO_METER_LAT;
+    double x0 = (lambda0 - lambda_ref) * cos(phi_m_rad) * DEGREE_TO_METER_LONG;
+    double y0 = (phi0 - phi_ref) * DEGREE_TO_METER_LAT;
+    // Coëfficiënten van de lijn
+    double A = y1 - y2;
+    double B = x2 - x1;
+    double C = x1 * y2 - x2 * y1;
+    // Zijdedetectie
+    double waarde = A * x0 + B * y0 + C;
+    // Afstand in meters
+    double afstand = fabs(waarde) / sqrt(A * A + B * B);
+    if(waarde<0)afstand = -afstand;
+    return afstand;
 }
+/**
+ * Bereken de afstand tussen twee GPS-punten met een lokale vlakke benadering.
+ *
+ * @param lambda1: lengtegraad punt 1 (in graden)
+ * @param phi1: breedtegraad punt 1 (in graden)
+ * @param lambda2: lengtegraad punt 2 (in graden)
+ * @param phi2: breedtegraad punt 2 (in graden)
+ * @return afstand in meters
+ */
+double afstandPunten(double lambda1, double phi1, double lambda2, double phi2) {
+    // Converteer breedtegraad naar radialen voor de correctie van de lengtegraad
+    double phi_rad = (phi1 + phi2) / 2.0 * M_PI / 180.0;
+    // Correctiefactor voor lengtegraad (cosinus van gemiddelde breedtegraad)
+    double meter_per_degree_long = DEGREE_TO_METER_LONG * cos(phi_rad);
+    // Verschillen in graden
+    double d_lambda = lambda2 - lambda1;
+    double d_phi = phi2 - phi1;
+    // Omrekenen naar meters
+    double dx = d_lambda * meter_per_degree_long;
+    double dy = d_phi * DEGREE_TO_METER_LAT;
+    // Pythagoras
+    double afstand = sqrt(dx * dx + dy * dy);
+    return afstand;
+}
+
 int setupGPS(void) {
   int Cpu_freq = getCpuFrequencyMhz();
   Serial.print("CPU freq 240 ?= "); Serial.println(Cpu_freq);

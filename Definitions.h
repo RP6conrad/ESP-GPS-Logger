@@ -25,8 +25,16 @@
 #define M10_DEFAULT_NAV  1
 #define SET_M10_HIGH_NAV 2
 #define M10_HIGH_NAV_RATE 3
-
 #define AUTO_DETECT 0xFF
+//#define TRACK_SPEED
+#define Punt1_lat 51.341970
+#define Punt1_lon 3.244888
+#define Punt2_lat 51.342876
+#define Punt2_lon 3.245013
+#define Punt3_lat 51.341907
+#define Punt3_lon 3.245205
+#define Punt4_lat 51.342886
+#define Punt4_lon 3.245366
 /*Pin definitions**************************************************************************/
 #define SPI_MOSI 23
 #define SPI_MISO -1//standaard is MISO GPIO 19 !!!!

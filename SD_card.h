@@ -71,7 +71,7 @@ struct Config {
   //int GPIO12_screens_persist=54;//choice for stats field when gpio12 is activated (pull-up high, low = active) / for resave the config
   int Board_Logo=1;
   int Sail_Logo=1;
-  char stat_screen[10]="167";//which stat_screen you want to see ?
+  char stat_screen[22]="167";//which stat_screen you want to see ?
   char gpio12_screen[10];//which stat_screen when gpio 12 toggles ?
   char speed_screen[10];//which speed fields are selected ?
   int screen_count=0;
@@ -100,6 +100,8 @@ struct Config {
   uint8_t ublox_type=0;
   uint8_t M10_high_nav=0;
   int cpu_freq = 80;
+  double p1_lon,p1_lat,p2_lon,p2_lat, p3_lon,p3_lat,p4_lon,p4_lat;
+  int track_distance;
   } ;
 extern Config config;
 void AddString();
