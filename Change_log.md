@@ -1,3 +1,5 @@
+###Changes SW6.01a
+Bugfix calculation AVG 5*10s !
 ###Changes SW6.01
 * Added sign to Dist point to line ()
 * Added GPIO19 for switch to AP-mode

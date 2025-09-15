@@ -842,10 +842,10 @@ void Update_screen(int screen) {
     }
     if (field <= SPEED2) {  //Run and AVG first line speed screen
       if (config.speed_large_font == 0) {
-        Speed_font0("Run", "Avg ", S10.display_speed[9] * calibration_speed, S10.avg_5runs * calibration_speed, gps_speed * calibration_speed, 0);
+        Speed_font0("Run", "Avg ", S10.display_last_run * calibration_speed, S10.avg_5runs * calibration_speed, gps_speed * calibration_speed, 0);
       }
       if (config.speed_large_font == 1) {
-        Speed_font1("", "A", S10.display_speed[9] * calibration_speed, S10.avg_5runs * calibration_speed, gps_speed * calibration_speed, 0);
+        Speed_font1("", "A", S10.display_last_run * calibration_speed, S10.avg_5runs * calibration_speed, gps_speed * calibration_speed, 0);
       }
       if (config.speed_large_font == 3) {
         if (S10.s_max_speed < S10.display_speed[5]) {
