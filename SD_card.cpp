@@ -599,7 +599,7 @@ int Logtime_left (uint64_t kbytes){
         uint64_t usedBytes=SD_MMC.usedBytes();
         free_kbytes=(totalBytes-usedBytes)/1024;
         }
-    int data_rate = (config.logGPY*24+config.logUBX*100+config.logSBP*32)*config.sample_rate+config.logGPX*230;
+    int data_rate = (config.logGPY*24+config.logUBX*100+config.logSBP*32+1)*config.sample_rate+config.logGPX*230;//+1 to prevent divide by 0 !!!
     uint64_t logtime_left_sec = free_kbytes/data_rate*1024;
     int logtime_left_min = logtime_left_sec/60; 
     return logtime_left_min;   

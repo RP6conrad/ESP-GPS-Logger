@@ -311,6 +311,7 @@ float GPS_time::Update_speed(int actual_run){
               }
               //sort display_speed
               sort_display(display_speed,10);
+              display_max_speed=display_speed[9];
               avg_5runs=0;
               for(int i=5;i<10;i++){
                 avg_5runs=avg_5runs+display_speed[i];

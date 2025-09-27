@@ -1,3 +1,8 @@
+###Changes SW6.01c
+Added E-paper type to SW version
+Bugfix speedscreen 6, max_display_speed
+Add speedscreen A, with CM = 2s max run and TM = 2s max session
+Logtime left prevent divide by 0 is al logfiles are switched off
 ###Changes SW6.01a
 Bugfix calculation AVG 5*10s !
 ###Changes SW6.01

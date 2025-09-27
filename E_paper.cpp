@@ -140,6 +140,7 @@ int device_boot_log(int rows, int ws) {
   int r = 2, row = ROW_9PT + ROW_SPACING;
   display.setCursor(offset, ROW_2_9PT);
   if (ws) delay(ws);
+  display.print(E_paper_version);
   display.print(SW_version);
   if (rows == 2 || rows == 23 || rows == 24 || rows == 234) {
     display.setCursor(offset, ROW_3_9PT);
@@ -190,6 +191,7 @@ void Boot_screen(void) {
     display.update();
   } else {
     display.println("ESP-GPS booting");
+    display.print(E_paper_version);
     display.println(SW_version);
     sdCardInfo();
     display.setCursor(offset, 102);
@@ -920,7 +922,7 @@ void Update_screen(int screen) {
     }
     if (field == SPEED6) {
       if ((config.speed_large_font != 2) & (config.speed_large_font != 4)) {  //Simon font, alleen speed !)
-        Speed_font0("2S ", "10S ", S2.display_max_speed * calibration_speed, S10.display_max_speed * calibration_speed, gps_speed * calibration_speed, 0);
+        Speed_font0("2S ", "10S ", S2.display_max_speed * calibration_speed, S10.display_max_speed * calibration_speed, gps_speed * calibration_speed, 1);
       }
     }
     if (field == SPEED7) {
@@ -929,7 +931,7 @@ void Update_screen(int screen) {
       } else if (config.speed_large_font == 3) {
         Speed_font3("500m :", M500.m_max_speed * calibration_speed);
       } else if (config.speed_large_font == 0) {
-        Speed_font0("500A", "Max", M500.m_max_speed * calibration_speed, M500.display_speed[9] * calibration_speed, gps_speed * calibration_speed, 0);
+        Speed_font0("500A", "Max", M500.m_max_speed * calibration_speed, M500.display_speed[9] * calibration_speed, gps_speed * calibration_speed, 1);
       }
     }
     if (config.speed_large_font == 4) {
@@ -957,6 +959,11 @@ void Update_screen(int screen) {
         Speed_font3("1 Hour", S3600.display_max_speed * calibration_speed);
       } else if (config.speed_large_font == 0) {
         Speed_font0("1hA ", "1hB ", S3600.avg_s * calibration_speed, S3600.display_max_speed * calibration_speed, gps_speed * calibration_speed, 0);
+      }
+    }
+    if (field == SPEEDA) {  //paco proposal : 2s actual run and 2s best of session
+      if ((config.speed_large_font != 2) & (config.speed_large_font != 4)) {  //Simon font, alleen speed !)
+        Speed_font0("CM ", "TM ", S2.display_last_run * calibration_speed, S2.display_max_speed * calibration_speed, gps_speed * calibration_speed, 1);
       }
     }
     /*progress bar**************************************************************************************************************************/
