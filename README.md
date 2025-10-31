@@ -42,3 +42,5 @@ https://docs.google.com/document/d/1j86kj3bNMID3sHCRT7QTYyrL7IHeQnGPec1LajsDfB4/
 
 ##### A help for installing the first SW on the T5 board (written by Tobias, Arduino IDE) :
 https://docs.google.com/document/d/1jIxAyi6wQ-Z860W548Xg--x6Ld8MBHJh7SCCWhSgnAs/edit?usp=sharing
+##### Youtube : Information about the needed parts ! 
+https://www.youtube.com/watch?v=kbG9EsX_yYk
