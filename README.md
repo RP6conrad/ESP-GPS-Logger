@@ -44,3 +44,5 @@ https://docs.google.com/document/d/1j86kj3bNMID3sHCRT7QTYyrL7IHeQnGPec1LajsDfB4/
 https://docs.google.com/document/d/1jIxAyi6wQ-Z860W548Xg--x6Ld8MBHJh7SCCWhSgnAs/edit?usp=sharing
 ##### Youtube : Information about the needed parts ! 
 https://www.youtube.com/watch?v=kbG9EsX_yYk
+#### Youtube : How to flash the T5 board en set the configuration !
+https://youtu.be/902EDgWqitQ
