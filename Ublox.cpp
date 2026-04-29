@@ -661,7 +661,7 @@ int Auto_detect_ublox(){
         Ublox_M10=true;
         }
       }
-    if(config.ublox_type==0){//no ublox @9600 bd detected
+  if(config.ublox_type==0){//no ublox @9600 bd detected
       Serial2.begin(115200,SERIAL_8N1, RXD2, TXD2);// Change baudrate to 38400 for new test
       Serial2.flush();
       Serial.println("Check UBX_MON_VER @115200bd ");  //check for 9600 bd ?? 

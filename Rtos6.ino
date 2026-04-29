@@ -53,6 +53,9 @@ void setup() {
   EEPROM.begin(EEPROM_SIZE);
   config.ublox_type = EEPROM.readByte(0);Serial.print("EEPROM ublox_type=");Serial.println(config.ublox_type);
   config.M10_high_nav=EEPROM.readByte(1);
+ // Serial.println("Force setting to autodetect!");
+//  EEPROM.writeByte(0,255);EEPROM.commit();
+//  config.ublox_type=255;
   if(config.M10_high_nav>3){config.M10_high_nav=0;EEPROM.writeByte(1,NO_M10_GPS);EEPROM.commit();} 
   Serial.print("EEPROM M10_high_nav=");Serial.println(config.M10_high_nav);
   //print_reset_reason(rtc_get_reset_reason(0));//Find out the reset reason, if no SW-reset-> back to deep sleep !
@@ -82,6 +85,8 @@ void setup() {
   //if (!SD.begin(SDCARD_SS, sdSPI)) {//was SD.begin
   //sdmmc_host_t host = SDMMC_HOST_DEFAULT();//SDMMC_HOST_SLOT_1
   //host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+ // #define SDMMC_FREQ_DEFAULT      10000       /*!< SD/MMC Default speed (limited by clock divider) was 20000 kHz */
+ // #define SDMMC_FREQ_HIGHSPEED    20000       /* was 40000 kHz, defined in sdmmc_types.h*/
   if (!SD_MMC.begin("/sdcard", true)) {  
         sdOK = false;
         Serial.println("No SDCard found!");
@@ -129,7 +134,9 @@ void setup() {
   Short_push19.begin(19,0);
   Short_push39.begin(39,1);
   M_500.Set_course(config.p1_lon,config.p1_lat,config.p2_lon,config.p2_lat,config.p3_lon,config.p3_lat,config.p4_lon,config.p4_lat,config.track_distance);
+  M_500.perpendicular_line(p1, p3, p1, 100.0, &p2, &p4);
   Boot_screen();
+
    if(RTC_voltage_bat<RTC_minimum_voltage_bat){
       RTC_OFF_screen=1;//Simon screen with info text !!!
       char tekst[32] = "";

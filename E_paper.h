@@ -24,6 +24,7 @@ Flip: horizontally
 */
 // https://tchapi.github.io/Adafruit-GFX-Font-Customiser/ used for extracting only needed digits and decimal point !!
 // FreeFonts from Adafruit_GFX
+//https://forum.arduino.cc/t/adding-glyphs-to-adafruit-gfx-builtin-font/689424/10  info about symbol distances in font files
 #include "Fonts/FreeSansBold6pt7b.h"//gebruikt
 #include "Fonts/FreeMonoBold8pt7b.h"//gebruikt
 #include "Fonts/FreeMonoBold9pt7b.h"//gebruikt
@@ -34,9 +35,11 @@ Flip: horizontally
 #include "Fonts/FreeSansBold18pt7b.h"//gebruikt
 #include "Fonts/FreeSansBold24pt7b.h"//
 #include "Fonts/FreeSansBold30pt7b.h"//gebruikt
-#include "Fonts/FreeSansBold75pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold67pt7b.h"//gebruikt
+#include "Fonts/FreeSansBold67pt7b_nr.h"//gebruikt
+#include "Fonts/FreeSansBold75pt7b_nr.h"//gebruikt
 #include "Fonts/SansSerif_bold_46_nr.h"//bijgevoegd in lib
-#include "Fonts/SansSerif_bold_84_nr.h"//bijgevoegd in lib
+#include "Fonts/SansSerif_bold_40_nr.h"//bijgevoegd in lib
 #include "Fonts/SansSerif_bold_96_nr.h"//bijgevoegd in lib
 #include "Fonts/Sea_Dog_2001_Italic9pt7b.h"//simon
 #include "Fonts/Sea_Dog_2001_Italic12pt7b.h"//simon
@@ -83,7 +86,8 @@ Flip: horizontally
 #define SPEEDB 66  //asci code for B
 #define SPEEDC 67  //asci code for C
 #define SPEEDD 68  //asci code for D
-
+#define SPEEDE 69  //asci code for E
+#define SPEEDF 70  //asci code for F
 
 #define SPEED 10
 #define WIFI_ON 11
@@ -133,7 +137,9 @@ extern RTC_DATA_ATTR short RTC_day;
 extern RTC_DATA_ATTR short RTC_hour;
 extern RTC_DATA_ATTR short RTC_min;
 extern RTC_DATA_ATTR float RTC_alp;
+extern RTC_DATA_ATTR float RTC_avg_alp;
 extern RTC_DATA_ATTR float RTC_500m;
+extern RTC_DATA_ATTR float RTC_30m;
 extern RTC_DATA_ATTR float RTC_1h;
 extern RTC_DATA_ATTR float RTC_mile;
 extern RTC_DATA_ATTR float RTC_R1_10s;
@@ -141,6 +147,8 @@ extern RTC_DATA_ATTR float RTC_R2_10s;
 extern RTC_DATA_ATTR float RTC_R3_10s;
 extern RTC_DATA_ATTR float RTC_R4_10s;
 extern RTC_DATA_ATTR float RTC_R5_10s;
+extern RTC_DATA_ATTR float RTC_100m;
+extern RTC_DATA_ATTR float RTC_250m;
 extern RTC_DATA_ATTR int RTC_counter;
 //Simon
 extern GPS_speed M100;

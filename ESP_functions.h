@@ -4,7 +4,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="Ver 6.01c";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 6.03c";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -83,14 +83,18 @@ RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
 RTC_DATA_ATTR float RTC_avg_10s;
 RTC_DATA_ATTR float RTC_max_2s;
+RTC_DATA_ATTR float RTC_30m;
 RTC_DATA_ATTR float RTC_1h;
 RTC_DATA_ATTR float RTC_alp;
+RTC_DATA_ATTR float RTC_avg_alp;
 RTC_DATA_ATTR float RTC_mile;
 RTC_DATA_ATTR float RTC_avg_10s_knots;
 RTC_DATA_ATTR float RTC_max_2s_knots;
 RTC_DATA_ATTR float RTC_alp_knots;
 RTC_DATA_ATTR float RTC_1h_knots;
 RTC_DATA_ATTR float RTC_mile_knots;
+RTC_DATA_ATTR float RTC_100m;
+RTC_DATA_ATTR float RTC_250m;
 //Simon
 RTC_DATA_ATTR short RTC_year;
 RTC_DATA_ATTR short RTC_month;
@@ -338,12 +342,16 @@ void Shut_down(void){
             RTC_avg_10s=S10.avg_5runs*calibration_speed;
             RTC_mile=M1852.display_speed[9]*calibration_speed;
             RTC_alp=A500.display_max_speed*calibration_speed;
+            RTC_avg_alp=A500.alfa_average*calibration_speed;
+            RTC_30m=S1800.display_max_speed*calibration_speed;
             RTC_1h=S3600.display_max_speed*calibration_speed; 
+            RTC_100m=M100.avg_speed[9]*calibration_speed;
+            RTC_250m=M250.avg_speed[9]*calibration_speed;
             RTC_500m=M500.avg_speed[9]*calibration_speed;
 
             RTC_max_2s_knots= S2.avg_speed[9]*1.9438/1000;
             RTC_avg_10s_knots=S10.avg_5runs*1.9438/1000;
-            RTC_1h_knots=S3600.display_speed[9]*1.9438/1000;               
+            RTC_1h_knots=S3600.display_max_speed*1.9438/1000;               
             RTC_mile_knots=M1852.display_speed[9]*1.9438/1000;
             RTC_alp_knots=A500.display_max_speed*1.9438/1000;
             

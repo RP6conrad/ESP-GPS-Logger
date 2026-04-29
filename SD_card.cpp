@@ -1,5 +1,3 @@
-//#include "SD_card.h"
-//#include <SD_MMC.h>
 #include <LITTLEFS.h>
 #include "Definitions.h"
 #include "gpx.h"
@@ -334,6 +332,9 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.gpio12_count =strlen(config.gpio12_screen)-1;
   config.field_actual=config.speed_screen[0];
   TimeZone_env(config.timezone);//to set the correct posic TZ string
+  p1={config.p1_lon,config.p1_lat};
+  p3={config.p3_lon,config.p3_lat};
+  perpendicular_line(p1,p3,p1,500.0,&p2,&p4);
 }
 // Prints the content of a file to the Serial
 void printFile(const char *filename) {

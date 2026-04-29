@@ -44,5 +44,12 @@ https://docs.google.com/document/d/1j86kj3bNMID3sHCRT7QTYyrL7IHeQnGPec1LajsDfB4/
 https://docs.google.com/document/d/1jIxAyi6wQ-Z860W548Xg--x6Ld8MBHJh7SCCWhSgnAs/edit?usp=sharing
 ##### Youtube : Information about the needed parts ! 
 https://www.youtube.com/watch?v=kbG9EsX_yYk
-#### Youtube : How to flash the T5 board en set the configuration !
+##### Youtube : How to flash the T5 board en set the configuration !
 https://youtu.be/902EDgWqitQ
+##### Youtube : Importance of shielding the lipo from inductive charging
+https://www.youtube.com/watch?v=GsCrqhh-bEE&t=22s
+##### Youtube : PMMA casing and 3D print design with Onshape
+https://www.youtube.com/watch?v=7HcuSVd9kAE
+##### Youtube : ESP-GPS soldering and assembling (PMMA /3D print casing)
+https://www.youtube.com/watch?v=2NX2z1mguc8&t=4s
+

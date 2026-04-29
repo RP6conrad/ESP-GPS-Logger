@@ -294,7 +294,7 @@ void Sleep_screen(int choice) {
     int row6 = row5 + row;
     int col1 = 0 + offset;
     int col2 = 34 + offset;
-    int col3 = 90 + offset;
+    int col3 = 94 + offset;
     int col4 = 146 + offset;
 
     // Board Logo's:
@@ -379,11 +379,7 @@ void Sleep_screen(int choice) {
     }
     if (RTC_Sail_Logo == 16) {
       display.drawExampleBitmap(Logo_LISA_vertical, 195, 50, 48, 48, GxEPD_BLACK);  //Patrik_logoS_zwart
-    }
-    display.setCursor(col1, 105);  // was 121
-    display.setFont(&SF_Distant_Galaxy9pt7b);
-    display.print(RTC_Sleep_txt);
-
+    } 
     display.setRotation(0);
     display.setCursor(30, 249);  //was 30, 249
     display.setFont(&FreeSansBold6pt7b);
@@ -391,63 +387,128 @@ void Sleep_screen(int choice) {
     if ((int)(calibration_speed * 1000000) == 3600) display.print("speed in km/h");
 
     display.setRotation(1);
+    if(true){
+      display.setCursor(col1, 105);  // was 121
+      display.setFont(&SF_Distant_Galaxy9pt7b);
+      display.print(RTC_Sleep_txt);
+    }
+    display.setFont(&FreeMonoBold9pt7b);
     // left column
-    display.setFont(&FreeMonoBold9pt7b);
-    display.setCursor(col1, row1);
-    display.print("AV:");
-    display.setCursor(col1, row2);
-    display.print("R1:");
-    display.setCursor(col1, row3);
-    display.print("R2:");
-    display.setCursor(col1, row4);
-    display.print("R3:");
-    display.setCursor(col1, row5);
-    display.print("R4:");
-    display.setCursor(col1, row6);
-    display.print("R5:");
+    if(choice==1){
+      display.setCursor(col1, row1);
+      display.print("AV:");
+      display.setCursor(col1, row2);
+      display.print("R1:");
+      display.setCursor(col1, row3);
+      display.print("R2:");
+      display.setCursor(col1, row4);
+      display.print("R3:");
+      display.setCursor(col1, row5);
+      display.print("R4:");
+      display.setCursor(col1, row6);
+      display.print("R5:");
+      display.setFont(&FreeSansBold9pt7b);
+      display.setCursor(col2, row1);
+      display.println(RTC_avg_10s, 2);
+      display.setCursor(col2, row2);
+      display.println(RTC_R1_10s, 2);
+      display.setCursor(col2, row3);
+      display.println(RTC_R2_10s, 2);
+      display.setCursor(col2, row4);
+      display.println(RTC_R3_10s, 2);
+      display.setCursor(col2, row5);
+      display.println(RTC_R4_10s, 2);
+      display.setCursor(col2, row6);
+      display.println(RTC_R5_10s, 2);
+    }
+    if(choice==2){
+      display.setFont(&FreeMonoBold8pt7b);
+      display.setCursor(col1, row1);
+      display.print("100:");
+      display.setCursor(col1, row2);
+      display.print("250:");
+      display.setCursor(col1, row3);
+      display.print("500:");
+      display.setCursor(col1, row4);
+      display.print("NM:");
+      display.setCursor(col1, row5);
+      display.print("Alf:");
+      display.setCursor(col1, row6);
+      display.print("Avg:");
 
-    display.setFont(&FreeSansBold9pt7b);
-    display.setCursor(col2, row1);
-    display.println(RTC_avg_10s, 2);
-    display.setCursor(col2, row2);
-    display.println(RTC_R1_10s, 2);
-    display.setCursor(col2, row3);
-    display.println(RTC_R2_10s, 2);
-    display.setCursor(col2, row4);
-    display.println(RTC_R3_10s, 2);
-    display.setCursor(col2, row5);
-    display.println(RTC_R4_10s, 2);
-    display.setCursor(col2, row6);
-    display.println(RTC_R5_10s, 2);
-
+      display.setFont(&FreeSansBold9pt7b);
+      display.setCursor(col2, row1);
+      display.println(RTC_100m, 2);
+      display.setCursor(col2, row2);
+      display.println(RTC_250m, 2);
+      display.setCursor(col2, row3);
+      display.println(RTC_500m, 2);
+      display.setCursor(col2, row4);
+      display.println(RTC_mile, 2);
+      display.setCursor(col2, row5);
+      display.println(RTC_alp, 2);
+      display.setCursor(col2, row6);
+      display.println(RTC_avg_alp, 2);
+    }
     // right column
-    display.setFont(&FreeMonoBold9pt7b);
-    display.setCursor(col3, row1);
-    display.print("2sec:");
-    display.setCursor(col3, row2);
-    display.print("Dist:");
-    display.setCursor(col3, row3);
-    display.print("Alph:");
-    display.setCursor(col3, row4);
-    display.print("1h:");  //
-    display.setCursor(col3, row5);
-    display.print("NM:");
-    display.setCursor(col3, row6);
-    display.print("500m:");
+    if(choice==1){
+      display.setFont(&FreeMonoBold9pt7b);
+      display.setCursor(col3, row1);
+      display.print("2sec:");
+      display.setCursor(col3, row2);
+      display.print("Dist:");
+      display.setCursor(col3, row3);
+      display.print("Alph:");
+      display.setCursor(col3, row4);
+      display.print("1h:");  //
+      display.setCursor(col3, row5);
+      display.print("NM:");
+      display.setCursor(col3, row6);
+      display.print("500m:");
 
-    display.setFont(&FreeSansBold9pt7b);
-    display.setCursor(col4, row1);
-    display.println(RTC_max_2s, 2);
-    display.setCursor(col4, row2);
-    display.println(RTC_distance, 2);
-    display.setCursor(col4, row3);
-    display.println(RTC_alp, 2);
-    display.setCursor(col4, row4);
-    display.println(RTC_1h, 2);  //
-    display.setCursor(col4, row5);
-    display.println(RTC_mile, 2);
-    display.setCursor(col4, row6);
-    display.println(RTC_500m, 2);
+      display.setFont(&FreeSansBold9pt7b);
+      display.setCursor(col4, row1);
+      display.println(RTC_max_2s, 2);
+      display.setCursor(col4, row2);
+      display.println(RTC_distance, 2);
+      display.setCursor(col4, row3);
+      display.println(RTC_alp, 2);
+      display.setCursor(col4, row4);
+      display.println(RTC_1h, 2);  //
+      display.setCursor(col4, row5);
+      display.println(RTC_mile, 2);
+      display.setCursor(col4, row6);
+      display.println(RTC_500m, 2);
+    }
+      if(choice==2){
+      display.setFont(&FreeMonoBold8pt7b);  
+      display.setCursor(col3, row1);
+      display.print("2s:");
+      display.setCursor(col3, row2);
+      display.print("10s:");
+      display.setCursor(col3, row3);
+      display.print("AVG:");
+      display.setCursor(col3, row4);
+      display.print(".5h:");  //
+      display.setCursor(col3, row5);
+      display.print("1h:");
+      display.setCursor(col3, row6);
+      display.print("Dis:");
+
+      display.setFont(&FreeSansBold9pt7b);
+      display.setCursor(col4, row1);
+      display.println(RTC_max_2s, 2);
+      display.setCursor(col4, row2);
+      display.println(RTC_R1_10s, 2);
+      display.setCursor(col4, row3);
+      display.println(RTC_avg_10s, 2);
+      display.setCursor(col4, row4);
+      display.println(RTC_30m, 2);  //
+      display.setCursor(col4, row5);
+      display.println(RTC_1h, 2);
+      display.setCursor(col4, row6);
+      display.println(RTC_distance, 2);
+    }  
     display.update();
   }
 }
@@ -828,12 +889,12 @@ void Update_screen(int screen) {
       if (config.speed_large_font == 2) {  //test for bigger font speed (Simon)
         //int gps_speed_int=(int)(gps_speed*calibration_speed);
         int gps_speed_komma = (int)((gps_speed * calibration_speed) * 10) % 10;
-        display.setFont(&FreeSansBold75pt7b);
+        display.setFont(&FreeSansBold75pt7b_nr);
         display.setCursor(offset - 6, 115);
         display.print((int)(gps_speed * calibration_speed));  //print main in large font, float with rounding ???
         display.setFont(&FreeSansBold30pt7b);
         display.print(".");
-        display.setFont(&SansSerif_bold_84_nr);
+        display.setFont(&SansSerif_bold_40_nr);
         display.println(gps_speed_komma);
         //display.println(int((gps_speed * calibration_speed - int(gps_speed * calibration_speed)) * 10), 0);  //int((x-int(x))*10) round to correct digit
       }
@@ -936,10 +997,11 @@ void Update_screen(int screen) {
     }
     if (config.speed_large_font == 4) {
       double speed = gps_speed * calibration_speed;
-      display.setFont(&FreeSansBold75pt7b);
+      display.setFont(&FreeSansBold75pt7b_nr);
       display.setCursor(offset - 6, 118);
       display.print(speed, 0);
-      display.setFont(&SansSerif_bold_84_nr);
+     // display.setFont(&FreeSansBold67pt7b_nr);//test
+      display.setFont(&SansSerif_bold_40_nr);
       display.print(".");
       int komma = (int)(speed * 10) % 10;
       display.print(komma, 0);
@@ -966,6 +1028,48 @@ void Update_screen(int screen) {
         Speed_font0("CM ", "TM ", S2.display_last_run * calibration_speed, S2.display_max_speed * calibration_speed, gps_speed * calibration_speed, 1);
       }
     }
+    if (field == SPEEDB) {  //paco 2nd proposal : 2s actual run and 2s best of session, total distance and time.
+      if ((config.speed_large_font != 2) & (config.speed_large_font != 4)) {  //Simon font, alleen speed !)
+      Speed_font0("CM ", "TM ", S2.display_last_run * calibration_speed, S2.display_max_speed * calibration_speed, gps_speed * calibration_speed, 1); //CM is Current run Maximum, TM is Total session Maximum
+      }
+      // put disstance in meters on location of distance bar
+      display.setFont(&FreeSansBold12pt7b);  
+      display.setCursor(3, 43);
+      display.print("Dist(m): ");
+      display.print(Ublox.total_distance / 1000, 0);
+    }
+    if (field == SPEEDC) {  //paco 3rd proposal : GPS speed large only by push button/magnet instead EWS setting.
+       // gps_speed=99.9/calibration_speed;//test
+        display.setFont(&FreeSansBold67pt7b_nr);
+        display.setCursor(10, 105);
+        display.print(gps_speed * calibration_speed);  //print main in large font, float with rounding ???
+    }
+    if  (field == SPEEDD) {  //test for bigger font speed (Simon)
+        //int gps_speed_int=(int)(gps_speed*calibration_speed);
+       // gps_speed=99.9/calibration_speed;//test
+        int gps_speed_komma = (int)((gps_speed * calibration_speed) * 10) % 10;
+        display.setFont(&FreeSansBold75pt7b_nr);
+        display.setCursor(offset - 6, 115);
+        display.print((int)(gps_speed * calibration_speed));  //print main in large font, float with rounding ???
+        display.setFont(&FreeSansBold30pt7b);
+        display.print(".");
+        display.setFont(&SansSerif_bold_40_nr);
+        display.println(gps_speed_komma);
+        //display.println(int((gps_speed * calibration_speed - int(gps_speed * calibration_speed)) * 10), 0);  //int((x-int(x))*10) round to correct digit
+      }
+    if (field == SPEEDE) {  //test for bigger font speed (Simon)
+        //int gps_speed_int=(int)(gps_speed*calibration_speed);
+        //gps_speed=99.9/calibration_speed;//test
+        int gps_speed_komma = (int)((gps_speed * calibration_speed) * 10) % 10;
+        display.setFont(&FreeSansBold75pt7b_nr);
+        display.setCursor(offset - 6, 115);
+        display.print((int)(gps_speed * calibration_speed));  //print main in large font, float with rounding ???
+        display.setFont(&FreeSansBold30pt7b);
+        display.print(".");
+        display.setFont(&SansSerif_bold_40_nr);
+        display.println(gps_speed_komma);
+        //display.println(int((gps_speed * calibration_speed - int(gps_speed * calibration_speed)) * 10), 0);  //int((x-int(x))*10) round to correct digit
+      }  
     /*progress bar**************************************************************************************************************************/
     if (config.speed_large_font == 0) {
       total_bar_length = 180;

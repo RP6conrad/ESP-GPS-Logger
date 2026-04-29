@@ -51,7 +51,7 @@ extern int RTC_bat_choice;
 extern int RTC_SLEEP_screen;
 extern int RTC_OFF_screen;
 extern float RTC_minimum_voltage_bat;
-
+extern Point p1,p2,p3,p4;
 struct Config {
   float cal_bat=1.74;//calibration for read out bat voltage
   float shutdown_voltage=3.2;

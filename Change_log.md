@@ -1,3 +1,7 @@
+* Added SD-nand breakout files to github (easy eda format)
+* Added 3D housing files to github (stl + dxf for lasercutting)
+* GPST post 1h knots bugfix
+* added  #define SDMMC_FREQ_DEFAULT
 ###Changes SW6.01c
 Added E-paper type to SW version
 Bugfix speedscreen 6, max_display_speed

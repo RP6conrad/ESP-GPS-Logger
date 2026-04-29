@@ -1,4 +1,4 @@
-const uint8_t SansSerif_bold_84_nrBitmaps[] PROGMEM = {
+const uint8_t SansSerif_bold_40_nrBitmaps[] PROGMEM = {
   0xFF, 0xFE, 0xFF, 0xFE, 0xFF, 0xFE, 0xFF, 0xFE, 0xFF, 0xFE, 0xFF, 0xFE, 
   0xFF, 0xFE, 0xFF, 0xFE, 0xFF, 0xFE, 0xFF, 0xFE, 0xFF, 0xFE, 0xFF, 0xFE, 
   0xFF, 0xFE, 0xFF, 0xFE, 0xFF, 0xFE, 0xFF, 0xFE, 0x00, 0x00, 0x03, 0xFE, 
@@ -341,7 +341,7 @@ const uint8_t SansSerif_bold_84_nrBitmaps[] PROGMEM = {
   0x00
 };
 
-const GFXglyph SansSerif_bold_84_nrGlyphs[] PROGMEM = {
+const GFXglyph SansSerif_bold_40_nrGlyphs[] PROGMEM = {
   {     0,  16,  16,  33,    9,  -16 },   // 0x2E '.'
   {    32,  32,  69,  32,    0,  -61 },   // 0x2F '/'
   {   308,  51,  63,  59,    4,  -62 },   // 0x30 '0'
@@ -356,5 +356,5 @@ const GFXglyph SansSerif_bold_84_nrGlyphs[] PROGMEM = {
   {  3675,  50,  63,  59,    4,  -62 }    // 0x39 '9'
 };
 
-const GFXfont SansSerif_bold_84_nr PROGMEM = {
-(uint8_t  *)SansSerif_bold_84_nrBitmaps, (GFXglyph *)SansSerif_bold_84_nrGlyphs, 0x2E, 0x39,  98};
+const GFXfont SansSerif_bold_40_nr PROGMEM = {
+(uint8_t  *)SansSerif_bold_40_nrBitmaps, (GFXglyph *)SansSerif_bold_40_nrGlyphs, 0x2E, 0x39,  98};

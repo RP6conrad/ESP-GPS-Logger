@@ -11,11 +11,17 @@
 #define FILTER_MAX_sACC 2   
 #define NR_OF_BAR 42 //aantal bar in de bar_graph
 #define NAV_SAT_BUFFER 10 // GPS_SAT_info buffersize for Mean CNO  values, here 10 NAV_SAT messages
+#define EARTH_RADIUS 6371000.0  // straal aarde in meter
+#define TRACKSPEED
 extern  int index_GPS,run_count;
 extern  int index_sec;//index van laatste sample 
 extern uint16_t _secSpeed[BUFFER_SIZE];
 extern float alfa_exit;
-
+typedef struct {
+    double lat; // breedtegraad in graden
+    double lon; // lengtegraad in graden
+} Point;
+typedef struct {Point P1;Point P2;} Line;
 // Description of the GPS data processing class
 class GPS_data {
   public:
@@ -46,7 +52,6 @@ uint32_t mean_cno,max_cno,min_cno,nr_sats;
     void push_SAT_info(struct NAV_SAT nav_sat);
 };
 
-//void sort_run(double a[], uint8_t hour[], uint8_t minute[],uint8_t seconde[],int runs[],int size);
 void sort_run(double a[], uint8_t hour[], uint8_t minute[],uint8_t seconde[],uint8_t mean_cno[],uint8_t max_cno[],uint8_t min_cno[],uint8_t nrSats[],int runs[], int size);
 void sort_run_alfa(double a[], int dis[],int message[],uint8_t hour[], uint8_t minute[],uint8_t seconde[],int runs[], int samples[],int size);
 
@@ -84,9 +89,18 @@ class GPS_Track{
   public:
     GPS_Track(void);
     void Set_course(double lon_1,double lat_1,double lon_2,double lat_2,double lon_3,double lat_3,double lon_4,double lat_4,int distance);
+    void perpendicular_line(Point p1, Point p2, Point through, double distance_m, Point *out1, Point *out2);
     float Update_Track(void);
     double lon1,lat1,lon2,lat2,lon3,lat3,lon4,lat4;
     double Start_lon,Start_lat,End_lon,End_lat;
+    /*
+    typedef struct {
+    double lat; // breedtegraad in graden
+    double lon; // lengtegraad in graden
+    } Point_GPS;
+    */
+    Point Start,End,Actual;
+    
     float set_distance;
     int Start_iTOW_ms;
     int End_iTOW_ms;
@@ -151,6 +165,7 @@ class Alfa_speed{
     double straight_dist_square;
     double alfa_speed;
     double alfa_speed_max;
+    double alfa_average;
     float display_max_speed;//Om update on the fly op display
     double alfa_circle_square;
     double avg_speed[10];
@@ -165,12 +180,9 @@ class Alfa_speed{
     int alfa_count;
     int old_run_count; 
 };
-//float Dis_point_line(float long_act,float lat_act,float long_1,float lat_1,float long_2,float lat_2);
-double Dis_point_line(double lambda0, double phi0,
-                      double lambda1, double phi1,
-                      double lambda2, double phi2  
-                      ) ;
-double afstandPunten(double lambda1, double phi1, double lambda2, double phi2) ;
+double Dis_point_line(Point P_0,Point L_1, Point L_2) ;                      
+double Dis_point_point(Point P1, Point P2);
+void perpendicular_line(Point p1, Point p2, Point through, double distance_m, Point *out1, Point *out2);
 float Alfa_indicator(GPS_speed M250,GPS_speed M100,float actual_heading);
 int setupGPS(void);
 #endif
