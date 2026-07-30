@@ -146,24 +146,7 @@ void Add_String(void) {
 }
 void Log_to_SD(void) {
   if (Time_Set_OK == true) {
-    static long old_iTOW;
-    static int interval;
-    interval = ubxMessage.navPvt.iTOW - old_iTOW;
-    old_iTOW = ubxMessage.navPvt.iTOW;
-    /*
-                if((interval>time_out_nav_pvt)&(sdOK==true)&(nav_pvt_message>10)){//check for timeout navPvt message !!
-                     next_gpy_full_frame=1;
-                     dataStr[0] = 0;
-                     dtostrf(ubxMessage.navPvt.hour, 2, 0, Buffer);AddString(); 
-                     dtostrf(ubxMessage.navPvt.minute, 2, 0, Buffer);AddString(); 
-                     dtostrf(ubxMessage.navPvt.second, 2, 0, Buffer);AddString(); 
-                     ltoa(nav_pvt_message_nr,Buffer,10);AddString();
-                     strcat(dataStr, "Lost ubx frame!\n");
-                     if(config.logTXT) {errorfile.print(dataStr);}
-                     Serial.print("Lost ubx frame");
-                     Serial.println(interval);
-                    }
-*/
+  
     if (config.logUBX == true) {
       ubxfile.write(0xB5);
       ubxfile.write(0x62);
@@ -223,7 +206,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
       //wifi_search = 120;  //elongation SoftAP mode to 120s !!!
     }
   }
-  StaticJsonDocument<1536> doc;
+  StaticJsonDocument<2048> doc;
   // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
   if (error) {
@@ -239,6 +222,9 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.sample_rate = doc["sample_rate"] | 5;
   config.cpu_freq = doc["cpu_freq"] | 80;
   config.gnss = doc["gnss"] | 3;
+  config.max_Svs = doc["max_Svs"] | 32;
+  config.M10_min_elevation = doc["M10_min_elevation"] | 5;
+  config.M10_full_power = doc["M10_full_power"] | 0;
   config.field = doc["speed_field"] | 1;
   config.speed_large_font = doc["speed_large_font"] | 0;
   config.bar_length = doc["bar_length"] | 1852;
@@ -259,7 +245,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.Board_Logo = doc["Board_Logo"] | 1;
   config.Sail_Logo = doc["Sail_Logo"] | 1;
   config.sleep_off_screen = doc["sleep_off_screen"] | 11;
-  config.bat_choice = doc["bat_choice"]|0;
+  config.screen_orientation = doc["screen_orientation"]|0;
   config.logTXT = doc["logTXT"] | 1;
   config.logUBX = doc["logUBX"] | 0;
   if (config.sample_rate < 10) {
@@ -274,15 +260,11 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.dynamic_model = doc["dynamic_model"] | 0;  //sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
   config.timezone = doc["timezone"] | 1.0;
   config.timezone_DST = doc["timezone_DST"]|1;
-  config.track_distance = doc["track_distance"] | 1852;
   config.p1_lon = doc["p1_lon"];
   config.p1_lat = doc["p1_lat"];
   config.p2_lon = doc["p2_lon"];
   config.p2_lat = doc["p2_lat"];
-  config.p3_lon = doc["p3_lon"];
-  config.p3_lat = doc["p3_lat"];
-  config.p4_lon = doc["p4_lon"];
-  config.p4_lat = doc["p4_lat"];
+
   strlcpy(config.UBXfile,                      // <- destination
           doc["UBXfile"] | "/ubxGPS",          // <- source
           sizeof(config.UBXfile));             // <- destination's capacity
@@ -322,10 +304,6 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   //time_out_nav_pvt=(1000/config.sample_rate+75);//max time out = 175 ms
   RTC_SLEEP_screen = config.sleep_off_screen % 10;
   RTC_OFF_screen = config.sleep_off_screen / 10 % 10;
-  //int Logo_choice=config.Logo_choice;//preserve value config.Logo_choice for config.txt update !!
-  int stat_screen = config.Stat_screens;              //preserve value config
-  int GPIO_12_screens = config.GPIO12_screens;        //preserve value config
-  int speed_screens = config.field;                   //preserve speed_screen setting
   if (config.file_date_time == 0) config.logTXT = 1;  //because txt file is needed for generating new file count !!
   config.screen_count= strlen(config.stat_screen)-1;
   config.speed_count =strlen(config.speed_screen)-1;
@@ -333,7 +311,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.field_actual=config.speed_screen[0];
   TimeZone_env(config.timezone);//to set the correct posic TZ string
   p1={config.p1_lon,config.p1_lat};
-  p3={config.p3_lon,config.p3_lat};
+  p2={config.p2_lon,config.p2_lat};
   perpendicular_line(p1,p3,p1,500.0,&p2,&p4);
 }
 // Prints the content of a file to the Serial
@@ -374,7 +352,7 @@ void Model_info(int model) {
 }
 void Session_info(GPS_data G) {
   char tekst[64] = "";
-  char message[512] = "";
+  char message[1024] = "";
   errorfile.print("T5 MAC adress: ");
   for (int i = 0; i < 6; i++) errorfile.print(mac[i], HEX);
   errorfile.println(" ");
@@ -407,15 +385,17 @@ void Session_info(GPS_data G) {
   else if (config.dynamic_model == 2) strcat(message, "Automotive");
   else strcat(message, "Portable");
   strcat(message, " \n");
+  sprintf(tekst, "Max nr of sats for M10: %d \n", config.max_Svs);
+  strcat(message, tekst);
   sprintf(tekst, "Ublox GNSS-enabled : %d\n", ubxMessage.monGNSS.enabled_Gnss);
   strcat(message, tekst);
-  if (ubxMessage.monGNSS.enabled_Gnss == 3) strcat(message, "GNSS = GPS + GLONAS");                      //bitmask GAL BEI GLO GPS:0011 = 3
+  if (ubxMessage.monGNSS.enabled_Gnss == 3) strcat(message, "GNSS = GPS + GLONASS");                      //bitmask GAL BEI GLO GPS:0011 = 3
   if (ubxMessage.monGNSS.enabled_Gnss == 5) strcat(message, "GNSS = GPS + BEIDOU");                      //bitmask GAL BEI GLO GPS:0101 = 5
   if (ubxMessage.monGNSS.enabled_Gnss == 9) strcat(message, "GNSS = GPS + GALILEO");                     //bitmask GAL BEI GLO GPS:1001 = 9
   if (ubxMessage.monGNSS.enabled_Gnss == 13) strcat(message, "GNSS = GPS + GALILEO + BEIDOU");           //bitmask GAL BEI GLO GPS:1101 = 13
-  if (ubxMessage.monGNSS.enabled_Gnss == 11) strcat(message, "GNSS = GPS + GLONAS + GALILEO");           //bitmask GAL BEI GLO GPS:1011 = 11
-  if (ubxMessage.monGNSS.enabled_Gnss == 7) strcat(message, "GNSS = GPS + GLONAS + BEIDOU");             //bitmask GAL BEI GLO GPS:0111 = 7
-  if (ubxMessage.monGNSS.enabled_Gnss == 15) strcat(message, "GNSS = GPS + GLONAS + GALILEO + BEIDOU");  //only M9 //bitmask GAL BEI GLO GPS:1111 = 15
+  if (ubxMessage.monGNSS.enabled_Gnss == 11) strcat(message, "GNSS = GPS + GLONASS + GALILEO");           //bitmask GAL BEI GLO GPS:1011 = 11
+  if (ubxMessage.monGNSS.enabled_Gnss == 7) strcat(message, "GNSS = GPS + GLONASS + BEIDOU");             //bitmask GAL BEI GLO GPS:0111 = 7
+  if (ubxMessage.monGNSS.enabled_Gnss == 15) strcat(message, "GNSS = GPS + GLONASS + GALILEO + BEIDOU");  //only M9 //bitmask GAL BEI GLO GPS:1111 = 15
   strcat(message, " \n");
   strcat(message, "Ublox SW-version : ");
   strcat(message, ubxMessage.monVER.swVersion);
@@ -423,11 +403,23 @@ void Session_info(GPS_data G) {
   strcat(message, "Ublox HW-version : ");
   strcat(message, ubxMessage.monVER.hwVersion);
   strcat(message, " \n");
-  if ((config.ublox_type == M10_9600BD) | (config.ublox_type == M10_38400BD))
+  sprintf(tekst,"Ublox minimal elevation Sats: %d \n",config.M10_min_elevation);
+  strcat(message, tekst);
+  if(config.M10_full_power) 
+    sprintf(tekst,"M10 full power ON !\n");
+  else
+    sprintf(tekst,"M10 full power OFF !\n");
+  strcat(message, tekst);
+  if(config.M10_high_nav==3) 
+    sprintf(tekst,"M10 high clockspeed !\n");
+  else
+    sprintf(tekst,"M10 default clockspeed !\n");
+  strcat(message, tekst);
+  if ((config.ublox_type == M10_9600BD) | (config.ublox_type == M10_38400BD)| (config.ublox_type == M10_115200BD)) 
     sprintf(tekst, "Ublox M10 ID = %02x%02x%02x%02x%02x%02x\n", ubxMessage.ubxId.ubx_id_1, ubxMessage.ubxId.ubx_id_2, ubxMessage.ubxId.ubx_id_3, ubxMessage.ubxId.ubx_id_4, ubxMessage.ubxId.ubx_id_5, ubxMessage.ubxId.ubx_id_6);
   if ((config.ublox_type == M8_9600BD) | (config.ublox_type == M8_38400BD))
     sprintf(tekst, "Ublox M8 ID = %02x%02x%02x%02x%02x\n", ubxMessage.ubxId.ubx_id_1, ubxMessage.ubxId.ubx_id_2, ubxMessage.ubxId.ubx_id_3, ubxMessage.ubxId.ubx_id_4, ubxMessage.ubxId.ubx_id_5);
-  if ((config.ublox_type == M9_9600BD) | (config.ublox_type == M9_38400BD))
+  if ((config.ublox_type == M9_9600BD) | (config.ublox_type == M9_38400BD)|(config.ublox_type == M9_115200BD))
     sprintf(tekst, "Ublox M9 ID = %02x%02x%02x%02x%02x%02x\n", ubxMessage.ubxId.ubx_id_1, ubxMessage.ubxId.ubx_id_2, ubxMessage.ubxId.ubx_id_3, ubxMessage.ubxId.ubx_id_4, ubxMessage.ubxId.ubx_id_5, ubxMessage.ubxId.ubx_id_6);
   strcat(message, tekst);
   strcat(message, Ublox_type);
@@ -547,6 +539,20 @@ void Session_results_Alfa(Alfa_speed A, GPS_speed M) {
     strcat(message, "\n");
     errorfile.print(message);
   }
+}
+void Session_results_track(void){
+   // char tekst[64] = "";
+    char message[255] = "";
+    sprintf(message,"Track Length %.2f , Start %.6f lat %.6f lon, Finish %.6f lat %.6f lon \n",trajectAfstandMeters,config.p1_lat,config.p1_lon,config.p2_lat,config.p2_lon);
+    errorfile.print(message);
+    //terug leeg schrijven
+    message[0] = '\0'; 
+    for (int i = 0; i < 10; i++) {
+      message[0] = '\0'; 
+      sprintf(message,"%d Track %f Doppler %f Proj_doppler %f Time %d:%d \n",i+1,track_speed[9-i] * calibration_speed,doppler_speed[9-i] * calibration_speed,projected_doppler_speed[9-i] * calibration_speed,track_hour[9-i],track_minute[9-i]);
+      errorfile.print(message);
+      }
+
 }
 void Session_gpstc(char* gpstc){
   errorfile.print(gpstc);

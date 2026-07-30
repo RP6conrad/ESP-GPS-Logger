@@ -41,6 +41,12 @@ extern GPS_time s2;
 extern GPS_time S10;
 extern GPS_time s10;
 extern Alfa_speed A250;
+extern double track_speed[10];
+extern double doppler_speed[10];
+extern double projected_doppler_speed[10];
+extern uint8_t track_hour[10];
+extern uint8_t track_minute[10];
+extern double trajectAfstandMeters;
 extern GPS_data Ublox; // create an object storing GPS_data, definition in RTOS
 extern GPS_SAT_info Ublox_Sat;//create an object storing GPS_SAT info !
 extern int nav_pvt_message; 
@@ -57,7 +63,7 @@ struct Config {
   float shutdown_voltage=3.2;
   float cal_speed=3.6;//conversion m/s to km/h, for knots use 1.944
   int sample_rate=5;//gps_rate in Hz, 1, 5 or 10Hz !!!
-  int gnss=3;//default setting 2 GNSS, GPS & GLONAS
+  int gnss=3;//default setting 2 GNSS, GPS & GLONASS
   int field=1;//choice for first field in speed screen !!!
   int field_actual=1;//actual choice in speed screen
   int speed_large_font=1;//fonts on the first line are bigger, actual speed font is smaller
@@ -82,7 +88,7 @@ struct Config {
   int start_logging_speed=1;
   int bar_length=1852;//choice for bar indicator for length of run in m (nautical mile)
   int archive_days=10; //how many days files will be moved to the "Archive" dir
-  bool bat_choice=1;//choice for voltage in % or voltage
+  bool screen_orientation=1;//choice for voltage in % or voltage
   bool logTXT=1;// switchinf off .txt files
   bool logUBX=1;//log to .ubx
   bool logUBX_nav_sat=0;// log nav sat msg to .ubx
@@ -99,9 +105,11 @@ struct Config {
   int config_fail=0;
   uint8_t ublox_type=0;
   uint8_t M10_high_nav=0;
+  uint8_t max_Svs=32; //max sats in nav solution
+  bool M10_full_power=0;
+  uint8_t M10_min_elevation = 5;
+  double p1_lon,p1_lat,p2_lon,p2_lat;
   int cpu_freq = 80;
-  double p1_lon,p1_lat,p2_lon,p2_lat, p3_lon,p3_lat,p4_lon,p4_lat;
-  int track_distance;
   } ;
 extern Config config;
 void AddString();
@@ -117,6 +125,7 @@ void Session_info(GPS_data G);
 void Session_results_M(GPS_speed M);
 void Session_results_S(GPS_time S);
 void Session_results_Alfa(Alfa_speed A,GPS_speed M);
+void Session_results_track(void);
 void Session_gpstc(char* gpstc);
 void TimeZone_env (float timezone);
 uint64_t Free_space(void);

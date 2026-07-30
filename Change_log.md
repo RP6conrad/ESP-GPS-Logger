@@ -1,3 +1,20 @@
+### Changes SW 6.05delta
+* settings M10 added tot .txt file
+* full power mode in the config
+* Added setting M10 minimal elevation satellite above horizon, 5 - 25 degrees
+* Stat-screen D  5-9 track speed, update Top_5()
+* Stat-screen E Ranking Nautical mile screen 
+* Stat-screen F Ranking 100m screen 
+* track_speed Start -> finish now with exact doppler - distance
+* added projected doppler speed to track speed (only in stat screen now)
+* json buffer now 2048 bytes (was 1536)
+* Screen orientation now in config, had to update GXDEM0213B74 lib, and bugfix for screen offset (added VISIBLE_WIDTH 122)
+### Changes SW 6.05beta
+* Added max nr of satellites in config (motion has a fix limit of 18)
+* Added "track-speed" measurement between 2 gps points, start and finishline perpendicular to start / finish point
+* Added stat-screen B with distance to start line, gps distance track, track-speed and doppler speed.
+* Added speed-screen F with distance to start line and track seconds passed
+* Best 5 track runs are added to *.txt file (track speed and doppler speed, but doppler is for 250m (track distance<350m) or 500m.
 * Added SD-nand breakout files to github (easy eda format)
 * Added 3D housing files to github (stl + dxf for lasercutting)
 * GPST post 1h knots bugfix
@@ -105,10 +122,10 @@ Bugfix calculation AVG 5*10s !
   ### Changes SW5.80
 * Extended choice for sample rate : add 4 Hz and 8 Hz  
 * extended choices for GNSS 
-** M10 4GNSS : GPS+GLONAS+GALILEO+BEIDOU, max 4Hz or lost points....
+** M10 4GNSS : GPS+GLONASS+GALILEO+BEIDOU, max 4Hz or lost points....
 ** M10 3GNSS : GPS+GALILEO+BEIDOU_B1C :  8Hz possible with no lost points (default = GPS+GALILEO+BEIDOU_B1L )
-** M10 3GNSS : GPS+GALILEO+GLONAS, max 5Hz or lost points....
-** M10 2GNSS : GPS+GLONAS or GPS+GALILEO : 10Hz possible with no lost points 
+** M10 3GNSS : GPS+GALILEO+GLONASS, max 5Hz or lost points....
+** M10 2GNSS : GPS+GLONASS or GPS+GALILEO : 10Hz possible with no lost points 
 * Sample_rate limited in function of GNSS settings (M10)
 * Wifi AP bug fixes
   ### Changes SW5.79

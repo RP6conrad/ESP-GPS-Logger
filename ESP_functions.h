@@ -4,7 +4,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="V 6.03c";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 6.05delta";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -83,6 +83,7 @@ RTC_DATA_ATTR int offset = 0;
 RTC_DATA_ATTR float RTC_distance;
 RTC_DATA_ATTR float RTC_avg_10s;
 RTC_DATA_ATTR float RTC_max_2s;
+RTC_DATA_ATTR float RTC_max_1s;
 RTC_DATA_ATTR float RTC_30m;
 RTC_DATA_ATTR float RTC_1h;
 RTC_DATA_ATTR float RTC_alp;
@@ -95,13 +96,14 @@ RTC_DATA_ATTR float RTC_1h_knots;
 RTC_DATA_ATTR float RTC_mile_knots;
 RTC_DATA_ATTR float RTC_100m;
 RTC_DATA_ATTR float RTC_250m;
+RTC_DATA_ATTR float RTC_500m;
 //Simon
 RTC_DATA_ATTR short RTC_year;
 RTC_DATA_ATTR short RTC_month;
 RTC_DATA_ATTR short RTC_day;
 RTC_DATA_ATTR short RTC_hour;
 RTC_DATA_ATTR short RTC_min;
-RTC_DATA_ATTR float RTC_500m;
+
 
 RTC_DATA_ATTR float RTC_R1_10s;
 RTC_DATA_ATTR float RTC_R2_10s;
@@ -114,6 +116,7 @@ RTC_DATA_ATTR int RTC_Sail_Logo;
 RTC_DATA_ATTR int RTC_SLEEP_screen=0;
 RTC_DATA_ATTR int RTC_OFF_screen=0;
 RTC_DATA_ATTR int RTC_counter=0;
+RTC_DATA_ATTR int RTC_screen_orientation;
 //Simon
 RTC_DATA_ATTR float RTC_calibration_bat=1.75;//bij ontwaken uit deepsleep niet noodzakelijk config file lezen
 RTC_DATA_ATTR float RTC_voltage_bat=3.6;
@@ -150,6 +153,7 @@ GPS_speed M100(100);
 GPS_speed M250(250);
 GPS_speed M500(500);
 GPS_speed M1852(1852);
+GPS_time S1(1);
 GPS_time S2(2);
 GPS_time s2(2);
 GPS_time S10(10);
@@ -159,7 +163,6 @@ GPS_time S3600(3600);
 Alfa_speed A250(50);
 Alfa_speed A500(50);
 Alfa_speed a500(50);//for  Alfa stats GPIO_12 screens, reset possible !!
-GPS_Track M_500;
 Button_push Short_push12 (12,50,15,1,1); //GPIO12 pull up, 100ms push time, 15s long_pulse, count 1, STAT screen 4&5
 Button_push Long_push12 (12,2000,10,4,1); //GPIO12 pull up, 2000ms push time, 10s long_pulse, count 4, reset STAT screen 4&5
 Button_push Short_push39 (GO_TO_SLEEP_GPIO,10,10,9,1);//was 39 GO_TO_SLEEP_GPIO
@@ -338,16 +341,17 @@ void Shut_down(void){
         if(Time_Set_OK){    //Only safe to RTC memory if new GPS data is available !!
             Time_Set_OK=false;
             RTC_distance=Ublox.total_distance/1000000;
-            RTC_max_2s= S2.avg_speed[9]*calibration_speed;
+            RTC_max_1s= S1.display_speed[9]*calibration_speed;
+            RTC_max_2s= S2.display_speed[9]*calibration_speed;
             RTC_avg_10s=S10.avg_5runs*calibration_speed;
-            RTC_mile=M1852.display_speed[9]*calibration_speed;
             RTC_alp=A500.display_max_speed*calibration_speed;
             RTC_avg_alp=A500.alfa_average*calibration_speed;
             RTC_30m=S1800.display_max_speed*calibration_speed;
             RTC_1h=S3600.display_max_speed*calibration_speed; 
-            RTC_100m=M100.avg_speed[9]*calibration_speed;
-            RTC_250m=M250.avg_speed[9]*calibration_speed;
-            RTC_500m=M500.avg_speed[9]*calibration_speed;
+            RTC_100m=M100.display_speed[9]*calibration_speed;
+            RTC_250m=M250.display_speed[9]*calibration_speed;
+            RTC_500m=M500.display_speed[9]*calibration_speed;
+            RTC_mile=M1852.display_speed[9]*calibration_speed;
 
             RTC_max_2s_knots= S2.avg_speed[9]*1.9438/1000;
             RTC_avg_10s_knots=S10.avg_5runs*1.9438/1000;
@@ -355,11 +359,11 @@ void Shut_down(void){
             RTC_mile_knots=M1852.display_speed[9]*1.9438/1000;
             RTC_alp_knots=A500.display_max_speed*1.9438/1000;
             
-            RTC_R1_10s=S10.avg_speed[9]*calibration_speed;
-            RTC_R2_10s=S10.avg_speed[8]*calibration_speed;
-            RTC_R3_10s=S10.avg_speed[7]*calibration_speed;
-            RTC_R4_10s=S10.avg_speed[6]*calibration_speed;
-            RTC_R5_10s=S10.avg_speed[5]*calibration_speed;
+            RTC_R1_10s=S10.display_speed[9]*calibration_speed;
+            RTC_R2_10s=S10.display_speed[8]*calibration_speed;
+            RTC_R3_10s=S10.display_speed[7]*calibration_speed;
+            RTC_R4_10s=S10.display_speed[6]*calibration_speed;
+            RTC_R5_10s=S10.display_speed[5]*calibration_speed;
 
             RTC_year=(tmstruct.tm_year+1900);//local time is corrected with timezone in close_files() !!
             RTC_month=(tmstruct.tm_mon+1);
@@ -380,6 +384,7 @@ void Shut_down(void){
               Session_results_M(M1852);
               Session_results_Alfa(A250,M250);
               Session_results_Alfa(A500,M500);
+              Session_results_track();
               Session_gpstc(gpstc_post);
               }
             //delay(3000);// go to sleep screen need some time...
@@ -551,6 +556,7 @@ void Search_for_wifi(void) {
     if(ap_mode==false)Update_screen(WIFI_STATION);
     else Update_screen(WIFI_SOFT_AP);
     Serial.print(".");
+    delay(500);
     wifi_search--;
     if(wifi_search<=0){
       IP_adress = "0.0.0.0";

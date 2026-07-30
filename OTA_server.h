@@ -302,7 +302,7 @@ void SD_dir(int archive) {
     String voltage_lipo = "&emsp;Bat voltage = " + String(RTC_voltage_bat, 2) + " Volt";
     String firmware = "Firmware "+ String(SW_version);
     String gps_warning = "<h3>"+ font_color_start+"Sample-rate too high for the actual gnss setting, possible lost points in the log file !!"+font_color_end + "</h3>";
-    String CPU_freq =  "<h3>"+ font_color_start+"For 5 Hz sample_rate, CPU freq of 80 MHz is sufficient. For 10 Hz, CPU freq of 160 MHz gives the maximal performance."+font_color_end + "</h3>";
+    String CPU_freq =  "<h3>"+ font_color_start+"For 5 Hz sample_rate, CPU freq of 160 MHz is sufficient. For 10 Hz, CPU freq of 240 MHz gives the maximal performance."+font_color_end + "</h3>";
     String Data_rate_high = "<h3>"+ font_color_start+"Max 2 file types set to ON, otherwise data rate too high and lost points possible !!"+font_color_end + "</h3>";
     String Shutdown_low = "<h3>"+ font_color_start+"Shutdown voltage in config lower then 3.1V, power down when lipo goes low !!"+font_color_end + "</h3>";
     /*
@@ -325,8 +325,7 @@ void SD_dir(int archive) {
       if (((config.gnss == 3) & (config.sample_rate> 5)) | ((config.gnss== 4) & (config.sample_rate > 8)) | ((config.gnss== 5) & (config.sample_rate > 4))) {GPS_warning=true;}
        }
     if(config.M10_high_nav) {GPS_warning=false;} 
-    if(((config.sample_rate==5)&!(config.cpu_freq==80))|((config.sample_rate==10)&!(config.cpu_freq==160)))CPU_freq_warning=true;
-   // if((config.logSBP+config.logUBX+config.logGPY+config.logGPX)>2)Data_rate_overload = true;
+    if(((config.sample_rate==5)&(config.cpu_freq<160))|((config.sample_rate==10)&!(config.cpu_freq<240)))CPU_freq_warning=true;
     if(config.shutdown_voltage<3.1) Shutdown_warning=true;
     if (root) {
       root.rewindDirectory();
@@ -456,13 +455,13 @@ void handleConfigUpload() {
         return;
       }
     }
-    StaticJsonDocument<1536> doc;
+    StaticJsonDocument<2048> doc;
     // Set the values in the document
     //Serial.println("calspeed:"+server.arg("cal_speed"));
     //gnss 4 = GPS + GALILEO + BEIDOU_B1C
-    //gnss x = GPS + GLONAS + BEIDOU   (impossible for the M10 ???)
-    //gnss 3 = GPS + GLONAS + GALILEO
-    //gnss 2 = GPS + GLONAS (default M8 ROM 2)
+    //gnss x = GPS + GLONASS + BEIDOU   (impossible for the M10 ???)
+    //gnss 3 = GPS + GLONASS + GALILEO
+    //gnss 2 = GPS + GLONASS (default M8 ROM 2)
     //gnss 1 = GPS + GALILEO (not working for M8)
     //gnss 0 = GPS + BEIDOU
     //EEPROM.readInt(2,RTC_highest_read);
@@ -473,6 +472,9 @@ void handleConfigUpload() {
     doc["cal_speed"] = serialized(server.arg("cal_speed"));
     doc["sample_rate"] = server.arg("sample_rate").toInt();
     doc["gnss"] = server.arg("gnss").toInt();
+    doc["max_Svs"] = server.arg("max_Svs").toInt();
+    doc["M10_full_power"] = server.arg("M10_full_power").toInt();
+    doc["M10_min_elevation"] = server.arg("M10_min_elevation").toInt();
     doc["speed_screen"] = server.arg("speed_screen");
     doc["speed_large_font"] = server.arg("speed_large_font").toInt();
     doc["bar_length"] = server.arg("bar_length").toInt();
@@ -485,9 +487,7 @@ void handleConfigUpload() {
     doc["Board_Logo"] = server.arg("Board_Logo").toInt();
     doc["Sail_Logo"] = server.arg("Sail_Logo").toInt();
     doc["sleep_off_screen"] = server.arg("sleep_off_screen").toInt();
-    #if defined(_GxDEPG0266BN_H_)
-    doc["bat_choice"] = server.arg("bat_choice").toInt();
-    #endif
+    doc["screen_orientation"] = server.arg("screen_orientation").toInt();
     doc["logTXT"] = server.arg("logTXT").toInt();
     doc["logSBP"] = server.arg("logSBP").toInt();
     doc["logUBX"] = server.arg("logUBX").toInt();
@@ -518,14 +518,7 @@ void handleConfigUpload() {
     config.p2_lon = server.arg("p2_lon").toDouble();
     doc["p2_lat"] = serialized(server.arg("p2_lat"));
     config.p2_lat = server.arg("p2_lat").toDouble();
-    doc["p3_lon"] = serialized(server.arg("p3_lon"));
-    config.p3_lon = server.arg("p3_lon").toDouble();
-    doc["p3_lat"] = serialized(server.arg("p3_lat"));
-    config.p3_lat = server.arg("p3_lat").toDouble();
-    doc["p4_lon"] = serialized(server.arg("p4_lon"));
-    config.p4_lon = server.arg("p4_lon").toDouble();
-    doc["p4_lat"] = serialized(server.arg("p4_lat"));
-    config.p4_lat = server.arg("p4_lat").toDouble();
+
     int Ublox_type = server.arg("GPS_Type").toInt();
     if(Ublox_type == 0xFF) {  //not in config.txt but saved in EEPROM !!!)
       EEPROM.writeByte(0, Ublox_type);

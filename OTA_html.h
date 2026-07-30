@@ -424,18 +424,31 @@ void html_config(String& webpage){
   else{ 
       Drop_down_menu(config.gnss,1,"GPS + GALILEO",webpage);     
       }
-  Drop_down_menu(config.gnss,2,"GPS + GLONAS",webpage);
-  Drop_down_menu(config.gnss,3,"GPS + GLONAS + GALILEO",webpage);
+  Drop_down_menu(config.gnss,2,"GPS + GLONASS",webpage);
+  Drop_down_menu(config.gnss,3,"GPS + GLONASS + GALILEO",webpage);
   Drop_down_menu(config.gnss,4,"GPS + GALILEO + BEIDOU_B1C",webpage);      
   if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)|(config.ublox_type == M9_115200BD)|(config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD)|(config.ublox_type == M10_115200BD)){
-    Drop_down_menu(config.gnss,5,"GPS + GLONAS + GALILEO + BEIDOU",webpage);
+    Drop_down_menu(config.gnss,5,"GPS + GLONASS + GALILEO + BEIDOU",webpage);
     }   
-  webpage += "</select>\n</td><td>gnss choice, for the M10, 3 or 4 gnss simultanous limits the sample rate ! :<br> M8 (ROM version 2.01) : max 2 GNSS (GPS + GLONAS)<br> M8 (ROM version 3.01) : max 3 GNSS (GPS + GLONAS + GALILEO)<br> M9 : max 4 GNSS (GPS + GLONAS + GALILEO + BEIDOU)<br> M10: max 4 GNSS  (GPS + GLONAS + GALILEO + BEIDOU), but depends on sample-rate !</td>\n</tr>\n";
+  webpage += "</select>\n</td><td>gnss choice, for the M10, 3 or 4 gnss simultanous limits the sample rate ! :<br> M8 (ROM version 2.01) : max 2 GNSS (GPS + GLONASS)<br> M8 (ROM version 3.01) : max 3 GNSS (GPS + GLONASS + GALILEO)<br> M9 : max 4 GNSS (GPS + GLONASS + GALILEO + BEIDOU)<br> M10: max 4 GNSS  (GPS + GLONASS + GALILEO + BEIDOU), but depends on sample-rate !</td>\n</tr>\n";
   //logUBX nav-sat message@rate/10
   webpage += "<tr><td>logUBX_nav_sat</td><td>\n<select id='logUBX_nav_sat' name='logUBX_nav_sat'>\n";
   Drop_down_menu(config.logUBX_nav_sat,1,"LOG UBX NAV SAT ON",webpage);
   Drop_down_menu(config.logUBX_nav_sat,0,"LOG UBX NAV SAT OFF",webpage);
   webpage += "</select>\n</td><td>logUBX_nav_sat: To save the GPS NAV SAT data in ubx format. For every 10 nav_pvt messages, 1 nav_sat message is saved. This can be used to evaluate the signal quality of your gps (ucenter). Only active if logUBX is ON and rate<10 Hz !!.</td>\n</tr>\n";  
+  //max_Svs
+  webpage += "<tr>\n<td>max Satellites in nav</td><td>\n";
+  webpage += "<input size='2' type='number' required name='max_Svs' min='10' max='32' value="+String(config.max_Svs)+" step='1'>\n";
+  webpage += "</select>\n</td><td>max_Svs: Default max of 32 satellites in nav solution M10</td>\n</tr>\n";
+  //M10_min_elevation
+  webpage += "<tr>\n<td>minimal elevation Satellites</td><td>\n";
+  webpage += "<input size='2' type='number' required name='M10_min_elevation' min='5' max='25' value="+String(config.M10_min_elevation)+" step='1'>\n";
+  webpage += "</select>\n</td><td>M10 : minimal elevation Satellites above horizon, default 5 degree</td>\n</tr>\n";
+  //M10_full power
+  webpage += "<tr><td>M10_full_power</td><td>\n<select id='M10_full_power' name='M10_full_power'>\n";
+  Drop_down_menu(config.M10_full_power,1,"M10 Full Power On",webpage);
+  Drop_down_menu(config.M10_full_power,0,"M10 Full Power Off",webpage);
+  webpage += "</select>\n</td><td>Default setting is M10 balanced power, M10 full power can optimize reception (testfase)</td>\n</tr>\n"; 
    //Archive_days
   webpage += "<tr>\n<td>archive_days</td><td>\n";
   webpage += "<input size='8' type='number' required name='archive_days' min='0' max='1000' value="+String(config.archive_days)+" step='1'>\n";
@@ -526,13 +539,11 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
   webpage += "<input size='8' type='number' required name='sleep_off_screen' min='0' max='1000' value="+String(config.sleep_off_screen)+" step='1'>\n";
   webpage += "</select>\n</td><td>Choice for switch_off (first digit 0 or 1) and sleep_screen (second digit 0 or 1): </td>\n</tr>\n";
-  //bat value in % or volt
-  #if defined(_GxDEPG0266BN_H_) 
-  webpage += "<tr><td>bat_choice</td><td>\n<select id='bat_choice' name='bat_choice'>\n";
-  Drop_down_menu(config.bat_choice,0,"Batery value in voltage",webpage);
-  Drop_down_menu(config.bat_choice,1,"Batery value in percentage",webpage);
-  webpage += "</select>\n</td><td>bat_choice: Screen info on battery will be presented in either percentage of voltage.</td>\n</tr>\n"; 
-  #endif     //266BN
+  //screen orientation
+  webpage += "<tr><td>screen_orientation</td><td>\n<select id='screen_orientation' name='screen_orientation'>\n";
+  Drop_down_menu(config.screen_orientation,0,"Default screen orientation",webpage);
+  Drop_down_menu(config.screen_orientation,1,"Upside down screen orientation",webpage);
+  webpage += "</select>\n</td><td>screen_orientation: Screen can be turned upside down</td>\n</tr>\n"; 
   #endif    //T5_EPAPER
   //logTXT
   webpage += "<tr><td>logTXT</td><td>\n<select id='logTXT' name='logTXT'>\n";
@@ -627,11 +638,8 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>Sleep_info</td><td>\n";
   webpage += "<input size='21' type='text' required name='Sleep_info' value="+Sleep_info+">\n";//size 20 -> 21
   webpage += "</select>\n</td><td>Sleep_info:  Text appears in sleep_screen.</td>\n</tr>\n";
-  //Track distance
+  
   #ifdef TRACKSPEED
-  webpage += "<tr>\n<td>Track_distance</td><td>\n";
-  webpage += "<input size='8' type='number' required name='track_distance' min='0' max='10000' value="+String(config.track_distance)+" step='1'>\n";
-  webpage += "</select>\n</td><td>Theoretical Track distance between start and finish line. GPS-Distance p1-p3= "+String(M_500.distance_p1p3)+" m, GPS-Distance p2-p4= "+String(M_500.distance_p2p4)+" m</td>\n</tr>\n";
   //Coordinates 
   webpage += "<tr>\n<td>Startline lon1</td><td>\n";
   webpage += "<input size='9' type='text' required name='p1_lon' value="+String(config.p1_lon,6)+">\n";
@@ -639,24 +647,12 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>Startline lat1</td><td>\n";
   webpage += "<input size='9' type='text' required name='p1_lat' value="+String(config.p1_lat,6)+">\n";
   webpage += "</select>\n</td><td>Coördinate 1 latitude.</td>\n</tr>\n";
-  webpage += "<tr>\n<td>Startline lon2</td><td>\n";
+  webpage += "<tr>\n<td>Finishline lon2</td><td>\n";
   webpage += "<input size='9' type='text' required name='p2_lon' value="+String(config.p2_lon,6)+">\n";
   webpage += "</select>\n</td><td>Coördinate 2 longitude.</td>\n</tr>\n"; 
-  webpage += "<tr>\n<td>Startline lat2</td><td>\n";
+  webpage += "<tr>\n<td>Finishline lat2</td><td>\n";
   webpage += "<input size='9' type='text' required name='p2_lat' value="+String(config.p2_lat,6)+">\n";
   webpage += "</select>\n</td><td>Coördinate 2 latitude.</td>\n</tr>\n"; 
-  webpage += "<tr>\n<td>Finishline lon3</td><td>\n";
-  webpage += "<input size='9' type='text' required name='p3_lon' value="+String(config.p3_lon,6)+">\n";
-  webpage += "</select>\n</td><td>Coördinate 3 longitude.</td>\n</tr>\n"; 
-  webpage += "<tr>\n<td>Finishline lat3</td><td>\n";
-  webpage += "<input size='9' type='text' required name='p3_lat' value="+String(config.p3_lat,6)+">\n";
-  webpage += "</select>\n</td><td>Coördinate 3 latitude.</td>\n</tr>\n";
-  webpage += "<tr>\n<td>Finishline lon4</td><td>\n";
-  webpage += "<input size='9' type='text' required name='p4_lon' value="+String(config.p4_lon,6)+">\n";
-  webpage += "</select>\n</td><td>Coördinate 4 longitude.</td>\n</tr>\n"; 
-  webpage += "<tr>\n<td>Finishline lat4</td><td>\n";
-  webpage += "<input size='9' type='text' required name='p4_lat' value="+String(config.p4_lat,6)+">\n";
-  webpage += "</select>\n</td><td>Coördinate 4 latitude.</td>\n</tr>\n";
   #endif
   //reboot the esp
   webpage += "<tr><td>reboot</td><td>\n<select id='reboot' name='reboot'>\n";

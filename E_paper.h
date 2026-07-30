@@ -3,6 +3,7 @@
 #include <GxEPD.h>
 #include "Ublox.h"
 #include "GPS_data.h"
+#include "track_speed.h"
 //! There are four versions of the 2.13 screen,
 //  if you are not sure which version, please test each one,
 //  if it is successful then it belongs to the model of the file name
@@ -73,6 +74,12 @@ Flip: horizontally
 #define STATSB 66  //asci code for B
 #define STATSC 67  //asci code for C
 #define STATSD 68  //asci code for D
+#define STATSE 69  //asci code for D
+#define STATSF 70  //asci code for D
+#define STATSG 71  //asci code for D
+
+
+
 #define SPEED1 49
 #define SPEED2 50
 #define SPEED3 51
@@ -117,7 +124,6 @@ extern String actual_ssid;
 extern const char E_paper_version[16];
 extern const char SW_version[16];
 extern UBXMessage ubxMessage;
-static int update_epaper = 2;
 extern int freeSpace;
 /*
 extern float Afstand_lijn;
@@ -159,7 +165,15 @@ extern Alfa_speed A500;
 extern Alfa_speed a500;
 extern GPS_time S1800;
 extern GPS_time S3600;
-extern GPS_Track M_500;
+
+extern double trajectAfstandMeters;
+extern double gemiddeldeSnelheid_mmps;
+extern double doppler_track_speed;
+extern double projected_doppler_track_speed;
+extern double track_time;
+extern LijnPassageResultaat startRes;
+extern LijnPassageResultaat finishRes;
+
 void Boot_screen(void);
 void Off_screen(int choice);
 void Sleep_screen(int choice);

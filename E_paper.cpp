@@ -1,7 +1,7 @@
 #include "E_paper.h"
 #include "Definitions.h"
 #include <LITTLEFS.h>
-
+# ifndef E_PAPER_VERSION_2
 // row height 14pt spacing 2pt
 #define ROW_SPACING 2
 
@@ -45,18 +45,12 @@
 #define INFO_BAR_TOP (displayHeight - INFO_BAR_HEIGHT)
 #define INFO_BAR_ROW (displayHeight - 2)
 
-//display.setFont(&FreeSansBold9pt7b);
-#define TITLE_9PT \
-  display.setFont(&FreeSansBold9pt7b); \
-  display.setCursor(offset, ROW_1_9PT);
-
-#define TOP_TITLE_MSG(msg) display.print(msg);
-#define TOP_TITLE(msg) \
-  TOP_LEFT_TITLE_MSG(msg) \
-  display.setCursor(offset, ROW_2_9PT);
-
-#define TOP_LEFT_TITLE(msg) TITLE_9PT TOP_TITLE(msg)
-#define TOP_LEFT_TITLE_MSG(msg) TITLE_9PT TOP_TITLE_MSG(msg)
+void topLeft_Title(const String& msg) {
+    display.setFont(&FreeSansBold9pt7b);
+    display.setCursor(offset, ROW_1_9PT);
+    display.print(msg);
+    display.setCursor(offset, ROW_2_9PT);
+}
 #ifndef T5_E_PAPER
 void Boot_screen(void){};
 void Sleep_screen(int choice){};
@@ -70,11 +64,65 @@ int bar_length = 1852;
 int bar_position = 32;
 int total_bar_length = 240;
 int run_rectangle_length = 0;
+static int update_epaper = 2;
 void InfoBar(int offset);
 void InfoBarRtc(int offset);
 void sdCardInfo(void);
 const char* gpsChip(int longname);
 char bar_info[8] = "info";
+
+struct Rank_best{
+  double speed[5];
+  uint8_t hour[5];
+  uint8_t minutes[5];
+};
+Rank_best copyGps_timeToRank(const GPS_time& gps) {
+    Rank_best result;
+    for (int i = 0; i < 5; i++) {
+        result.speed[i]   = gps.display_speed[9-i]* calibration_speed;  // Directe kopie (double)
+        result.hour[i]    = gps.time_hour[9-i];       // Directe kopie (uint8_t)
+        result.minutes[i] = gps.time_min[9-i];        // Directe kopie (uint8_t)
+    }
+    return result;
+}
+Rank_best copyGps_speedToRank(const GPS_speed& gps) {
+    Rank_best result;
+    for (int i = 0; i < 5; i++) {
+        result.speed[i]   = gps.display_speed[9-i]* calibration_speed;  // Directe kopie (double)
+        result.hour[i]    = gps.time_hour[9-i];       // Directe kopie (uint8_t)
+        result.minutes[i] = gps.time_min[9-i];        // Directe kopie (uint8_t)
+    }
+    return result;
+}
+Rank_best copyAlfa_speedToRank(const Alfa_speed& gps) {
+    Rank_best result;
+    for (int i = 0; i < 5; i++) {
+        result.speed[i]   = gps.avg_speed[9-i]* calibration_speed;  // Directe kopie (double)
+        result.hour[i]    = gps.time_hour[9-i];       // Directe kopie (uint8_t)
+        result.minutes[i] = gps.time_min[9-i];        // Directe kopie (uint8_t)
+    }
+    return result;
+}
+
+void Top_5(const String& msg,const Rank_best& rb,int rank_start) {
+    display.setFont(&FreeSansBold12pt7b); 
+    for (int i = 0; i < 5; i++) {
+        // Let op de y-positie berekening (zie uitleg hieronder)
+        display.setCursor(offset, 24 * (1 + i));  
+        display.print(msg);
+        display.print(i + 1+rank_start); // Print "1" t/m "5" in plaats van "0" t/m "4"
+        display.print(": ");
+        display.print(rb.speed[i], 2);
+        display.print(" @ ");
+        display.print(rb.hour[i]);
+        if (rb.minutes[i] < 10) {
+            display.print(":0");
+        } else {
+            display.print(":");
+        }
+        display.print(rb.minutes[i]);
+    }
+}
 void Speed_font0(String message1, String message2, float speed1, float speed2, float speed, int screen) {
   int decimal = 1;
   if (screen == 2) decimal = 0;          //screen==1 : Run xx.x AVG xx.x
@@ -137,7 +185,7 @@ void Speed_font3(String message1, float speed) {
   display.print(speed, 1);
 }
 int device_boot_log(int rows, int ws) {
-  int r = 2, row = ROW_9PT + ROW_SPACING;
+  int r = 2;
   display.setCursor(offset, ROW_2_9PT);
   if (ws) delay(ws);
   display.print(E_paper_version);
@@ -209,8 +257,8 @@ void Off_screen(int choice) {  //choice 0 = old screen, otherwise Simon screens
   display.setTextColor(GxEPD_BLACK);
   int cursor = ROW_3_9PT + ROW_12PT_W_SPACING;
   ESP_GPS_LOGO_40
-  TOP_LEFT_TITLE_MSG("ESP-GPS saving");  //row1 14
-  DEVICE_BOOT_LOG(4);
+  topLeft_Title("ESP-GPS saving");  //row1 14
+ // DEVICE_BOOT_LOG(4);
   display.setFont(&FreeSansBold12pt7b);
   display.setCursor(offset, cursor);
   if (choice == 0) {
@@ -732,8 +780,8 @@ void Update_screen(int screen) {
   if (screen == BOOT_SCREEN) {
     update_delay = 1000;
     ESP_GPS_LOGO_40
-    TOP_LEFT_TITLE_MSG("ESP-GPS config");
-    DEVICE_BOOT_LOG(234);
+    topLeft_Title("ESP-GPS config");
+   // DEVICE_BOOT_LOG(234);
     if (screen != old_screen) count = 0;  //eerste keer full update
     Speed_in_Unit(offset);
     delay(1000);
@@ -741,8 +789,8 @@ void Update_screen(int screen) {
   if (screen == GPS_INIT_SCREEN) {
     update_delay = 100;
     ESP_GPS_LOGO_40
-    TOP_LEFT_TITLE_MSG("ESP-GPS GPS init");
-    DEVICE_BOOT_LOG(24);
+    topLeft_Title("ESP-GPS GPS init");
+    //DEVICE_BOOT_LOG(24);
 
     if (config.ublox_type == 0xFF) {
       display.setFont(&FreeSansBold12pt7b);
@@ -763,8 +811,8 @@ void Update_screen(int screen) {
     if (count % 20 < 10) offset++;
     else offset--;
     ESP_GPS_LOGO_40
-    TOP_LEFT_TITLE_MSG("ESP-GPS connect");
-    DEVICE_BOOT_LOG(2);
+    topLeft_Title("ESP-GPS connect");
+    //DEVICE_BOOT_LOG(2);
     if (SoftAP_connection != true) {
       display.setCursor(offset, 102);
       display.printf("Logspace left : %d hour", Logtime_left(Free_space()) / 60);
@@ -787,8 +835,8 @@ void Update_screen(int screen) {
     } else {
       display.fillRect(0, 0, 250, 122, GxEPD_WHITE);
       ESP_GPS_LOGO_40
-      TOP_LEFT_TITLE_MSG("ESP-GPS ready");
-      DEVICE_BOOT_LOG(24);
+      topLeft_Title("ESP-GPS ready");
+      //DEVICE_BOOT_LOG(24);
       display.setFont(&FreeSansBold12pt7b);
       display.setCursor(offset, (cursor = ROW_4_9PT + ROW_12PT_W_SPACING));
       if (ubxMessage.navPvt.numSV < 5) {
@@ -817,8 +865,8 @@ void Update_screen(int screen) {
   if (screen == WIFI_STATION) {
     update_delay = 100;
     ESP_GPS_LOGO_40
-    TOP_LEFT_TITLE_MSG("ESP-GPS try to connect");
-    DEVICE_BOOT_LOG(2);
+    topLeft_Title("ESP-GPS try to connect");
+    //DEVICE_BOOT_LOG(2);
     display.setCursor(offset, 102);
     display.printf("Logspace left : %d hour", Logtime_left(Free_space()) / 60);
     display.setFont(&FreeSansBold12pt7b);
@@ -833,8 +881,8 @@ void Update_screen(int screen) {
   if (screen == WIFI_SOFT_AP) {
     update_delay = 100;  //was 500
     ESP_GPS_LOGO_40
-    TOP_LEFT_TITLE_MSG("Connect to ESP-GPS");
-    DEVICE_BOOT_LOG(2);
+    topLeft_Title("Connect to ESP-GPS");
+    //DEVICE_BOOT_LOG(2);
     display.setFont(&FreeSansBold12pt7b);
     display.setCursor(offset, (cursor = ROW_3_9PT + ROW_12PT_W_SPACING));
     display.print("Ssid: ESP32AP");
@@ -1069,7 +1117,10 @@ void Update_screen(int screen) {
         display.setFont(&SansSerif_bold_40_nr);
         display.println(gps_speed_komma);
         //display.println(int((gps_speed * calibration_speed - int(gps_speed * calibration_speed)) * 10), 0);  //int((x-int(x))*10) round to correct digit
-      }  
+      } 
+    if (field == SPEEDF) { 
+        Speed_font0("Tdis", "Time",startRes.afstandTotLijn , track_time, gps_speed * calibration_speed, 2); 
+      }   
     /*progress bar**************************************************************************************************************************/
     if (config.speed_large_font == 0) {
       total_bar_length = 180;
@@ -1179,28 +1230,8 @@ void Update_screen(int screen) {
     }
   }
   if (screen == STATS5) {  //alfa statistics
-    display.setFont(&FreeSansBold12pt7b);
-    display.setCursor(offset, ROW_1_18PT);
-    display.print("Last Alfa stats ! ");
-    display.setFont(&FreeSansBold18pt7b);
-    for (int i = 9; i > 6; i--) {
-      display.setCursor(offset, ROW_2_18PT + (9 - i) * ROW_18PT);
-      display.setFont(&FreeSansBold12pt7b);
-      display.print("A");
-      display.print(10 - i);
-      display.print(" ");
-      display.setFont(&FreeSansBold18pt7b);
-      display.print(a500.avg_speed[i] * calibration_speed, 1);
-      display.setCursor(offset + 118, ROW_2_18PT + (9 - i) * ROW_18PT);
-      if (i > 7) {
-        display.setFont(&FreeSansBold12pt7b);
-        display.print(" A");
-        display.print(13 - i);
-        display.print(" ");
-        display.setFont(&FreeSansBold18pt7b);
-        display.print(a500.avg_speed[i - 3] * calibration_speed, 1);
-      }
-    }
+    Rank_best Rank = copyAlfa_speedToRank(A500);
+    Top_5("Alfa ", Rank,0);
   }
   if (screen == STATS6) {  //Simon stat screen
     Serial.println("STATS6_Simon_screen");
@@ -1342,71 +1373,47 @@ void Update_screen(int screen) {
     }
   }
     if (screen == STATS8) {
-      display.setFont(&FreeSansBold12pt7b);
-      for (int i = 9; i > 4; i--) {
-        display.setCursor(offset, 24 * (10 - i));
-        display.print("500 ");
-        display.print(10 - i);
-        display.print(": ");
-        display.print(M500.avg_speed[i] * calibration_speed, 2);
-        display.print(" @");
-        display.print(M500.time_hour[i]);
-        if (M500.time_min[i] < 10) display.print(":0");
-        else display.print(":");
-        display.print(M500.time_min[i]);
-      }
+      Rank_best Rank = copyGps_speedToRank(M500);
+      Top_5("500M ", Rank,0);
     }
     if (screen == STATS9) {
-      display.setFont(&FreeSansBold12pt7b);
-      for (int i = 9; i > 4; i--) {
-        display.setCursor(offset, 24 * (10 - i));
-        display.print("Run ");
-        display.print(10 - i);
-        display.print(": ");
-        display.print(S10.avg_speed[i] * calibration_speed, 2);
-        display.print(" @");
-        display.print(S10.time_hour[i]);
-        if (S10.time_min[i] < 10) display.print(":0");
-        else display.print(":");
-        display.print(S10.time_min[i]);
-      }
+      Rank_best Rank = copyGps_timeToRank(S10);
+      Top_5("S10 ", Rank,0);
     }
     if (screen == STATSA) {
-      display.setFont(&FreeSansBold12pt7b);
-      for (int i = 9; i > 4; i--) {
-        display.setCursor(offset, 24 * (10 - i));
-        display.print("2s: ");
-        display.print(10 - i);
-        display.print(": ");
-        display.print(S2.avg_speed[i] * calibration_speed, 2);
-        display.print(" @");
-        display.print(S2.time_hour[i]);
-        if (S2.time_min[i] < 10) display.print(":0");
-        else display.print(":");
-        display.print(S2.time_min[i]);
-      }
+      Rank_best Rank = copyGps_timeToRank(S2);
+      Top_5("S2 ", Rank,0);
     }
     if (screen == STATSB) {
     Stats_2s_3_lines("10sLast: ", "10sBest: ", "AVG :  ", S10.display_last_run * calibration_speed, S10.display_speed[9] * calibration_speed, S10.avg_5runs * calibration_speed);
     }
     #ifdef TRACKSPEED
     if (screen == STATSC) {
-      Stats_4lines("Dis_S:", "Dis:", "Speed:", "Dis_E:", M_500.distance_startline, M_500.track_distance, M_500.Track_speed, M_500.distance_endline);
+      Stats_4lines("P_dopp","Afstand","Doppler","Speed",projected_doppler_track_speed*calibration_speed,trajectAfstandMeters,doppler_track_speed*calibration_speed,gemiddeldeSnelheid_mmps*calibration_speed);
     }
     if (screen == STATSD) {
-      display.setFont(&FreeSansBold12pt7b);
-      for (int i = 9; i > 4; i--) {
-        display.setCursor(offset, 24 * (10 - i));
-        display.print("Track");
-        display.print(10 - i);
-        display.print(": ");
-        display.print(M_500.avg_speed[i] * config.cal_speed, 2);
-        display.print(" @");
-        display.print(M_500.time_hour[i]);
-        if (M_500.time_min[i] < 10) display.print(":0");
-        else display.print(":");
-        display.print(M_500.time_min[i]);
+      Rank_best track;
+      extern double track_speed[10];
+      extern uint8_t track_hour[10];
+      extern uint8_t track_minute[10];
+      for (int i=0;i<5;i++){
+        track.speed[i]=track_speed[9-i]*calibration_speed;
+        track.hour[i]=track_hour[9-i];
+        track.minutes[i]=track_minute[9-i];
       }
+      Top_5("Track", track,0);    
+    }
+    if (screen == STATSE) {
+      Rank_best track;
+      extern double track_speed[10];
+      extern uint8_t track_hour[10];
+      extern uint8_t track_minute[10];
+      for (int i=0;i<5;i++){
+        track.speed[i]=track_speed[4-i]*calibration_speed;
+        track.hour[i]=track_hour[4-i];
+        track.minutes[i]=track_minute[4-i];
+        }
+      Top_5("Track", track,5);  
     }
     #endif
   if (count % 200 == 0) {  //was 200
@@ -1427,4 +1434,5 @@ void Update_screen(int screen) {
 #undef TOP_LEFT_INFO
 #undef ROW_3_9PT
 #undef ROW_9pt_2
+#endif
 #endif

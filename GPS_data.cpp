@@ -3,6 +3,7 @@
 #include "Ublox.h"
 #include "Definitions.h"
 
+#define DISPLAY_RESET_SPEED 4000  //reset speed in mm/sek for last run display
 uint16_t _gSpeed[BUFFER_SIZE]; 
 float _lat[BUFFER_ALFA]; 
 float _long[BUFFER_ALFA];
@@ -302,6 +303,13 @@ double GPS_speed::Update_distance(int actual_run){
       avg_speed[0]=0;
       m_max_speed=0;
       }
+  if((actual_run!=reset_display_last_run)&(m_speed>DISPLAY_RESET_SPEED)){//speed  > 18 km/h om display last run reset
+      reset_display_last_run=actual_run;
+      display_last_run=0;
+      }
+      else if(display_last_run<m_max_speed){
+        display_last_run=m_max_speed;
+        }     
   old_run=actual_run;
   return m_max_speed;
 }
@@ -362,7 +370,7 @@ float GPS_time::Update_speed(int actual_run){
                     }
                 avg_5runs=avg_5runs/5;
               }
-            if((actual_run!=reset_display_last_run)&(avg_s>3000)){
+            if((actual_run!=reset_display_last_run)&(avg_s> DISPLAY_RESET_SPEED )){
               reset_display_last_run=actual_run;
               display_last_run=0;
               }
@@ -391,7 +399,6 @@ float GPS_time::Update_speed(int actual_run){
             if(s_max_speed>avg_speed[9])display_max_speed=s_max_speed;//update on the fly voor S1800 / S3600 
             else display_max_speed=avg_speed[9];
             if((actual_run!=old_run)&(this_run[0]==old_run)){   //sorting only if new max during this run !!!
-                  //sort_run(avg_speed,time_hour,time_min,time_sec,this_run,10);
                   sort_run(avg_speed,time_hour,time_min,time_sec,Mean_cno,Max_cno,Min_cno,Mean_numSat,this_run,10);
                   avg_speed[0]=0;
                   s_max_speed=0;
@@ -446,7 +453,6 @@ float Alfa_speed::Update_Alfa(GPS_speed M){
       dtostrf(alfa_speed_max*calibration_speed, 2, 2, tekst);
       strcat(message,tekst); 
       strcat(message,"\n");    
-      //logERR(message);
       alfa_speed=0;alfa_speed_max=0;
       }
   old_run_count=run_count;    

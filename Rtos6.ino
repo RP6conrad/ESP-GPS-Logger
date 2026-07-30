@@ -34,8 +34,39 @@
 #include "Definitions.h"
 #include <LittleFS.h>
 #include "rom/rtc.h"
+#include "track_speed.h"
 #include "ESP_functions.h"
 
+//#def INCLUDE_BLE
+#ifdef INCLUDE_BLE
+    #include <NimBLEDevice.h>
+    // --- BLE CONFIGURATIE ---
+    #define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+    #define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+    NimBLECharacteristic* pBLECharacteristic = nullptr;
+    bool bleDeviceConnected = false;
+    // Variabele om de 10 Hz timing (elke 100 ms) bij te houden
+    unsigned long lastTransmitTime = 0;
+    // Compacte struct voor BLE-verzending naar de app (Exact 16 bytes)
+    struct __attribute__((__packed__)) BLEGPSData {
+        float latitude;     // 4 bytes
+        float longitude;    // 4 bytes
+        float dopplerSpeed; // 4 bytes
+        float heading;      // 4 bytes
+    };
+    // BLE Connectie callbacks
+    class MyBLEServerCallbacks: public NimBLEServerCallbacks {
+        void onConnect(NimBLEServer* pServer) { 
+            bleDeviceConnected = true; 
+            Serial.println("Apparaat verbonden via BLE!");
+        }
+        void onDisconnect(NimBLEServer* pServer) {
+            bleDeviceConnected = false;
+            Serial.println("Apparaat losgekoppeld. Starten met adverteren...");
+            pServer->startAdvertising(); // Automatisch opnieuw adverteren
+        }
+    };
+#endif
 const char* ssid = config.ssid; //WiFi SSID
 const char* password = config.password; //WiFi Password
 const char* ssid2 = config.ssid2; //WiFi SSID
@@ -45,6 +76,31 @@ const char* soft_ap_password = "password"; //accespoint password
 bool ap_mode=false;
 bool sleep_mode=false;
 extern bool reset_boot; 
+// Globale variabelen voor het traject en de metingen
+Line_2D startLijn;
+Line_2D finishLijn;
+GPS_point poort1;
+GPS_point poort2;
+LijnMetingState startState;
+LijnMetingState finishState;
+Doppler_track result_track_speed;
+// Variabelen om de status van de run bij te houden
+uint32_t exacteGpsTijdStart = 0;  // Gewogen iTOW start (ms)
+uint32_t exacteGpsTijdFinish = 0; // Gewogen iTOW finish (ms)
+bool runIsBezig = false;
+// Afstand tussen de poorten (wordt eenmalig berekend in setup)
+double trajectAfstandMeters = 0.0;
+double gemiddeldeSnelheid_mmps;
+double doppler_track_speed;
+double projected_doppler_track_speed;
+double track_speed[10];
+double doppler_speed[10];
+double projected_doppler_speed[10];
+uint8_t track_hour[10];
+uint8_t track_minute[10];
+double track_time;
+LijnPassageResultaat startRes;
+LijnPassageResultaat finishRes;
 
 void setup() {
   Serial.begin(115200);
@@ -82,11 +138,7 @@ void setup() {
   //sdSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_SS);//default 20 MHz gezet worden !
   struct timeval tv = { .tv_sec =  0, .tv_usec = 0 };
   settimeofday(&tv, NULL);
-  //if (!SD.begin(SDCARD_SS, sdSPI)) {//was SD.begin
-  //sdmmc_host_t host = SDMMC_HOST_DEFAULT();//SDMMC_HOST_SLOT_1
-  //host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
- // #define SDMMC_FREQ_DEFAULT      10000       /*!< SD/MMC Default speed (limited by clock divider) was 20000 kHz */
- // #define SDMMC_FREQ_HIGHSPEED    20000       /* was 40000 kHz, defined in sdmmc_types.h*/
+
   if (!SD_MMC.begin("/sdcard", true)) {  
         sdOK = false;
         Serial.println("No SDCard found!");
@@ -133,8 +185,16 @@ void setup() {
   Short_push12.begin(12,1);
   Short_push19.begin(19,0);
   Short_push39.begin(39,1);
-  M_500.Set_course(config.p1_lon,config.p1_lat,config.p2_lon,config.p2_lat,config.p3_lon,config.p3_lat,config.p4_lon,config.p4_lat,config.track_distance);
-  M_500.perpendicular_line(p1, p3, p1, 100.0, &p2, &p4);
+  // 1. Voer hier je Google Maps coördinaten in van jouw windsurf speed-strip
+  poort1 = { config.p1_lat, config.p1_lon }; 
+  poort2 = { config.p2_lat, config.p2_lon };
+  // 2. Bereken de vaste afstand
+  trajectAfstandMeters = berekenAfstand(poort1, poort2);
+  // 3. Genereer automatisch de haakse start- en finishlijn op basis van de vaaras
+  TrajectLijnen mijnTraject = genereerLoodrechteLijnen(poort1, poort2);
+  startLijn  = mijnTraject.startLijn;
+  finishLijn = mijnTraject.finishLijn;
+  RTC_screen_orientation = config.screen_orientation;
   Boot_screen();
 
    if(RTC_voltage_bat<RTC_minimum_voltage_bat){
@@ -208,7 +268,29 @@ void setup() {
       Update_screen(GPS_INIT_SCREEN);
       }
   delay(100);
-   //Create RTOS task, so logging and e-paper update are separated (update e-paper is blocking, 800 ms !!)
+  #ifdef INCLUDE_BLE
+  // --- INITIALISEER NIMBLE v1.3.7 BLE ---
+    Serial.println("Initialiseren NimBLE Dummy GPS Service...");
+    NimBLEDevice::init("ESP32_Dummy_10Hz");
+    NimBLEServer* pBLEServer = NimBLEDevice::createServer();
+    pBLEServer->setCallbacks(new MyBLEServerCallbacks());
+    // Let op: in NimBLE 1.3.7 maken we de service rechtstreeks via pBLEServer aan
+    NimBLEService *pBLEService = pBLEServer->createService(SERVICE_UUID);
+    // Aanmaken karakteristiek met NimBLE v1.3.7 eigenschappen
+    pBLECharacteristic = pBLEService->createCharacteristic(
+                         CHARACTERISTIC_UUID,
+                         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
+                       );
+    // Handmatige aanmaak van de 0x2902 descriptor voor notificatie-ondersteuning
+    pBLECharacteristic->createDescriptor("2902", NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE);
+    pBLEService->start();
+    NimBLEAdvertising *pBLEAdvertising = NimBLEDevice::getAdvertising();
+    pBLEAdvertising->addServiceUUID(SERVICE_UUID);
+    pBLEAdvertising->setScanResponse(true);
+    NimBLEDevice::startAdvertising();
+    Serial.println("Systeem Online. Dummy 10Hz data start zodra verbonden...");
+#endif    
+  //Create RTOS task, so logging and e-paper update are separated (update e-paper is blocking, 800 ms !!)
   //xTaskCreate(
   xTaskCreatePinnedToCore(  
                     taskOne,          /* Task function. */
@@ -357,6 +439,64 @@ void taskOne( void * parameter )
                       } 
                   Log_to_SD();//hier wordt ook geprint naar serial !!
                   Ublox.push_data(ubxMessage.navPvt.lat/10000000.0f,ubxMessage.navPvt.lon/10000000.0f,gps_speed);   
+                  // Vertaal binaire data naar leesbare double eenheden
+                  double latNu = (double)ubxMessage.navPvt.lat / 10000000.0;
+                  double lonNu = (double)ubxMessage.navPvt.lon / 10000000.0;
+                  uint32_t iTOW_nu = ubxMessage.navPvt.iTOW;
+
+                  // Voer de live data in de twee poortfuncties
+                  startRes  = controleerLijnPassage(latNu, lonNu, iTOW_nu, startLijn, startState);
+                  finishRes = controleerLijnPassage(latNu, lonNu, iTOW_nu, finishLijn, finishState);
+                  // --- DETECTIE EN BEREKENING --- 
+                  // 1. Startlijn passage
+                  if (startRes.isLijnGepasseerd && !runIsBezig) {
+                        exacteGpsTijdStart = startRes.gewogen_iTOW;
+                        runIsBezig = true;
+                        Serial.println("\n[START] Startlijn overschreden! Timer loopt...");
+                    }
+                 if (runIsBezig){
+                    track_time = (double)(iTOW_nu-exacteGpsTijdStart)/1000;
+                  }
+                  result_track_speed=doppler_speed_calculation(ubxMessage.navPvt.gSpeed,ubxMessage.navPvt.heading,startLijn.start_finishRad,ubxMessage.navPvt.iTOW,runIsBezig);
+                  doppler_track_speed = result_track_speed.doppler_track_speed;
+                  projected_doppler_track_speed = result_track_speed.doppler_projected_track_speed;
+                  // 3. Finishlijn passage & Snelheidsberekening, minimaal 5 s run om glitch te vermijden
+                  if (finishRes.isLijnGepasseerd && runIsBezig) {
+                        exacteGpsTijdFinish = finishRes.gewogen_iTOW;
+                        runIsBezig = false; // Run voltooid
+                        // VAARTIJD BEREKENEN: het verschil in milliseconden omrekenen naar seconden
+                        double vaartijd_milliSeconden = (double)(exacteGpsTijdFinish - exacteGpsTijdStart);
+                        // GEMIDDELDE SNELHEID BEREKENEN (m/s)
+                        gemiddeldeSnelheid_mmps = trajectAfstandMeters / vaartijd_milliSeconden; 
+                        getLocalTime(&tmstruct, 0);
+                        track_hour[0]=tmstruct.tm_hour; 
+                        track_minute[0]=tmstruct.tm_min; 
+                        track_speed[0]= gemiddeldeSnelheid_mmps;
+                        doppler_speed[0]= doppler_track_speed;
+                        projected_doppler_speed[0]= projected_doppler_track_speed;
+                        
+                        sort_track(track_speed,doppler_speed,projected_doppler_speed,10,track_hour,track_minute);
+                        Serial.println("\n=========================================");
+                        Serial.println("       >>> RUN SUCCESVOL VOLTOOID <<<     ");
+                        Serial.print(" Trajectafstand : "); Serial.print(trajectAfstandMeters, 2); Serial.println(" meter");
+                        Serial.print(" Exacte Vaartijd: "); Serial.print(vaartijd_milliSeconden, 3); Serial.println(" milliseconden");
+                        //Serial.print(" GEM. SNELHEID  : "); Serial.print(gemiddeldeSnelheidKmu, 3); Serial.println(" km/u");
+                        Serial.println("=========================================\n");
+                        // Reset de states handmatig voor een eventuele volgende run op de terugweg
+                        startState.eersteFixIngevuld = false;
+                        finishState.eersteFixIngevuld = false;
+                        // Toggle finish en start lijn om track in 2 richtingen te meten
+                       GPS_point dummy =  poort1;
+                        poort1 = poort2;
+                        poort2 = dummy;
+                        // 2. Bereken de vaste afstand
+                        trajectAfstandMeters = berekenAfstand(poort1, poort2);
+                        // 3. Genereer automatisch de haakse start- en finishlijn op basis van de vaaras
+                        TrajectLijnen mijnTraject = genereerLoodrechteLijnen(poort1, poort2);
+                        startLijn  = mijnTraject.startLijn;
+                        finishLijn = mijnTraject.finishLijn;
+                        }
+
                   run_count=New_run_detection(ubxMessage.navPvt.heading/100000.0f,S2.avg_s); 
                   alfa_window=Alfa_indicator(M250,M100,ubxMessage.navPvt.heading/100000.0f);
                   if(run_count!=old_run_count)Ublox.run_distance=0;
@@ -365,7 +505,7 @@ void taskOne( void * parameter )
                   M250.Update_distance(run_count);
                   M500.Update_distance(run_count);
                   M1852.Update_distance(run_count);
-                  //S1.Update_speed(run_count); 
+                  S1.Update_speed(run_count); 
                   S2.Update_speed(run_count); 
                   s2.Update_speed(run_count);      
                   S10.Update_speed(run_count);
@@ -375,7 +515,7 @@ void taskOne( void * parameter )
                   A250.Update_Alfa(M250);
                   A500.Update_Alfa(M500);
                   a500.Update_Alfa(M500);
-                  M_500.Update_Track();
+                  //M_500.Update_Track();
                   if(S2.avg_s>4000) S10_previous_run=S10.s_max_speed;//only update to new run value if actual speed > 4 m/s
                   }     
       } 

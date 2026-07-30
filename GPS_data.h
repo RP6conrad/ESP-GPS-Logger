@@ -80,8 +80,12 @@ int New_run_detection(float actual_heading, float S2_speed);
     int m_set_distance;//hier wordt de instantie afstand gezet, vb 100m, 200m, 500m....   
     int m_Set_Distance;//hier in de juiste resolutie, dus *1000*sample_rate !!
     int m_sample; 
+    float display_max_speed;//Om update on the fly op display
+    float display_last_run;
+    float avg_5runs;
   private:      
     int old_run;
+    int reset_display_last_run;
  };
 //berekening van gemiddelde snelheid over een track gegeven door 2 rechten, vb 500m afstand startlijn / aankomstlijn 
 //Globale gps-data wordt gebruikt

@@ -98,9 +98,9 @@ void Init_ublox(void){
   Ublox_serial2(wait); 
   }
   //gnss 4 = GPS + GALILEO + BEIDOU  (default M10)
-  //gnss x = GPS + GLONAS + BEIDOU   (impossible for the M10 ???)
-  //gnss 3 = GPS + GLONAS + GALILEO
-  //gnss 2 = GPS + GLONAS (default M8 ROM 2)
+  //gnss x = GPS + GLONASS + BEIDOU   (impossible for the M10 ???)
+  //gnss 3 = GPS + GLONASS + GALILEO
+  //gnss 2 = GPS + GLONASS (default M8 ROM 2)
   //gnss 1 = GPS + GALILEO (not working for M8)
   //gnss 0 = GPS + BEIDOU  
     if(config.gnss==1){
@@ -111,14 +111,14 @@ void Init_ublox(void){
       Ublox_serial2(wait); 
       }
   if(config.gnss==3){
-      Serial.println("Set ublox UBX_GNSS3 : GPS, GLONAS & GALILEO ");
+      Serial.println("Set ublox UBX_GNSS3 : GPS, GLONASS & GALILEO ");
       for(int i = 0; i < sizeof(UBX_GNSS3); i++) {                        
         Serial2.write( pgm_read_byte(UBX_GNSS3+i) );
         }
       Ublox_serial2(wait); 
       }
   if(config.gnss==4){
-      Serial.println("Set ublox UBX_GNSS3 : GPS, GLONAS & BEIDOU ");
+      Serial.println("Set ublox UBX_GNSS3 : GPS, GLONASS & BEIDOU ");
       for(int i = 0; i < sizeof(UBX_GNSS3_BEIDOU); i++) {                        
         Serial2.write( pgm_read_byte(UBX_GNSS3_BEIDOU+i) );
         }
@@ -185,6 +185,34 @@ void Set_rate_ublox(int rate){
         }
   Ublox_serial2(500);      
 }
+void sendNavSpgInfilMaxSvs(uint8_t maxSvs) {
+  if(maxSvs<10)maxSvs=10;
+  uint8_t packet[17] = {
+    0xB5, 0x62,             // Sync
+    0x06, 0x8A,             // Class, ID
+    0x09, 0x00,             // Payload Length (9)
+    0x00,                   // Version
+    0x01,                   // Layer: 0x01 = RAM
+    0x00, 0x00,             // Reserved
+    0xA2, 0x00, 0x11, 0x20, // Key ID (Little Endian)
+    maxSvs,                 // De dynamische waarde
+    0x00, 0x00              // Placeholder for CK_A, CK_B
+  };
+  uint8_t ck_a = 0;
+  uint8_t ck_b = 0;
+  // Calculate checksum start at index 2 (Class/ID to Value)
+  for (int i = 2; i < 15; i++) {
+    ck_a += packet[i];
+    ck_b += ck_a;
+  }
+  // add checksum last 2 bytes
+  packet[15] = ck_a;
+  packet[16] = ck_b;
+  // send to gps module
+  Serial2.write(packet, sizeof(packet));
+  Ublox_serial2(500);   //wait for response
+}
+
 //Initialization of the ublox M10N with binary commands
 void Init_ubloxM10(void){
   int wait=250;
@@ -226,17 +254,17 @@ void Init_ubloxM10(void){
   Ublox_serial2(wait); 
   }
   //Default M10 = GPS+GALILEO+BEIDOU
-  //GNSS 5 = GPS + GALILEO + GLONAS + BEIDOU (only M9)
+  //GNSS 5 = GPS + GALILEO + GLONASS + BEIDOU (only M9)
   //gnss 4 = GPS + GALILEO + BEIDOU_B1C  (default is beidou B1L !! M10)
-  //gnss x = GPS + GLONAS + BEIDOU (switch off QZSS first M10 !!!)
-  //gnss 3 = GPS + GLONAS + GALILEO
-  //gnss 2 = GPS + GLONAS
+  //gnss x = GPS + GLONASS + BEIDOU (switch off QZSS first M10 !!!)
+  //gnss 3 = GPS + GLONASS + GALILEO
+  //gnss 2 = GPS + GLONASS
   //gnss 1 = GPS + GALILEO
   
   if(config.gnss==4){   //for M9, default is 4 GNSS activated, config.gnss=6  !!
-        Serial.println("Set ublox M10 GLONAS OFF ");     
-        for(int i = 0; i < sizeof(UBLOX_M10_GLONAS_OFF); i++) {                        
-              Serial2.write( pgm_read_byte(UBLOX_M10_GLONAS_OFF+i) );
+        Serial.println("Set ublox M10 GLONASS OFF ");     
+        for(int i = 0; i < sizeof(UBLOX_M10_GLONASS_OFF); i++) {                        
+              Serial2.write( pgm_read_byte(UBLOX_M10_GLONASS_OFF+i) );
               }
         Ublox_serial2(wait);
         Serial.println("Set ublox M10 BEIDOU B1 OFF ");     
@@ -263,9 +291,9 @@ void Init_ubloxM10(void){
             Serial2.write( pgm_read_byte(UBLOX_M10_BEIDOU_OFF+i) );
             }
       Ublox_serial2(wait);  
-      Serial.println("Set ublox M10 GLONAS ON ");     
-      for(int i = 0; i < sizeof(UBLOX_M10_GLONAS_ON); i++) {                        
-            Serial2.write( pgm_read_byte(UBLOX_M10_GLONAS_ON+i) );
+      Serial.println("Set ublox M10 GLONASS ON ");     
+      for(int i = 0; i < sizeof(UBLOX_M10_GLONASS_ON); i++) {                        
+            Serial2.write( pgm_read_byte(UBLOX_M10_GLONASS_ON+i) );
             }
       Ublox_serial2(wait);      
       } 
@@ -280,9 +308,9 @@ void Init_ubloxM10(void){
             Serial2.write( pgm_read_byte(UBLOX_M10_BEIDOU_OFF+i) );
             }
       Ublox_serial2(wait);  
-      Serial.println("Set ublox M10 GLONAS ON ");     
-      for(int i = 0; i < sizeof(UBLOX_M10_GLONAS_ON); i++) {                        
-            Serial2.write( pgm_read_byte(UBLOX_M10_GLONAS_ON+i) );
+      Serial.println("Set ublox M10 GLONASS ON ");     
+      for(int i = 0; i < sizeof(UBLOX_M10_GLONASS_ON); i++) {                        
+            Serial2.write( pgm_read_byte(UBLOX_M10_GLONASS_ON+i) );
             }
       Ublox_serial2(wait);      
       }
@@ -292,9 +320,9 @@ void Init_ubloxM10(void){
             Serial2.write( pgm_read_byte(UBLOX_M10_BEIDOU_OFF+i) );
             }
       Ublox_serial2(wait);      
-      Serial.println("Set ublox M10 GLONAS OFF ");     
-      for(int i = 0; i < sizeof(UBLOX_M10_GLONAS_OFF); i++) {                        
-            Serial2.write( pgm_read_byte(UBLOX_M10_GLONAS_OFF+i) );
+      Serial.println("Set ublox M10 GLONASS OFF ");     
+      for(int i = 0; i < sizeof(UBLOX_M10_GLONASS_OFF); i++) {                        
+            Serial2.write( pgm_read_byte(UBLOX_M10_GLONASS_OFF+i) );
             }
       Ublox_serial2(wait);      
       }         
@@ -312,7 +340,18 @@ void Init_ubloxM10(void){
   for(int i = 0; i < sizeof(UBLOX_M10_NAV_DOP); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_M10_NAV_DOP+i) );
         }
-  Ublox_serial2(wait);  
+  if(config.M10_full_power){
+    Serial.println("Set ublox M10 full power ON ");   
+    for(int i = 0; i < sizeof(UBX_M10_FULL_POWER_MODE); i++) {                        
+          Serial2.write( pgm_read_byte(UBX_M10_FULL_POWER_MODE+i) );
+          }      
+    Ublox_serial2(wait);
+    } 
+  Serial.println("Set ublox max_Svs ");   
+  sendNavSpgInfilMaxSvs(config.max_Svs); //max satellites in nav solution  
+  Serial.println("Set ublox min elevation Sats ");   
+  build_ubx_cfg_min_elevation(config.M10_min_elevation); //minimal elevation above horizon
+
   if((config.logUBX_nav_sat)&(config.logUBX)){
       Serial.println("Set ublox M10 NAV_SAT_ON "); 
       if(config.sample_rate<10){ 
@@ -726,3 +765,67 @@ int Set_M10_high_nav_rate(void){
   EEPROM.writeByte(1,M10_HIGH_NAV_RATE); EEPROM.commit();//always set EEPROM to default nav rate.....
   return config.M10_high_nav;
 }  
+
+/**
+ * Bouwt een UBX-CFG-VALSET pakket om de minimale satelliethoek (elevation mask) in te stellen.
+ * 
+ * @param buffer      Pointer naar een array van minimaal 17 bytes waar het pakket in wordt opgeslagen.
+ * @param angle_deg   De gewenste hoek in graden (geldig bereik: 5 tot 25).
+ * @param permanent   Als 1 (true): opslaan in RAM+BBR+Flash. Als 0 (false): alleen in RAM.
+ */
+void build_ubx_cfg_min_elevation(int8_t angle_deg) {
+    // Validatie van de invoer (u-blox accepteert formeel -90 tot 90, maar we begrenzen op uw vraag)
+    uint8_t buffer[17];
+    if (angle_deg < 5 || angle_deg > 25 || buffer == NULL) {
+        angle_deg=5; 
+    }
+
+    // 1. Sync Chars
+    buffer[0] = 0xB5;
+    buffer[1] = 0x62;
+
+    // 2. Class & ID (UBX-CFG-VALSET = 0x06 0x8A)
+    buffer[2] = 0x06;
+    buffer[3] = 0x8A;
+
+    // 3. Length (9 bytes payload -> Little Endian)
+    buffer[4] = 0x09;
+    buffer[5] = 0x00;
+
+    // 4. Payload: Version (0)
+    buffer[6] = 0x00;
+
+    // 5. Payload: Layer (0x01 = RAM, 0x07 = RAM + BBR + Flash)
+    buffer[7] = 0x01;
+
+    // 6. Payload: Reserved (2 bytes)
+    buffer[8] = 0x00;
+    buffer[9] = 0x00;
+
+    // 7. Payload: Configuration Key ID (0x201100a4 -> Little Endian)
+    buffer[10] = 0xA4;
+    buffer[11] = 0x00;
+    buffer[12] = 0x11;
+    buffer[13] = 0x20;
+
+    // 8. Payload: Value (De gekozen hoek)
+    buffer[14] = (uint8_t)angle_deg;
+
+    // 9. Bereken Fletcher-8 Checksum over bytes 2 t/m 14
+    uint8_t ck_a = 0;
+    uint8_t ck_b = 0;
+    
+    for (size_t i = 2; i < 15; i++) {
+        ck_a += buffer[i];
+        ck_b += ck_a;
+    }
+
+    // 10. Voeg checksum toe aan het einde van de buffer
+    buffer[15] = ck_a;
+    buffer[16] = ck_b;
+    for(int i = 0; i < sizeof(buffer); i++) {                        
+      Serial2.write( buffer[i] );
+      }
+    Ublox_serial2(500);  //wait for response
+}
+
