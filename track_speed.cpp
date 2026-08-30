@@ -123,6 +123,55 @@ double berekenAfstand(GPS_point p1,GPS_point p2) {
     // Pythagoras geeft de exacte afstand over de ellipsoïde
     return sqrt(dx * dx + dy * dy);
 }
+
+double berekenAfstandVincenty(GPS_point p1, GPS_point p2) {
+    const double a = 6378137.0;
+    const double b = 6356752.314245;
+    const double f = 1.0 / 298.257223563;
+
+    double L = (p2.lon - p1.lon) * M_PI / 180.0;
+    double U1 = atan((1.0 - f) * tan(p1.lat * M_PI / 180.0));
+    double U2 = atan((1.0 - f) * tan(p2.lat * M_PI / 180.0));
+    
+    double sinU1 = sin(U1), cosU1 = cos(U1);
+    double sinU2 = sin(U2), cosU2 = cos(U2);
+
+    double lambda = L, lambdaP;
+    double sinSigma, cosSigma, sigma, sinAlpha, cosSqAlpha, cos2SigmaM;
+    int iterLimit = 100;
+
+    do {
+        double sinLambda = sin(lambda), cosLambda = cos(lambda);
+        sinSigma = sqrt((cosU2 * sinLambda) * (cosU2 * sinLambda) + 
+                        (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda) * (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda));
+        if (sinSigma == 0) return 0; // Coördinaten vallen samen
+
+        cosSigma = sinU1 * sinU2 + cosU1 * cosU2 * cosLambda;
+        sigma = atan2(sinSigma, cosSigma);
+        sinAlpha = cosU1 * cosU2 * sinLambda / sinSigma;
+        cosSqAlpha = 1.0 - sinAlpha * sinAlpha;
+        cos2SigmaM = cosSigma - 2.0 * sinU1 * sinU2 / cosSqAlpha;
+        
+        if (isnan(cos2SigmaM)) cos2SigmaM = 0; // Speciaal geval bij de evenaar
+        
+        double C = f / 16.0 * cosSqAlpha * (4.0 + f * (4.0 - 3.0 * cosSqAlpha));
+        lambdaP = lambda;
+        lambda = L + (1.0 - C) * f * sinAlpha * 
+                 (sigma + C * sinSigma * (cos2SigmaM + C * cosSigma * (-1.0 + 2.0 * cos2SigmaM * cos2SigmaM)));
+    } while (fabs(lambda - lambdaP) > 1e-12 && --iterLimit > 0);
+
+    if (iterLimit == 0) return NAN; // Formule convergeert niet
+
+    double uSq = cosSqAlpha * (a * a - b * b) / (b * b);
+    double A = 1.0 + uSq / 16384.0 * (4096.0 + uSq * (-768.0 + uSq * (320.0 - 175.0 * uSq)));
+    double B = uSq / 1024.0 * (256.0 + uSq * (-128.0 + uSq * (74.0 - 47.0 * uSq)));
+    double deltaSigma = B * sinSigma * (cos2SigmaM + B / 4.0 * (cosSigma * (-1.0 + 2.0 * cos2SigmaM * cos2SigmaM) -
+                        B / 6.0 * cos2SigmaM * (-3.0 + 4.0 * sinSigma * sinSigma) * (-3.0 + 4.0 * cos2SigmaM * cos2SigmaM)));
+
+    return b * A * (sigma - deltaSigma);
+}
+
+
 void sort_track(double a[],double b[],double cd[],int size,uint8_t hour[],uint8_t minute[]){
   for(int i=0; i<(size-1); i++) {
         for(int o=0; o<(size-(i+1)); o++) {
@@ -164,4 +213,21 @@ Doppler_track doppler_speed_calculation(long ground_speed,long ground_heading,do
     old_iTOW=iTOW;
     
     return t_speed;
+}
+// Deze functie gaat de start en finish vastleggen op het begin en einde van de laatste 500 meter run
+// Nuttig voor testdoeleinden !!
+void Auto_set_track(void){
+    static Point P1,P2; //These 2 points determinate the reference line for the track_speed !!!
+    config.p2_lat=_lat[M500.m_index%BUFFER_ALFA];//dit is het punt op -500 m van de actuele positie
+    config.p2_lon=_long[M500.m_index%BUFFER_ALFA];
+    config.p1_lat=_lat[index_GPS%BUFFER_ALFA];//dit is de actuele positie
+    config.p1_lon=_long[index_GPS%BUFFER_ALFA];
+    poort1 = { config.p1_lat, config.p1_lon }; 
+    poort2 = { config.p2_lat, config.p2_lon };
+    // 2. Bereken de vaste afstand
+    trajectAfstandMeters = berekenAfstandVincenty(poort1, poort2);
+    // 3. Genereer automatisch de haakse start- en finishlijn op basis van de vaaras
+    TrajectLijnen mijnTraject = genereerLoodrechteLijnen(poort1, poort2);
+    startLijn  = mijnTraject.startLijn;
+    finishLijn = mijnTraject.finishLijn;
 }

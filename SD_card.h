@@ -131,8 +131,5 @@ void TimeZone_env (float timezone);
 uint64_t Free_space(void);
 int Logtime_left (uint64_t);
 void testFileIO(fs::FS &fs, const char * path);
-/*
-void log_header_SBP(void);
-void log_SBP(void);
-*/
+
 #endif

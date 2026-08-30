@@ -5,7 +5,7 @@ int Time_Set_OK;
 bool Nav_rate_NACK = false;
 bool High_nav_rate_ACK = false;
 bool check_M10_nav_rate = false;
-//extern File errorfile;
+
 UBXMessage ubxMessage = {000000000000};//definition here, declaration in ublox.h !!
 struct tm tmstruct ;
 struct tm my_time;  // time elements structure
@@ -33,7 +33,7 @@ void Ublox_off(){
 }
 void Ublox_serial2(int delay_ms){
  for(int i=0;i<delay_ms;i++){
-    int msgType = processGPS();
+     int msgType = processGPS();
      if ( msgType == MT_NAV_ACK){
           Serial.print(" ACK ");
           Serial.print (ubxMessage.navAck.msg_cls);
@@ -349,7 +349,7 @@ void Init_ubloxM10(void){
     } 
   Serial.println("Set ublox max_Svs ");   
   sendNavSpgInfilMaxSvs(config.max_Svs); //max satellites in nav solution  
-  Serial.println("Set ublox min elevation Sats ");   
+  Serial.println("Set ublox min elevation Sats ");  
   build_ubx_cfg_min_elevation(config.M10_min_elevation); //minimal elevation above horizon
 
   if((config.logUBX_nav_sat)&(config.logUBX)){
@@ -388,7 +388,7 @@ void Init_ubloxM10(void){
         } 
   Serial2.flush();
   Serial2.begin(38400,SERIAL_8N1, RXD2, TXD2);//in Init_ublox last command is change baudrate to 38400, necessary for 10 Hz  NAV_PVT + NAV_DOP!!!
-  Ublox_serial2(wait);        
+  Ublox_serial2(wait);   
 }
 //Initialization of the ublox M10N  rate with binary commands, choice between 1..5
 void Set_rate_ubloxM10(int rate){

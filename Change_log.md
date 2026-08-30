@@ -1,3 +1,10 @@
+### Changes SW 6.05g
+* bugfix screen 6 / shut down screen
+* Added maxSVS in config, to limit nr of sats in nav solution. This for "lost points" prevention
+* GPS nerd settings button in configuration webpageto hide all detailed gps settings
+* p1/p2 data type in json is now string, so all digits stay unchanged
+* check for string type p1/p2, other wise panic when still double type !!!
+* Auto track setting when p1/p2 is zero in the config : first 500m run with speed min 5 m/s after 600 m run distance
 ### Changes SW 6.05delta
 * settings M10 added tot .txt file
 * full power mode in the config

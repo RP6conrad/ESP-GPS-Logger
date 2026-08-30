@@ -341,7 +341,6 @@ extern bool sdOK;
 //extern int config.ublox_type;
 extern char dataStr[255];  //string for logging NMEA in txt, test for write 2000 chars !!
 extern char Buffer[50];
-
 void calcChecksum(unsigned char* CK,int msgType,int msgSize);
 boolean compareMsgHeader(const unsigned char* msgHeader);
 void Ublox_on();

@@ -271,10 +271,10 @@ void Off_screen(int choice) {  //choice 0 = old screen, otherwise Simon screens
       display.print(" s");
       display.setCursor(offset, (cursor += ROW_9PT_W_SPACING));
       display.print("AVG: ");
-      display.print(RTC_avg_10s, 2);
+      display.print(S10.avg_5runs*calibration_speed, 2);
       display.setCursor(offset + 120, cursor);
       display.print("Dist: ");
-      display.print(Ublox.total_distance / 1000, 0);
+      display.print(Ublox.total_distance/1000000, 2);
     } else {
       display.println("Going back to sleep");
     }
@@ -289,10 +289,10 @@ void Off_screen(int choice) {  //choice 0 = old screen, otherwise Simon screens
       display.print(" s");
       display.setCursor(offset, (cursor += ROW_9PT_W_SPACING));
       display.print("AVG: ");
-      display.print(RTC_avg_10s, 2);
+      display.print(S10.avg_5runs*calibration_speed, 2);
       display.setCursor(offset + 120, cursor);
       display.print("Dist: ");
-      display.print(Ublox.total_distance / 1000, 0);
+      display.print(Ublox.total_distance/1000000, 2);
     } else {
       display.println("Going back to sleep");
     }
@@ -776,7 +776,7 @@ void Update_screen(int screen) {
   if (offset < 0) offset = 0;
   int cursor = 0;
   display.fillScreen(GxEPD_WHITE);
-  if ((screen != SPEED) & (screen != STATS9) & (screen != STATS8) & (screen != STATSA) & (screen != STATSD)) InfoBar(offset);
+  if ((screen != SPEED) & (screen != STATS5) & (screen != STATS8) & (screen != STATS9) & (screen != STATSA) & (screen != STATSD) & (screen != STATSE)) InfoBar(offset);
   if (screen == BOOT_SCREEN) {
     update_delay = 1000;
     ESP_GPS_LOGO_40
@@ -812,6 +812,7 @@ void Update_screen(int screen) {
     else offset--;
     ESP_GPS_LOGO_40
     topLeft_Title("ESP-GPS connect");
+    display.printf("SW : %s\n", SW_version); 
     //DEVICE_BOOT_LOG(2);
     if (SoftAP_connection != true) {
       display.setCursor(offset, 102);
@@ -1295,7 +1296,7 @@ void Update_screen(int screen) {
     display.setCursor(col4, row1);
     display.println(S2.display_speed[9] * calibration_speed, 2);
     display.setCursor(col4, row2);
-    display.println(S10.s_max_speed * calibration_speed, 2);  //previous run
+    display.println(S10.display_last_run * calibration_speed, 2);  //previous run
     display.setCursor(col4, row3);   
     display.println(Ublox.total_distance / 1000000);
     display.setCursor(col4, row4);

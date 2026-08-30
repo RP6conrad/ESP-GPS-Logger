@@ -2,8 +2,15 @@
 #define TRACK_SPEED_H
 
 #include <stdint.h>
+#include "GPS_data.h" //use of struct Point
+#include "SD_card.h"    
 
+extern float _lat[BUFFER_ALFA]; 
+extern float _long[BUFFER_ALFA];
+extern GPS_speed M500;
+extern int index_GPS;
 extern float calibration_speed;
+
 // Een simpel GPS punt
 struct GPS_point {
     double lat; // Breedtegraad in graden
@@ -44,13 +51,21 @@ struct Doppler_track{
     double doppler_track_distance;
     double doppler_projected_track_distance;
 };
+
+extern Line_2D startLijn;
+extern Line_2D finishLijn;
+extern GPS_point poort1;
+extern GPS_point poort2;
+
 // Functie om de start- en finishlijn te genereren op basis van 2 GPS-punten
 TrajectLijnen genereerLoodrechteLijnen(GPS_point p1,GPS_point p2);
 
 // Functie om de live passage en afstand per lijn te controleren
 LijnPassageResultaat controleerLijnPassage(double lat, double lon, uint32_t iTOW,Line_2D lijn, LijnMetingState& state);
 double berekenAfstand(GPS_point p1,GPS_point p2);
+double berekenAfstandVincenty(GPS_point p1, GPS_point p2);
 void sort_track(double a[],double b[],double cd[],int size,uint8_t hour[],uint8_t minute[]);
 Doppler_track doppler_speed_calculation(long ground_speed,long ground_heading,double track_direction,unsigned long iTOW,bool run_status);
+void Auto_set_track(void);
 #endif // TRACK_SPEED_H
 

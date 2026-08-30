@@ -189,7 +189,7 @@ void setup() {
   poort1 = { config.p1_lat, config.p1_lon }; 
   poort2 = { config.p2_lat, config.p2_lon };
   // 2. Bereken de vaste afstand
-  trajectAfstandMeters = berekenAfstand(poort1, poort2);
+  trajectAfstandMeters = berekenAfstandVincenty(poort1, poort2);
   // 3. Genereer automatisch de haakse start- en finishlijn op basis van de vaaras
   TrajectLijnen mijnTraject = genereerLoodrechteLijnen(poort1, poort2);
   startLijn  = mijnTraject.startLijn;
@@ -447,6 +447,11 @@ void taskOne( void * parameter )
                   // Voer de live data in de twee poortfuncties
                   startRes  = controleerLijnPassage(latNu, lonNu, iTOW_nu, startLijn, startState);
                   finishRes = controleerLijnPassage(latNu, lonNu, iTOW_nu, finishLijn, finishState);
+                  //500 m track auto setting coordinates if still 0 in config !!
+                  //Minimal run from 650 m, where average speed last 500 m exceed 5 m/s
+                  if((config.p1_lat<0.1)&(M500.m_speed>5000.0)&(Ublox.alfa_distance/1000>650.0)){
+                    Auto_set_track();
+                    }
                   // --- DETECTIE EN BEREKENING --- 
                   // 1. Startlijn passage
                   if (startRes.isLijnGepasseerd && !runIsBezig) {
@@ -465,9 +470,9 @@ void taskOne( void * parameter )
                         exacteGpsTijdFinish = finishRes.gewogen_iTOW;
                         runIsBezig = false; // Run voltooid
                         // VAARTIJD BEREKENEN: het verschil in milliseconden omrekenen naar seconden
-                        double vaartijd_milliSeconden = (double)(exacteGpsTijdFinish - exacteGpsTijdStart);
+                        double vaartijd_Seconden = (double)(exacteGpsTijdFinish - exacteGpsTijdStart)/1000;
                         // GEMIDDELDE SNELHEID BEREKENEN (m/s)
-                        gemiddeldeSnelheid_mmps = trajectAfstandMeters / vaartijd_milliSeconden; 
+                        gemiddeldeSnelheid_mmps = trajectAfstandMeters*1000 / vaartijd_Seconden; 
                         getLocalTime(&tmstruct, 0);
                         track_hour[0]=tmstruct.tm_hour; 
                         track_minute[0]=tmstruct.tm_min; 
@@ -479,7 +484,7 @@ void taskOne( void * parameter )
                         Serial.println("\n=========================================");
                         Serial.println("       >>> RUN SUCCESVOL VOLTOOID <<<     ");
                         Serial.print(" Trajectafstand : "); Serial.print(trajectAfstandMeters, 2); Serial.println(" meter");
-                        Serial.print(" Exacte Vaartijd: "); Serial.print(vaartijd_milliSeconden, 3); Serial.println(" milliseconden");
+                        Serial.print(" Exacte Vaartijd: "); Serial.print(vaartijd_Seconden, 3); Serial.println(" seconden");
                         //Serial.print(" GEM. SNELHEID  : "); Serial.print(gemiddeldeSnelheidKmu, 3); Serial.println(" km/u");
                         Serial.println("=========================================\n");
                         // Reset de states handmatig voor een eventuele volgende run op de terugweg
@@ -490,7 +495,7 @@ void taskOne( void * parameter )
                         poort1 = poort2;
                         poort2 = dummy;
                         // 2. Bereken de vaste afstand
-                        trajectAfstandMeters = berekenAfstand(poort1, poort2);
+                        trajectAfstandMeters = berekenAfstandVincenty(poort1, poort2);
                         // 3. Genereer automatisch de haakse start- en finishlijn op basis van de vaaras
                         TrajectLijnen mijnTraject = genereerLoodrechteLijnen(poort1, poort2);
                         startLijn  = mijnTraject.startLijn;
@@ -562,7 +567,6 @@ void taskTwo( void * parameter)
         Serial.println("RTC_OFF_screen");
         delay(2000);
         Shut_down();
-        delay(100);
         vTaskDelete(NULL);//to avoid that screen get new updates !!!!
     }
     else if(low_bat_count>10){
@@ -573,7 +577,6 @@ void taskTwo( void * parameter)
         Off_screen(2);//off screen with "shutdown low bat"
         delay(2000);
         Shut_down();
-        delay(100);
         vTaskDelete(NULL);//to avoid that screen get new updates !!!!
     }
     else if(millis()<2000)Update_screen(BOOT_SCREEN);

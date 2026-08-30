@@ -260,11 +260,10 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.dynamic_model = doc["dynamic_model"] | 0;  //sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
   config.timezone = doc["timezone"] | 1.0;
   config.timezone_DST = doc["timezone_DST"]|1;
-  config.p1_lon = doc["p1_lon"];
-  config.p1_lat = doc["p1_lat"];
-  config.p2_lon = doc["p2_lon"];
-  config.p2_lat = doc["p2_lat"];
-
+  if (doc["p1_lon"].is<const char*>()) {config.p1_lon = strtod(doc["p1_lon"], NULL);}
+  if (doc["p1_lat"].is<const char*>()) {config.p1_lat = strtod(doc["p1_lat"], NULL);}
+  if (doc["p2_lon"].is<const char*>()) {config.p2_lon = strtod(doc["p2_lon"], NULL);}
+  if (doc["p2_lat"].is<const char*>()) {config.p2_lat = strtod(doc["p2_lat"], NULL);}
   strlcpy(config.UBXfile,                      // <- destination
           doc["UBXfile"] | "/ubxGPS",          // <- source
           sizeof(config.UBXfile));             // <- destination's capacity
@@ -543,13 +542,13 @@ void Session_results_Alfa(Alfa_speed A, GPS_speed M) {
 void Session_results_track(void){
    // char tekst[64] = "";
     char message[255] = "";
-    sprintf(message,"Track Length %.2f , Start %.6f lat %.6f lon, Finish %.6f lat %.6f lon \n",trajectAfstandMeters,config.p1_lat,config.p1_lon,config.p2_lat,config.p2_lon);
+    sprintf(message,"Track Length %.2f , Start %.7f lat %.7f lon, Finish %.7f lat %.7f lon \n",trajectAfstandMeters,config.p1_lat,config.p1_lon,config.p2_lat,config.p2_lon);
     errorfile.print(message);
     //terug leeg schrijven
     message[0] = '\0'; 
     for (int i = 0; i < 10; i++) {
       message[0] = '\0'; 
-      sprintf(message,"%d Track %f Doppler %f Proj_doppler %f Time %d:%d \n",i+1,track_speed[9-i] * calibration_speed,doppler_speed[9-i] * calibration_speed,projected_doppler_speed[9-i] * calibration_speed,track_hour[9-i],track_minute[9-i]);
+      sprintf(message,"%d Track %.7f Doppler %.7f Proj_doppler %.7f Time %d:%d \n",i+1,track_speed[9-i] * calibration_speed,doppler_speed[9-i] * calibration_speed,projected_doppler_speed[9-i] * calibration_speed,track_hour[9-i],track_minute[9-i]);
       errorfile.print(message);
       }
 

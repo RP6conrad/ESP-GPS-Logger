@@ -339,6 +339,10 @@ void Drop_down_menu(float config_item,float value,String drop_text,String& webpa
   }  
 //configfill the current config Info
 void html_config(String& webpage){
+    // 1. De knop met een ID en een standaard groene achtergrondkleur
+  webpage += "<tr><td colspan='3'>\n";
+  webpage += "<button type='button' id='toggleBtn' onclick='toggleMenu()' style='background-color: #4CAF50; color: white; padding: 8px 16px; border: none; cursor: pointer;'>GPS Nerd settings !</button>\n";
+  webpage += "</td></tr>\n";
   //ssid
   String ssid="\"" + String(config.ssid) + "\"";//problem with white space in SSID depends on position in webpage ???
   webpage += "<tr>\n<td>ssid</td><td>\n";
@@ -357,104 +361,7 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>password2</td><td>\n";
   webpage += "<input size='20' type='text' required name='password2' value="+String(config.password2)+">\n";
   webpage += "</select>\n</td><td>password2: the password of the wlan2 where the esp-logger should connect to</td>\n</tr>\n"; 
-  //cal_bat
-  webpage += "<tr>\n<td>cal_bat</td><td>\n";
-  webpage += "<input size='4' type='number' required name='cal_bat' min='1.6' max='1.89' value="+String(RTC_calibration_bat)+" step='0.01'>\n";
-  webpage += "</select>\n</td><td>cal_bat: is the calibration <br> of the battery voltage measurement (1.6-1.89).</td>\n</tr>\n"; 
-  //shutdown_voltage
-  webpage += "<tr>\n<td>shutdown_voltage</td><td>\n";
-  webpage += "<input size='4' type='number' required name='shutdown_voltage' min='0' max='3.5' value="+String(config.shutdown_voltage)+" step='0.01'>\n";
-  webpage += "</select>\n</td><td>shutdown_voltage : shutdown if lipo voltage is lower then this value.<br> Set to 0 if you want to force a power cycle !!</td>\n</tr>\n"; 
- //cal_speed 
-  webpage += "<tr><td>cal_speed</td><td>\n<select id='cal_speed' name='cal_speed' type='number'>\n";
-  if(config.cal_speed == 3.6) webpage += "<option value='3.60' selected>3.6 km/h</option>\n"; else webpage += "<option value=3.60>3.6 km/h</option>\n";
-  if(config.cal_speed <2) webpage += "<option value='1.9438' selected>1.9438 knots</option>\n"; else webpage += "<option value=1.9438>1.9438 knots</option>\n";
-  webpage += "</select>\n</td><td>cal_speed: is for the conversion from gps unit m/s to km/h (3.6)or knots (1.9438).</td>\n</tr>\n";
-  //Auto detect gps bd rate and type
-  webpage += "<tr>\n<td>GPS_Type</td><td>\n<select id='GPS_Type' name='GPS_Type'>";
-  Drop_down_menu(config.ublox_type,255,"AUTO_DETECT @ Boot",webpage);
-  Drop_down_menu(config.ublox_type,M8_9600BD,"M8@9600BD",webpage);
-  Drop_down_menu(config.ublox_type,M8_38400BD,"M8@38400BD",webpage);
-  Drop_down_menu(config.ublox_type,M8_115200BD,"M8@115200BD",webpage);
-  Drop_down_menu(config.ublox_type,M9_9600BD,"M9@9600BD",webpage);
-  Drop_down_menu(config.ublox_type,M9_38400BD,"M9@38400BD",webpage);
-  Drop_down_menu(config.ublox_type,M9_115200BD,"M9@115200BD",webpage);
-  Drop_down_menu(config.ublox_type,M10_9600BD,"M10@9600BD",webpage);
-  Drop_down_menu(config.ublox_type,M10_38400BD,"M10@38400BD",webpage);
-  Drop_down_menu(config.ublox_type,M10_115200BD,"M10@115200BD",webpage);
-  webpage += "</select>\n</td><td>GPS type : If auto detect ON, the type of GPS will be identified when booting. If a M10 gps, you can select high navigation rate.<br>This is irreversible !!</td>\n</tr>\n";
-  //Set M10 to high nav rate
-  if((config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)|(config.ublox_type==M10_115200BD)){
-    webpage += "<tr>\n<td>M10_high_nav</td><td>\n<select id='M10_high_nav' name='M10_high_nav'>";
-    if(config.M10_high_nav==M10_DEFAULT_NAV) {
-        Drop_down_menu(config.M10_high_nav,M10_DEFAULT_NAV,"M10 default nav",webpage);
-        Drop_down_menu(config.M10_high_nav,SET_M10_HIGH_NAV,"set M10 to high nav rate",webpage);
-        }
-    if(config.M10_high_nav==M10_HIGH_NAV_RATE) Drop_down_menu(config.M10_high_nav,M10_HIGH_NAV_RATE,"M10 high nav rate",webpage);
-    webpage += "</select>\n</td><td>If a M10 gps, you can select high navigation rate.<br>Battery last about 10% shorter. This is irreversible !!</td>\n</tr>\n";
-    }
-  //sample_rate
-  webpage += "<tr>\n<td>sample_rate(Hz)</td><td>\n<select id='sample_rate' name='sample_rate'>";
-  Drop_down_menu(config.sample_rate,1,"1 Hz",webpage);
-  Drop_down_menu(config.sample_rate,2,"2 Hz",webpage);
-  Drop_down_menu(config.sample_rate,4,"4 Hz",webpage);
-  Drop_down_menu(config.sample_rate,5,"5 Hz",webpage);
-  Drop_down_menu(config.sample_rate,8,"8 Hz",webpage);
-  Drop_down_menu(config.sample_rate,10,"10 Hz",webpage);
-  int ublox_type =0;
-  if((config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD)|(config.ublox_type == M10_115200BD))ublox_type=3;
-  if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)|(config.ublox_type == M9_115200BD)|(config.M10_high_nav==M10_HIGH_NAV_RATE)) ublox_type=2;
-  if((ublox_type==2)|((config.gnss==1)&(ublox_type==3))){
-    Drop_down_menu(config.sample_rate,15,"15 Hz",webpage);
-    Drop_down_menu(config.sample_rate,20,"20 Hz",webpage);
-    }
-  webpage += "</select>\n</td><td>sample_rate: can be 1,2,4,5,8,10 (M8,M9,M10) 15Hz,20Hz (only M9/M10 High nav rate !). The higher, the more accurate, but also the larger the files become!<br> One UBX NavPVT message is 100byte, so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!<br>For the M10, max. sample-rate depends on GNSS settings ! 4 GNSS : max  4 Hz, 3 GNSS : max 5 Hz, 2 GNSS : max 10 Hz !</td>\n</tr>\n";
-  //cpu_freq
-  webpage += "<tr>\n<td>CPU freq(MHz)</td><td>\n<select id='CPU_freq' name='CPU_freq'>";
-  //Drop_down_menu(config.cpu_freq,40,"40 MHz",webpage);
-  Drop_down_menu(config.cpu_freq,80,"80 MHz",webpage);
-  Drop_down_menu(config.cpu_freq,160,"160 MHz",webpage);
-  Drop_down_menu(config.cpu_freq,240,"240 MHz",webpage);
-  webpage += "</select>\n</td><td>CPU freq: can be 80 MHz (5 Hz),160 MHz(10hz) or 240 MHz(20Hz). Longest battery live @ 80 Mhz ! 20 Hz (M9) needs possible 160 MHz. </td>\n</tr>\n";
-  //gnss
-  webpage += "<tr><td>gnss</td><td>\n<select id='gnss' name='gnss'>\n";
-  if((config.ublox_type == M8_9600BD)|(config.ublox_type == M8_38400BD)|(config.ublox_type == M8_115200BD)){
-      Drop_down_menu(config.gnss,0,"GPS + BEIDOU",webpage);
-      }
-  else{ 
-      Drop_down_menu(config.gnss,1,"GPS + GALILEO",webpage);     
-      }
-  Drop_down_menu(config.gnss,2,"GPS + GLONASS",webpage);
-  Drop_down_menu(config.gnss,3,"GPS + GLONASS + GALILEO",webpage);
-  Drop_down_menu(config.gnss,4,"GPS + GALILEO + BEIDOU_B1C",webpage);      
-  if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)|(config.ublox_type == M9_115200BD)|(config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD)|(config.ublox_type == M10_115200BD)){
-    Drop_down_menu(config.gnss,5,"GPS + GLONASS + GALILEO + BEIDOU",webpage);
-    }   
-  webpage += "</select>\n</td><td>gnss choice, for the M10, 3 or 4 gnss simultanous limits the sample rate ! :<br> M8 (ROM version 2.01) : max 2 GNSS (GPS + GLONASS)<br> M8 (ROM version 3.01) : max 3 GNSS (GPS + GLONASS + GALILEO)<br> M9 : max 4 GNSS (GPS + GLONASS + GALILEO + BEIDOU)<br> M10: max 4 GNSS  (GPS + GLONASS + GALILEO + BEIDOU), but depends on sample-rate !</td>\n</tr>\n";
-  //logUBX nav-sat message@rate/10
-  webpage += "<tr><td>logUBX_nav_sat</td><td>\n<select id='logUBX_nav_sat' name='logUBX_nav_sat'>\n";
-  Drop_down_menu(config.logUBX_nav_sat,1,"LOG UBX NAV SAT ON",webpage);
-  Drop_down_menu(config.logUBX_nav_sat,0,"LOG UBX NAV SAT OFF",webpage);
-  webpage += "</select>\n</td><td>logUBX_nav_sat: To save the GPS NAV SAT data in ubx format. For every 10 nav_pvt messages, 1 nav_sat message is saved. This can be used to evaluate the signal quality of your gps (ucenter). Only active if logUBX is ON and rate<10 Hz !!.</td>\n</tr>\n";  
-  //max_Svs
-  webpage += "<tr>\n<td>max Satellites in nav</td><td>\n";
-  webpage += "<input size='2' type='number' required name='max_Svs' min='10' max='32' value="+String(config.max_Svs)+" step='1'>\n";
-  webpage += "</select>\n</td><td>max_Svs: Default max of 32 satellites in nav solution M10</td>\n</tr>\n";
-  //M10_min_elevation
-  webpage += "<tr>\n<td>minimal elevation Satellites</td><td>\n";
-  webpage += "<input size='2' type='number' required name='M10_min_elevation' min='5' max='25' value="+String(config.M10_min_elevation)+" step='1'>\n";
-  webpage += "</select>\n</td><td>M10 : minimal elevation Satellites above horizon, default 5 degree</td>\n</tr>\n";
-  //M10_full power
-  webpage += "<tr><td>M10_full_power</td><td>\n<select id='M10_full_power' name='M10_full_power'>\n";
-  Drop_down_menu(config.M10_full_power,1,"M10 Full Power On",webpage);
-  Drop_down_menu(config.M10_full_power,0,"M10 Full Power Off",webpage);
-  webpage += "</select>\n</td><td>Default setting is M10 balanced power, M10 full power can optimize reception (testfase)</td>\n</tr>\n"; 
-   //Archive_days
-  webpage += "<tr>\n<td>archive_days</td><td>\n";
-  webpage += "<input size='8' type='number' required name='archive_days' min='0' max='1000' value="+String(config.archive_days)+" step='1'>\n";
-  webpage += "</select>\n</td><td>If the files on the sd are older then archive_days, they can be moved to the Archive directory with \"Archive Files\"</td>\n</tr>\n";
-  #ifdef T5_E_PAPER
-  //speed_screen
+    //speed_screen
   webpage += "<tr>\n<td>speed_screen</td><td>\n";
   webpage += "<input size='9' type='text' required name='speed_screen' value="+String(config.speed_screen)+">\n";//input size 9
   webpage += "</select>\n</td><td>Speed_screens choice :  1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= Auto switching between Alfa & 500m, 8= Auto switching between Alfa & 1h, 9= Alfa, 1h, and good run. If more then 1 digit, toggle between separat digits : 841 toggle between 1,4 and 8 !</td>\n</tr>\n";  
@@ -540,6 +447,130 @@ void html_config(String& webpage){
   webpage += "<input size='8' type='number' required name='sleep_off_screen' min='0' max='1000' value="+String(config.sleep_off_screen)+" step='1'>\n";
   webpage += "</select>\n</td><td>Choice for switch_off (first digit 0 or 1) and sleep_screen (second digit 0 or 1): </td>\n</tr>\n";
   //screen orientation
+   // 2. Het uitklapbare gedeelte (start ingeklapt)
+  webpage += "<tbody id='extra_instellingen' style='display:none;'>\n";
+
+  //cal_bat
+  webpage += "<tr>\n<td>cal_bat</td><td>\n";
+  webpage += "<input size='4' type='number' required name='cal_bat' min='1.6' max='1.89' value="+String(RTC_calibration_bat)+" step='0.01'>\n";
+  webpage += "</select>\n</td><td>cal_bat: is the calibration <br> of the battery voltage measurement (1.6-1.89).</td>\n</tr>\n"; 
+  //shutdown_voltage
+  webpage += "<tr>\n<td>shutdown_voltage</td><td>\n";
+  webpage += "<input size='4' type='number' required name='shutdown_voltage' min='0' max='3.5' value="+String(config.shutdown_voltage)+" step='0.01'>\n";
+  webpage += "</select>\n</td><td>shutdown_voltage : shutdown if lipo voltage is lower then this value.<br> Set to 0 if you want to force a power cycle !!</td>\n</tr>\n"; 
+ //cal_speed 
+  webpage += "<tr><td>cal_speed</td><td>\n<select id='cal_speed' name='cal_speed' type='number'>\n";
+  if(config.cal_speed == 3.6) webpage += "<option value='3.60' selected>3.6 km/h</option>\n"; else webpage += "<option value=3.60>3.6 km/h</option>\n";
+  if(config.cal_speed <2) webpage += "<option value='1.9438' selected>1.9438 knots</option>\n"; else webpage += "<option value=1.9438>1.9438 knots</option>\n";
+  webpage += "</select>\n</td><td>cal_speed: is for the conversion from gps unit m/s to km/h (3.6)or knots (1.9438).</td>\n</tr>\n";
+  //Archive_days
+  webpage += "<tr>\n<td>archive_days</td><td>\n";
+  webpage += "<input size='8' type='number' required name='archive_days' min='0' max='1000' value="+String(config.archive_days)+" step='1'>\n";
+  webpage += "</select>\n</td><td>If the files on the sd are older then archive_days, they can be moved to the Archive directory with \"Archive Files\"</td>\n</tr>\n";
+  //Auto detect gps bd rate and type
+  webpage += "<tr>\n<td>GPS_Type</td><td>\n<select id='GPS_Type' name='GPS_Type'>";
+  Drop_down_menu(config.ublox_type,255,"AUTO_DETECT @ Boot",webpage);
+  Drop_down_menu(config.ublox_type,M8_9600BD,"M8@9600BD",webpage);
+  Drop_down_menu(config.ublox_type,M8_38400BD,"M8@38400BD",webpage);
+  Drop_down_menu(config.ublox_type,M8_115200BD,"M8@115200BD",webpage);
+  Drop_down_menu(config.ublox_type,M9_9600BD,"M9@9600BD",webpage);
+  Drop_down_menu(config.ublox_type,M9_38400BD,"M9@38400BD",webpage);
+  Drop_down_menu(config.ublox_type,M9_115200BD,"M9@115200BD",webpage);
+  Drop_down_menu(config.ublox_type,M10_9600BD,"M10@9600BD",webpage);
+  Drop_down_menu(config.ublox_type,M10_38400BD,"M10@38400BD",webpage);
+  Drop_down_menu(config.ublox_type,M10_115200BD,"M10@115200BD",webpage);
+  webpage += "</select>\n</td><td>GPS type : If auto detect ON, the type of GPS will be identified when booting. If a M10 gps, you can select high navigation rate.<br>This is irreversible !!</td>\n</tr>\n";
+  //Set M10 to high nav rate
+  if((config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)|(config.ublox_type==M10_115200BD)){
+    webpage += "<tr>\n<td>M10_high_nav</td><td>\n<select id='M10_high_nav' name='M10_high_nav'>";
+    if(config.M10_high_nav==M10_DEFAULT_NAV) {
+        Drop_down_menu(config.M10_high_nav,M10_DEFAULT_NAV,"M10 default nav",webpage);
+        Drop_down_menu(config.M10_high_nav,SET_M10_HIGH_NAV,"set M10 to high nav rate",webpage);
+        }
+    if(config.M10_high_nav==M10_HIGH_NAV_RATE) Drop_down_menu(config.M10_high_nav,M10_HIGH_NAV_RATE,"M10 high nav rate",webpage);
+    webpage += "</select>\n</td><td>If a M10 gps, you can select high navigation rate.<br>Battery last about 10% shorter. This is irreversible !!</td>\n</tr>\n";
+    }
+  //sample_rate
+  webpage += "<tr>\n<td>sample_rate(Hz)</td><td>\n<select id='sample_rate' name='sample_rate'>";
+  Drop_down_menu(config.sample_rate,1,"1 Hz",webpage);
+  Drop_down_menu(config.sample_rate,2,"2 Hz",webpage);
+  Drop_down_menu(config.sample_rate,4,"4 Hz",webpage);
+  Drop_down_menu(config.sample_rate,5,"5 Hz",webpage);
+  Drop_down_menu(config.sample_rate,8,"8 Hz",webpage);
+  Drop_down_menu(config.sample_rate,10,"10 Hz",webpage);
+  int ublox_type =0;
+  if((config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD)|(config.ublox_type == M10_115200BD))ublox_type=3;
+  if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)|(config.ublox_type == M9_115200BD)|(config.M10_high_nav==M10_HIGH_NAV_RATE)) ublox_type=2;
+  if((ublox_type==2)|((config.gnss==1)&(ublox_type==3))){
+    Drop_down_menu(config.sample_rate,15,"15 Hz",webpage);
+    Drop_down_menu(config.sample_rate,20,"20 Hz",webpage);
+    }
+  webpage += "</select>\n</td><td>sample_rate: can be 1,2,4,5,8,10 (M8,M9,M10) 15Hz,20Hz (only M9/M10 High nav rate !). The higher, the more accurate, but also the larger the files become!<br> One UBX NavPVT message is 100byte, so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!<br>For the M10, max. sample-rate depends on GNSS settings ! 4 GNSS : max  4 Hz, 3 GNSS : max 5 Hz, 2 GNSS : max 10 Hz !</td>\n</tr>\n";
+  //cpu_freq
+  webpage += "<tr>\n<td>CPU freq(MHz)</td><td>\n<select id='CPU_freq' name='CPU_freq'>";
+  //Drop_down_menu(config.cpu_freq,40,"40 MHz",webpage);
+  Drop_down_menu(config.cpu_freq,80,"80 MHz",webpage);
+  Drop_down_menu(config.cpu_freq,160,"160 MHz",webpage);
+  Drop_down_menu(config.cpu_freq,240,"240 MHz",webpage);
+  webpage += "</select>\n</td><td>CPU freq: can be 80 MHz (5 Hz),160 MHz(10hz) or 240 MHz(20Hz). Longest battery live @ 80 Mhz ! 20 Hz (M9) needs possible 240 MHz. </td>\n</tr>\n";
+  //gnss
+  webpage += "<tr><td>gnss</td><td>\n<select id='gnss' name='gnss'>\n";
+  if((config.ublox_type == M8_9600BD)|(config.ublox_type == M8_38400BD)|(config.ublox_type == M8_115200BD)){
+      Drop_down_menu(config.gnss,0,"GPS + BEIDOU",webpage);
+      }
+  else{ 
+      Drop_down_menu(config.gnss,1,"GPS + GALILEO",webpage);     
+      }
+  Drop_down_menu(config.gnss,2,"GPS + GLONASS",webpage);
+  Drop_down_menu(config.gnss,3,"GPS + GLONASS + GALILEO",webpage);
+  Drop_down_menu(config.gnss,4,"GPS + GALILEO + BEIDOU_B1C",webpage);      
+  if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)|(config.ublox_type == M9_115200BD)|(config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD)|(config.ublox_type == M10_115200BD)){
+    Drop_down_menu(config.gnss,5,"GPS + GLONASS + GALILEO + BEIDOU",webpage);
+    }   
+  webpage += "</select>\n</td><td>gnss choice, for the M10, 3 or 4 gnss simultanous limits the sample rate ! :<br> M8 (ROM version 2.01) : max 2 GNSS (GPS + GLONASS)<br> M8 (ROM version 3.01) : max 3 GNSS (GPS + GLONASS + GALILEO)<br> M9 : max 4 GNSS (GPS + GLONASS + GALILEO + BEIDOU)<br> M10: max 4 GNSS  (GPS + GLONASS + GALILEO + BEIDOU), but depends on sample-rate !</td>\n</tr>\n";
+  //logUBX nav-sat message@rate/10
+  webpage += "<tr><td>logUBX_nav_sat</td><td>\n<select id='logUBX_nav_sat' name='logUBX_nav_sat'>\n";
+  Drop_down_menu(config.logUBX_nav_sat,1,"LOG UBX NAV SAT ON",webpage);
+  Drop_down_menu(config.logUBX_nav_sat,0,"LOG UBX NAV SAT OFF",webpage);
+  webpage += "</select>\n</td><td>logUBX_nav_sat: To save the GPS NAV SAT data in ubx format. For every 10 nav_pvt messages, 1 nav_sat message is saved. This can be used to evaluate the signal quality of your gps (ucenter). Only active if logUBX is ON and rate<10 Hz !!.</td>\n</tr>\n";  
+  //max_Svs
+  webpage += "<tr>\n<td>max Satellites in nav</td><td>\n";
+  webpage += "<input size='2' type='number' required name='max_Svs' min='10' max='32' value="+String(config.max_Svs)+" step='1'>\n";
+  webpage += "</select>\n</td><td>max_Svs: Default max of 32 satellites in nav solution M10</td>\n</tr>\n";
+  //M10_min_elevation
+  webpage += "<tr>\n<td>minimal elevation Satellites</td><td>\n";
+  webpage += "<input size='2' type='number' required name='M10_min_elevation' min='5' max='25' value="+String(config.M10_min_elevation)+" step='1'>\n";
+  webpage += "</select>\n</td><td>M10 : minimal elevation Satellites above horizon, default 5 degree</td>\n</tr>\n";
+  //M10_full power
+  webpage += "<tr><td>M10_full_power</td><td>\n<select id='M10_full_power' name='M10_full_power'>\n";
+  Drop_down_menu(config.M10_full_power,1,"M10 Full Power On",webpage);
+  Drop_down_menu(config.M10_full_power,0,"M10 Full Power Off",webpage);
+  webpage += "</select>\n</td><td>Default setting is M10 balanced power, M10 full power can optimize reception (testfase)</td>\n</tr>\n"; 
+  //dynamic_model
+  webpage += "<tr><td>dynamic_model</td><td>\n<select id='dynamic_model' name='dynamic_model'>\n";
+  if(config.dynamic_model == 0) webpage += "<option value='0' selected>portable</option>\n"; else webpage += "<option value='0'>portable</option>\n";
+  if(config.dynamic_model == 1) webpage += "<option value='1' selected>sea</option>\n"; else webpage += "<option value='1'>sea</option>\n";
+  if(config.dynamic_model == 2) webpage += "<option value='2' selected>automotive</option>\n"; else webpage += "<option value='2'>automotive</option>\n";
+  webpage += "</select>\n</td><td>dynamic_model: Here you can choose the dynamic model of the Ublox  (0=portable, 1=sea, 2=automotive). As 'sea' has some disadvantages (max speed is limited to 40 knots, only sea-level..), my advice is to stay with 'portable'. </td>\n</tr>\n"; 
+    #ifdef TRACKSPEED
+  //Coordinates 
+  webpage += "<tr>\n<td>Startline lon1</td><td>\n";
+  webpage += "<input size='10' type='text' required name='p1_lon' value="+String(config.p1_lon,7)+">\n";
+  webpage += "</select>\n</td><td>Coördinate 1 longitude.Start-line defined bij Start-point (p1) and perpendicular to the Start - Finish line !</td>\n</tr>\n"; 
+  webpage += "<tr>\n<td>Startline lat1</td><td>\n";
+  webpage += "<input size='10' type='text' required name='p1_lat' value="+String(config.p1_lat,7)+">\n";
+  webpage += "</select>\n</td><td>Coördinate 1 latitude.</td>\n</tr>\n";
+  webpage += "<tr>\n<td>Finishline lon2</td><td>\n";
+  webpage += "<input size='10' type='text' required name='p2_lon' value="+String(config.p2_lon,7)+">\n";
+  webpage += "</select>\n</td><td>Coördinate 2 longitude. Finish line is defined by Finish-point (p2) and perpendicular to the Start - Finish line !</td>\n</tr>\n"; 
+  webpage += "<tr>\n<td>Finishline lat2</td><td>\n";
+  webpage += "<input size='10' type='text' required name='p2_lat' value="+String(config.p2_lat,7)+">\n";
+  webpage += "</select>\n</td><td>Coördinate 2 latitude.</td>\n</tr>\n"; 
+  #endif
+   // 3. Sluit het uitklapbare gedeelte
+  webpage += "</tbody>\n";
+  #ifdef T5_E_PAPER
+
   webpage += "<tr><td>screen_orientation</td><td>\n<select id='screen_orientation' name='screen_orientation'>\n";
   Drop_down_menu(config.screen_orientation,0,"Default screen orientation",webpage);
   Drop_down_menu(config.screen_orientation,1,"Upside down screen orientation",webpage);
@@ -570,14 +601,7 @@ void html_config(String& webpage){
   if(config.logGPX == 1) webpage += "<option value='1' selected>LOG GPX ON</option>\n"; else webpage += "<option value='1'>LOG GPX ON</option>\n";
   if(config.logGPX == 0) webpage += "<option value='0' selected>LOG GPX OFF</option>\n"; else webpage += "<option value='0'>LOG GPX OFF</option>\n";
   webpage += "</select>\n</td><td>logGPX: To save the GPS data in gpx format @ 1Hz, for video overlay or other purposes.</td>\n</tr>\n";  
-  //dynamic_model
-  //if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)){
-  webpage += "<tr><td>dynamic_model</td><td>\n<select id='dynamic_model' name='dynamic_model'>\n";
-  if(config.dynamic_model == 0) webpage += "<option value='0' selected>portable</option>\n"; else webpage += "<option value='0'>portable</option>\n";
-  if(config.dynamic_model == 1) webpage += "<option value='1' selected>sea</option>\n"; else webpage += "<option value='1'>sea</option>\n";
-  if(config.dynamic_model == 2) webpage += "<option value='2' selected>automotive</option>\n"; else webpage += "<option value='2'>automotive</option>\n";
-  webpage += "</select>\n</td><td>dynamic_model: Here you can choose the dynamic model of the Ublox  (0=portable, 1=sea, 2=automotive). As 'sea' has some disadvantages (max speed is limited to 40 knots, only sea-level..), my advice is to stay with 'portable'. </td>\n</tr>\n"; 
- // }
+
   //timezone
   webpage += "<tr>\n<td>timezone</td><td>\n<select id='timezone' name='timezone' type='number'>\n"; 
   Drop_down_menu(config.timezone,-11.0,"-11 (Pacific/Samoa)",webpage);
@@ -639,26 +663,28 @@ void html_config(String& webpage){
   webpage += "<input size='21' type='text' required name='Sleep_info' value="+Sleep_info+">\n";//size 20 -> 21
   webpage += "</select>\n</td><td>Sleep_info:  Text appears in sleep_screen.</td>\n</tr>\n";
   
-  #ifdef TRACKSPEED
-  //Coordinates 
-  webpage += "<tr>\n<td>Startline lon1</td><td>\n";
-  webpage += "<input size='9' type='text' required name='p1_lon' value="+String(config.p1_lon,6)+">\n";
-  webpage += "</select>\n</td><td>Coördinate 1 longitude.</td>\n</tr>\n"; 
-  webpage += "<tr>\n<td>Startline lat1</td><td>\n";
-  webpage += "<input size='9' type='text' required name='p1_lat' value="+String(config.p1_lat,6)+">\n";
-  webpage += "</select>\n</td><td>Coördinate 1 latitude.</td>\n</tr>\n";
-  webpage += "<tr>\n<td>Finishline lon2</td><td>\n";
-  webpage += "<input size='9' type='text' required name='p2_lon' value="+String(config.p2_lon,6)+">\n";
-  webpage += "</select>\n</td><td>Coördinate 2 longitude.</td>\n</tr>\n"; 
-  webpage += "<tr>\n<td>Finishline lat2</td><td>\n";
-  webpage += "<input size='9' type='text' required name='p2_lat' value="+String(config.p2_lat,6)+">\n";
-  webpage += "</select>\n</td><td>Coördinate 2 latitude.</td>\n</tr>\n"; 
-  #endif
+
   //reboot the esp
   webpage += "<tr><td>reboot</td><td>\n<select id='reboot' name='reboot'>\n";
   webpage += "<option value='yes' selected>yes</option>\n";
   webpage += "<option value='no'>no</option>\n";
   webpage += "</select>\n</td><td>reboot: reboot after upload (new config will only load@boot)</td>\n</tr>\n";  
+   // 3. De aangepaste JavaScript-functie die ook de knopkleur en tekst bijwerkt
+  webpage += "<script>\n";
+  webpage += "function toggleMenu() {\n";
+  webpage += "  var x = document.getElementById('extra_instellingen');\n";
+  webpage += "  var btn = document.getElementById('toggleBtn');\n";
+  webpage += "  if (x.style.display === 'none') {\n";
+  webpage += "    x.style.display = 'table-row-group';\n";
+  webpage += "    btn.style.backgroundColor = '#f44336';\n"; // Rood
+  webpage += "    btn.innerText = 'Hide GPS Nerd settings';\n";
+  webpage += "  } else {\n";
+  webpage += "    x.style.display = 'none';\n";
+  webpage += "    btn.style.backgroundColor = '#4CAF50';\n"; // Groen
+  webpage += "    btn.innerText = 'GPS Nerd settings';\n";
+  webpage += "  }\n";
+  webpage += "}\n";
+  webpage += "</script>\n";
 }
 
  const char html_config_footer[] PROGMEM = R"=====(
