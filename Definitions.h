@@ -4,7 +4,13 @@
 //#define STATIC_DEBUG        //indien gps test zonder snelheid en met wifi actief
 //#define DLS                  //set date on march 26 1:55, to test daylightsaving
 #define T5_E_PAPER           //for compiling without display funtions....
-#define GPIO12_ACTIF        //if GPIO12 is used as wake up, standard GPIO12 function is not activated !!
+//#define GPIO12_ACTIF        //if GPIO12 is used as wake up, standard GPIO12 function is not activated !!
+#define T5_V2_4_GPIO12      //GPIO12 set high @ boot for activating the screen from the Version 2.4 is necessary. Low deepsleep current 30 µA
+//#define EPD_PWR_EN              (12)    // Only V2.4 Version , v2.3.1 version not have this pin
+  // Power on the EPD
+  //  pinMode(EPD_PWR_EN, OUTPUT);
+  //  digitalWrite(EPD_PWR_EN, HIGH);
+
 //#define USE_AUTO_OTA_UPDATE
 #define VERSION 0
 #define TIME_DELAY_FIRST_FIX 10 //10 navpvt messages alvorens start loggen
@@ -72,4 +78,6 @@
 #define EEPROM_SIZE 32            //use 8 bytes in eeprom for saving type of ublox
 #define TIME_OUT_NAV_PVT 10000    //10s time out ubx nav-pvt msg before screen "TROUBLE" 
 #define FORMAT_LITTLEFS_IF_FAILED true
+#define MAX_API_KEY_LENGTH 50
+#define AUTO_UPLOAD_SPEEDSURF
 #endif

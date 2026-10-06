@@ -1,5 +1,7 @@
 //html files readable
 extern RTC_DATA_ATTR float RTC_calibration_bat;
+extern char apiKey[MAX_API_KEY_LENGTH] ;
+extern String apiKeyShort ; //only show first 20 chars of the api
 //header file readable
 const char html_header[] PROGMEM = R"=====(
 <html><head><meta charset="UTF-8"><title>ESP-GPS-Logger</title>
@@ -347,24 +349,36 @@ void html_config(String& webpage){
   String ssid="\"" + String(config.ssid) + "\"";//problem with white space in SSID depends on position in webpage ???
   webpage += "<tr>\n<td>ssid</td><td>\n";
   webpage += "<input size='21' type='text' required name='ssid' value="+ssid+">\n";//input size 20->30 if SSID name exceeds input size, full name is not visible
-  webpage += "</select>\n</td><td>ssid: the name of the wlan where the esp-logger should connect to</td>\n</tr>\n";  
+  webpage += "</td><td>ssid: the name of the wlan where the esp-logger should connect to</td>\n</tr>\n";  
    //password
   webpage += "<tr>\n<td>password</td><td>\n";
   webpage += "<input size='20' type='text' required name='password' value="+String(config.password)+">\n";
-  webpage += "</select>\n</td><td>password: the password of the wlan where the esp-logger should connect to</td>\n</tr>\n"; 
+  webpage += "</td><td>password: the password of the wlan where the esp-logger should connect to</td>\n</tr>\n"; 
   //ssid2
   String ssid2="\"" + String(config.ssid2) + "\"";//problem with white space in SSID depends on position in webpage ???
   webpage += "<tr>\n<td>ssid2</td><td>\n";
   webpage += "<input size='21' type='text' required name='ssid2' value="+ssid2+">\n";//input size 20->30 if SSID name exceeds input size, full name is not visible
-  webpage += "</select>\n</td><td>ssid2: wlan2, usefull for connection to your smartphone hotspot !</td>\n</tr>\n";  
+  webpage += "</td><td>ssid2: wlan2, usefull for connection to your smartphone hotspot !</td>\n</tr>\n";  
    //password2
   webpage += "<tr>\n<td>password2</td><td>\n";
   webpage += "<input size='20' type='text' required name='password2' value="+String(config.password2)+">\n";
-  webpage += "</select>\n</td><td>password2: the password of the wlan2 where the esp-logger should connect to</td>\n</tr>\n"; 
+  webpage += "</td><td>password2: the password of the wlan2 where the esp-logger should connect to</td>\n</tr>\n"; 
+  #ifdef AUTO_UPLOAD_SPEEDSURF
+   // apiKey for speedsurf.app
+  webpage += "<tr>\n<td>apiKey</td><td>\n";
+  // We gebruiken de macro 'MAX_API_KEY_LENGTH' dynamisch voor de grootte van de inputbox
+  webpage += "<input size='" + String(MAX_API_KEY_LENGTH) + "' type='text' required name='apiKeyShort' value='" + apiKeyShort + "'>\n";
+  webpage += "</td><td>apiKey: first 20 chars from apiKey for auto-upload your .gpy files to speedsurf.app</td>\n</tr>\n"; 
+  // name new  .gpy files $.gpy  so auto-upload is activated
+  webpage += "<tr><td>auto_upload</td><td>\n<select id='auto_upload' name='auto_upload'>\n";
+  if(config.auto_upload_speedsurf == 1) webpage += "<option value='1' selected>AUTO UPLOAD ON</option>\n"; else webpage += "<option value='1'>AUTO UPLOAD ON</option>\n";
+  if(config.auto_upload_speedsurf == 0) webpage += "<option value='0' selected>AUTO UPLOAD OFF</option>\n"; else webpage += "<option value='0'>AUTO UPLOAD OFF</option>\n";
+  webpage += "</select>\n</td><td>auto upload to speedsurf.app : new files get the extension $.gpy for auto upload. After succesfull upload, they are renamed to .gpy ! </td>\n</tr>\n";  
+  #endif
     //speed_screen
   webpage += "<tr>\n<td>speed_screen</td><td>\n";
   webpage += "<input size='9' type='text' required name='speed_screen' value="+String(config.speed_screen)+">\n";//input size 9
-  webpage += "</select>\n</td><td>Speed_screens choice :  1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= Auto switching between Alfa & 500m, 8= Auto switching between Alfa & 1h, 9= Alfa, 1h, and good run. If more then 1 digit, toggle between separat digits : 841 toggle between 1,4 and 8 !</td>\n</tr>\n";  
+  webpage += "</td><td>Speed_screens choice :  1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= Auto switching between Alfa & 500m, 8= Auto switching between Alfa & 1h, 9= Alfa, 1h, and good run. If more then 1 digit, toggle between separat digits : 841 toggle between 1,4 and 8 !</td>\n</tr>\n";  
   //speed_large_font
   webpage += "<tr><td>speed_large_font</td><td>\n<select id='speed_large_font' name='speed_large_font'>\n";
   //Drop_down_menu(config.speed_large_font,4,"Giant_Font ON, no categories",webpage);
@@ -376,28 +390,30 @@ void html_config(String& webpage){
   //bar_length
   webpage += "<tr>\n<td>bar_length</td><td>\n";
   webpage += "<input size='8' type='number' required name='bar_length' min='100' max='10000' value="+String(config.bar_length)+" step='1'>\n";
-  webpage += "</select>\n</td><td>bar_length: Default length = 1852 m for 100% bar (=Nautical mile)</td>\n</tr>\n";
+  webpage += "</td><td>bar_length: Default length = 1852 m for 100% bar (=Nautical mile)</td>\n</tr>\n";
   //stat_screen
   webpage += "<tr>\n<td>stat_screen</td><td>\n";
   webpage += "<input size='20' type='text' required name='stat_screen' value="+String(config.stat_screen)+">\n";//input size 20
-  webpage += "</select>\n</td><td>Stat_screens choice : every character shows the according stat_screen after each other</td>\n</tr>\n";  
+  webpage += "</td><td>Stat_screens choice : every character shows the according stat_screen after each other</td>\n</tr>\n";  
   
   //Stat_screens_time
   webpage += "<tr>\n<td>Stat_screens_time</td><td>\n";
   webpage += "<input size='8' type='number' required name='Stat_screens_time' min='0' max='10' value="+String(config.Stat_screens_time)+" step='1'>\n";
-  webpage += "</select>\n</td><td>The time between toggle the different stat screens. If set to 0, stat screens can be toggled with short push ON/OFF GPIO39</td>\n</tr>\n";
+  webpage += "</td><td>The time between toggle the different stat screens. If set to 0, stat screens can be toggled with short push ON/OFF GPIO39</td>\n</tr>\n";
   //Stat_speed
   webpage += "<tr>\n<td>stat_speed</td><td>\n";
   webpage += "<input size='8' type='number' required name='stat_speed' min='0' max='10' value="+String(config.stat_speed)+" step='1'>\n";
-  webpage += "</select>\n</td><td>If the actual speed(in m/s) is less then this stat_speed, stat_screens are active</td>\n</tr>\n";
+  webpage += "</td><td>If the actual speed(in m/s) is less then this stat_speed, stat_screens are active</td>\n</tr>\n";
    //Start_logging_speed
   webpage += "<tr>\n<td>start_logging_speed</td><td>\n";
   webpage += "<input size='8' type='number' required name='start_logging_speed' min='0' max='10' value="+String(config.start_logging_speed)+" step='1'>\n";
-  webpage += "</select>\n</td><td>If the actual speed(in m/s) exceed this start_logging_speed, then the log is started</td>\n</tr>\n"; 
+  webpage += "</td><td>If the actual speed(in m/s) exceed this start_logging_speed, then the log is started</td>\n</tr>\n"; 
   //GPIO12_screens
+  #ifdef GPIO12_ACTIF
   webpage += "<tr>\n<td>gpio12_screen</td><td>\n";
   webpage += "<input size='9' type='text' required name='gpio12_screen' value="+String(config.gpio12_screen)+">\n";//input size 9
-  webpage += "</select>\n</td><td>gpio12_screens choice : Every digit shows the according GPIO_screen after each push. Screen 4 = s10 runs, screen 5 = alfa's.</td>\n</tr>\n";  
+  webpage += "</td><td>gpio12_screens choice : Every digit shows the according GPIO_screen after each push. Screen 4 = s10 runs, screen 5 = alfa's.</td>\n</tr>\n";  
+  #endif
   //Board_Logo
   webpage += "<tr>\n<td>Board_Logo</td><td>\n<select id='Board_Logo' name='Board_Logo'>";
   Drop_down_menu(config.Board_Logo,0,"No logo",webpage);
@@ -445,28 +461,27 @@ void html_config(String& webpage){
   //sleep_off_screen
   webpage += "<tr>\n<td>sleep_off_screen</td><td>\n";
   webpage += "<input size='8' type='number' required name='sleep_off_screen' min='0' max='1000' value="+String(config.sleep_off_screen)+" step='1'>\n";
-  webpage += "</select>\n</td><td>Choice for switch_off (first digit 0 or 1) and sleep_screen (second digit 0 or 1): </td>\n</tr>\n";
-  //screen orientation
-   // 2. Het uitklapbare gedeelte (start ingeklapt)
+  webpage += "</td><td>Choice for switch_off (first digit 0 or 1) and sleep_screen (second digit 0 or 1): </td>\n</tr>\n";
+  
+  // 2. Het uitklapbare gedeelte (start ingeklapt)
   webpage += "<tbody id='extra_instellingen' style='display:none;'>\n";
-
   //cal_bat
   webpage += "<tr>\n<td>cal_bat</td><td>\n";
   webpage += "<input size='4' type='number' required name='cal_bat' min='1.6' max='1.89' value="+String(RTC_calibration_bat)+" step='0.01'>\n";
-  webpage += "</select>\n</td><td>cal_bat: is the calibration <br> of the battery voltage measurement (1.6-1.89).</td>\n</tr>\n"; 
+  webpage += "</td><td>cal_bat: is the calibration <br> of the battery voltage measurement (1.6-1.89).</td>\n</tr>\n"; 
   //shutdown_voltage
   webpage += "<tr>\n<td>shutdown_voltage</td><td>\n";
   webpage += "<input size='4' type='number' required name='shutdown_voltage' min='0' max='3.5' value="+String(config.shutdown_voltage)+" step='0.01'>\n";
-  webpage += "</select>\n</td><td>shutdown_voltage : shutdown if lipo voltage is lower then this value.<br> Set to 0 if you want to force a power cycle !!</td>\n</tr>\n"; 
+  webpage += "</td><td>shutdown_voltage : shutdown if lipo voltage is lower then this value.<br> Set to 0 if you want to force a power cycle !!</td>\n</tr>\n"; 
  //cal_speed 
   webpage += "<tr><td>cal_speed</td><td>\n<select id='cal_speed' name='cal_speed' type='number'>\n";
-  if(config.cal_speed == 3.6) webpage += "<option value='3.60' selected>3.6 km/h</option>\n"; else webpage += "<option value=3.60>3.6 km/h</option>\n";
+  if(config.cal_speed >=2) webpage += "<option value='3.60' selected>3.6 km/h</option>\n"; else webpage += "<option value=3.60>3.6 km/h</option>\n";
   if(config.cal_speed <2) webpage += "<option value='1.9438' selected>1.9438 knots</option>\n"; else webpage += "<option value=1.9438>1.9438 knots</option>\n";
   webpage += "</select>\n</td><td>cal_speed: is for the conversion from gps unit m/s to km/h (3.6)or knots (1.9438).</td>\n</tr>\n";
   //Archive_days
   webpage += "<tr>\n<td>archive_days</td><td>\n";
   webpage += "<input size='8' type='number' required name='archive_days' min='0' max='1000' value="+String(config.archive_days)+" step='1'>\n";
-  webpage += "</select>\n</td><td>If the files on the sd are older then archive_days, they can be moved to the Archive directory with \"Archive Files\"</td>\n</tr>\n";
+  webpage += "</td><td>If the files on the sd are older then archive_days, they can be moved to the Archive directory with \"Archive Files\"</td>\n</tr>\n";
   //Auto detect gps bd rate and type
   webpage += "<tr>\n<td>GPS_Type</td><td>\n<select id='GPS_Type' name='GPS_Type'>";
   Drop_down_menu(config.ublox_type,255,"AUTO_DETECT @ Boot",webpage);
@@ -536,16 +551,17 @@ void html_config(String& webpage){
   //max_Svs
   webpage += "<tr>\n<td>max Satellites in nav</td><td>\n";
   webpage += "<input size='2' type='number' required name='max_Svs' min='10' max='32' value="+String(config.max_Svs)+" step='1'>\n";
-  webpage += "</select>\n</td><td>max_Svs: Default max of 32 satellites in nav solution M10</td>\n</tr>\n";
+  webpage += "</td><td>max_Svs: Default max of 32 satellites in nav solution M10</td>\n</tr>\n";
   //M10_min_elevation
   webpage += "<tr>\n<td>minimal elevation Satellites</td><td>\n";
   webpage += "<input size='2' type='number' required name='M10_min_elevation' min='5' max='25' value="+String(config.M10_min_elevation)+" step='1'>\n";
-  webpage += "</select>\n</td><td>M10 : minimal elevation Satellites above horizon, default 5 degree</td>\n</tr>\n";
-  //M10_full power
+  webpage += "</td><td>M10 : minimal elevation Satellites above horizon, default 5 degree</td>\n</tr>\n";
+  /*M10_full power
   webpage += "<tr><td>M10_full_power</td><td>\n<select id='M10_full_power' name='M10_full_power'>\n";
   Drop_down_menu(config.M10_full_power,1,"M10 Full Power On",webpage);
   Drop_down_menu(config.M10_full_power,0,"M10 Full Power Off",webpage);
   webpage += "</select>\n</td><td>Default setting is M10 balanced power, M10 full power can optimize reception (testfase)</td>\n</tr>\n"; 
+  */
   //dynamic_model
   webpage += "<tr><td>dynamic_model</td><td>\n<select id='dynamic_model' name='dynamic_model'>\n";
   if(config.dynamic_model == 0) webpage += "<option value='0' selected>portable</option>\n"; else webpage += "<option value='0'>portable</option>\n";
@@ -556,21 +572,21 @@ void html_config(String& webpage){
   //Coordinates 
   webpage += "<tr>\n<td>Startline lon1</td><td>\n";
   webpage += "<input size='10' type='text' required name='p1_lon' value="+String(config.p1_lon,7)+">\n";
-  webpage += "</select>\n</td><td>Coördinate 1 longitude.Start-line defined bij Start-point (p1) and perpendicular to the Start - Finish line !</td>\n</tr>\n"; 
+  webpage += "</td><td>Coördinate 1 longitude.Start-line defined bij Start-point (p1) and perpendicular to the Start - Finish line !</td>\n</tr>\n"; 
   webpage += "<tr>\n<td>Startline lat1</td><td>\n";
   webpage += "<input size='10' type='text' required name='p1_lat' value="+String(config.p1_lat,7)+">\n";
-  webpage += "</select>\n</td><td>Coördinate 1 latitude.</td>\n</tr>\n";
+  webpage += "</td><td>Coördinate 1 latitude.</td>\n</tr>\n";
   webpage += "<tr>\n<td>Finishline lon2</td><td>\n";
   webpage += "<input size='10' type='text' required name='p2_lon' value="+String(config.p2_lon,7)+">\n";
-  webpage += "</select>\n</td><td>Coördinate 2 longitude. Finish line is defined by Finish-point (p2) and perpendicular to the Start - Finish line !</td>\n</tr>\n"; 
+  webpage += "</td><td>Coördinate 2 longitude. Finish line is defined by Finish-point (p2) and perpendicular to the Start - Finish line !</td>\n</tr>\n"; 
   webpage += "<tr>\n<td>Finishline lat2</td><td>\n";
   webpage += "<input size='10' type='text' required name='p2_lat' value="+String(config.p2_lat,7)+">\n";
-  webpage += "</select>\n</td><td>Coördinate 2 latitude.</td>\n</tr>\n"; 
+  webpage += "</td><td>Coördinate 2 latitude.</td>\n</tr>\n"; 
   #endif
    // 3. Sluit het uitklapbare gedeelte
   webpage += "</tbody>\n";
   #ifdef T5_E_PAPER
-
+  //Screen orientation
   webpage += "<tr><td>screen_orientation</td><td>\n<select id='screen_orientation' name='screen_orientation'>\n";
   Drop_down_menu(config.screen_orientation,0,"Default screen orientation",webpage);
   Drop_down_menu(config.screen_orientation,1,"Upside down screen orientation",webpage);
@@ -656,12 +672,12 @@ void html_config(String& webpage){
   //UBXfile
   webpage += "<tr>\n<td>UBXfile</td><td>\n";
   webpage += "<input size='10' type='text' required name='UBXfile' value="+String(config.UBXfile)+">\n";
-  webpage += "</select>\n</td><td>UBXfile: Here you can set the desired file name (max 10 char!), this is completed with the (unique) MAC address of the ESP32 and a suffix from 000 to 999 or the timestamp when the logging started.</td>\n</tr>\n";
+  webpage += "</td><td>UBXfile: Here you can set the desired file name (max 10 char!), this is completed with the (unique) MAC address of the ESP32 and a suffix from 000 to 999 or the timestamp when the logging started.</td>\n</tr>\n";
   //Sleep_info
   String Sleep_info="\"" + String(config.Sleep_info) + "\"";
   webpage += "<tr>\n<td>Sleep_info</td><td>\n";
   webpage += "<input size='21' type='text' required name='Sleep_info' value="+Sleep_info+">\n";//size 20 -> 21
-  webpage += "</select>\n</td><td>Sleep_info:  Text appears in sleep_screen.</td>\n</tr>\n";
+  webpage += "</td><td>Sleep_info:  Text appears in sleep_screen.</td>\n</tr>\n";
   
 
   //reboot the esp

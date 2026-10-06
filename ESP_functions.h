@@ -4,7 +4,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="V 6.05g";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 7.0betaB74";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -37,7 +37,7 @@ int NTP_time_set = 0;
 int Gps_time_set = 0;
 bool Shut_down_Save_session = false;
 bool trouble_screen = false;
-extern bool downloading_file;
+//extern bool downloading_file;
 extern bool ap_mode;
 int GPS_OK = 0;
 int analog_bat;
@@ -62,13 +62,17 @@ float Mean_heading,heading_SD;
 int wdt_task0,wdt_task1;
 int max_count_wdt_task0;
 int freeSpace;
-/*
-float Afstand_lijn=0;
-float Afstand_lijn2=0;
-float Afstand_sec=61.61;
-float Afstand_sec2=71.71;
-float Afstand_gps=0;
-*/
+
+char apiKey[MAX_API_KEY_LENGTH] = ""; // Wordt nu dynamisch gevuld vanuit Preferences
+String apiKeyShort = "" ;
+const char* uploadUrl = "https://speedsurf.app/api/device/upload";
+// Globale variabelen en handles voor de RTOS upload-taak
+volatile bool isUploading = false;         // Geeft aan of er een actieve upload bezig is
+bool apiKeyValid = true;                   // Wordt false bij een 401 of 403 fout
+bool auto_upload_time_out = false;
+TaskHandle_t UploadTaskHandle = NULL;      // De handle waarmee we de taak kunnen beheren of deleten
+SemaphoreHandle_t fileSystemMutex = NULL;  // Voorkomt dat de GPS-logger en de upload-taak tegelijk de SD-kaart gebruiken
+
 String actual_ssid="_ssid_";
  /* variables to hold instances of tasks*/
 TaskHandle_t t1 = NULL;
@@ -163,8 +167,8 @@ GPS_time S3600(3600);
 Alfa_speed A250(50);
 Alfa_speed A500(50);
 Alfa_speed a500(50);//for  Alfa stats GPIO_12 screens, reset possible !!
-Button_push Short_push12 (12,50,15,1,1); //GPIO12 pull up, 100ms push time, 15s long_pulse, count 1, STAT screen 4&5
-Button_push Long_push12 (12,2000,10,4,1); //GPIO12 pull up, 2000ms push time, 10s long_pulse, count 4, reset STAT screen 4&5
+//Button_push Short_push12 (12,50,15,1,1); //GPIO12 pull up, 100ms push time, 15s long_pulse, count 1, STAT screen 4&5
+//Button_push Long_push12 (12,2000,10,4,1); //GPIO12 pull up, 2000ms push time, 10s long_pulse, count 4, reset STAT screen 4&5
 Button_push Short_push39 (GO_TO_SLEEP_GPIO,10,10,9,1);//was 39 GO_TO_SLEEP_GPIO
 Button_push Long_push39 (GO_TO_SLEEP_GPIO,1700,10,9,1);//was 39 GO_TO_SLEEP_GPIO
 Button_push Short_push19 (GO_TO_SLEEP_PULLDOWN,10,10,9,0);//
@@ -229,7 +233,8 @@ void print_wakeup_reason(){
                                  break;
     case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); 
                                  break;
-    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer");                                 
+    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer");   
+                                  /*
                                   if((int)analog_mean>(RTC_highest_read+TOLERANCE)){ 
                                     RTC_highest_read=(int)analog_mean; 
                                     EEPROM.writeInt(2,RTC_highest_read) ;
@@ -237,7 +242,8 @@ void print_wakeup_reason(){
                                     RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
                                     Serial.print("New RTC_highest_read = ");
                                     Serial.println(RTC_highest_read);
-                                    }   
+                                    } 
+                                  */    
                                   if(abs(RTC_voltage_bat-RTC_old_voltage_bat)>MINIMUM_VOLTAGE_CHANGE){
                                     Sleep_screen(RTC_SLEEP_screen);
                                     display.powerDown();
@@ -352,7 +358,7 @@ void Shut_down(void){
             RTC_250m=M250.display_speed[9]*calibration_speed;
             RTC_500m=M500.display_speed[9]*calibration_speed;
             RTC_mile=M1852.display_speed[9]*calibration_speed;
-
+            
             RTC_max_2s_knots= S2.avg_speed[9]*1.9438/1000;
             RTC_avg_10s_knots=S10.avg_5runs*1.9438/1000;
             RTC_1h_knots=S3600.display_max_speed*1.9438/1000;               
@@ -506,14 +512,7 @@ void OnWiFiEvent(WiFiEvent_t event){
     default: break;
   }
 }
-/*
-void IRAM_ATTR isr() {
-  WiFi.disconnect();
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(soft_ap_ssid, soft_ap_password); 
-	wifi_search=150;//to prevent action @ boot
-}
-*/
+
 /*Eenmaal flankdetectie indien GPIO langer dan push_time gedrukt
 * Ook variabele die dan long_pulse_time hoog blijft
 * Ook variabele die optelt tot maw elke keer push
@@ -564,4 +563,197 @@ void Search_for_wifi(void) {
       }
     }
 } 
+// Prototypes (Forward declarations) zodat setup() weet dat ze bestaan
+void uploadTask(void * pvParameters);
+void probeerUpload(const char* filepath);
+void gemarkeerdAlsVerzonden(const char* filepath);
+#include <WiFiClientSecure.h>
+void uploadTask(void * pvParameters) {
+  for(;;) {
+    // Alleen scannen als er Wi-Fi verbinding is, de API-sleutel geldig is én de GPS NIET logt
+    if (WiFi.status() == WL_CONNECTED && apiKeyValid) {
+      Serial.println("[Upload] WL connected! Start scan...");
+      
+      // Vraag toegang tot de SD-kaart via de Mutex
+      if (xSemaphoreTake(fileSystemMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        
+        File root = SD_MMC.open("/");
+        if (root) {
+          File file = root.openNextFile();
+          
+          while (file) {
+            String filename = String(file.name());
+            
+            // Controleer of het bestand eindigt op $.gpy
+            if (filename.endsWith("$.gpy")) {
+              String fullPath = filename;
+              Serial.println("[Upload Task] Gevonden bestand voor HTTPS upload: ");
+              Serial.println(fullPath);
+              
+              file.close(); // Sluit handlers direct vóór de upload start
+              root.close();
+              
+              // Start de HTTPS multipart upload procedure
+              probeerUpload(fullPath.c_str());
+              
+              break; // Verbreek de lus om de SD-kaart direct vrij te geven
+            }
+            file = root.openNextFile();
+          }
+          if (root) root.close();
+        }
+        
+        // Geef de SD-kaart weer vrij
+        xSemaphoreGive(fileSystemMutex);
+      }
+    }
+    
+    // Scan elke 10 seconden naar afgeronde bestanden wanneer verbonden met Wi-Fi
+    vTaskDelay(pdMS_TO_TICKS(10000)); 
+  }
+}
+// === VEILIGE MULTIPART HTTPS UPLOAD (POORT 443) ===
+void probeerUpload(const char* filepath) {
+  File file = SD_MMC.open(filepath, FILE_READ);
+  if (!file) return;
+
+  // === SET UPLOAD MERKER OP TRUE ===
+  isUploading = true; 
+  auto_upload_time_out = false;
+  size_t fileSize = file.size();
+  
+  WiFiClientSecure client; // Gebruik van de beveiligde TLS client
+  client.setInsecure();    // Slaat root-certificaatcontrole over (voorkomt crashes door RAM-gebrek)
+
+  Serial.println("[Upload] Verbinden met speedsurf.app via HTTPS... "); 
+  // Maak verbinding met speedsurf.app op de beveiligde HTTPS-poort (443)
+  if (!client.connect("speedsurf.app", 443)) {
+    Serial.println("Mislukt!");
+    file.close();
+    isUploading = false;
+    Serial.println("[RAM Check] Vrije Heap op dit moment: ");
+    Serial.println(ESP.getFreeHeap());
+    return;
+  }
+  Serial.println("Verbonden!");
+
+  // Bouw unieke multipart boundary op
+  String boundary = "--------------------------ESP32Boundary" + String(millis());
+  
+  // Formatteer de multipart metadata headers
+  String bodyHeader = "--" + boundary + "\r\n";
+  bodyHeader += "Content-Disposition: form-data; name=\"file\"; filename=\"" + String(filepath) + "\"\r\n";
+  bodyHeader += "Content-Type: application/octet-stream\r\n\r\n";
+  String bodyFooter = "\r\n--" + boundary + "--\r\n";
+  
+  // Bereken exact de totale lengte van de payload (header + bestand + footer)
+  size_t totalLength = bodyHeader.length() + fileSize + bodyFooter.length();
+
+  // HTTPS POST-headers handmatig verzenden naar het officiële endpoint
+  client.print("POST /api/device/upload HTTP/1.1\r\n");
+  client.print("Host: speedsurf.app\r\n");
+  client.print("Authorization: Bearer " + String(apiKey) + "\r\n"); // De key gaat nu 100% versleuteld over de lijn!
+  client.print("Content-Type: multipart/form-data; boundary=" + boundary + "\r\n");
+  client.print("Content-Length: " + String(totalLength) + "\r\n");
+  client.print("Connection: close\r\n\r\n");
+
+  // 1. Schrijf de start van de multipart body
+  client.print(bodyHeader);
+  
+  // 2. Stream het bestand in brokken van 1024 bytes
+  uint8_t buffer[1024]; 
+  while (file.available()) {
+    size_t bytesRead = file.read(buffer, sizeof(buffer));
+    client.write(buffer, bytesRead);
+    vTaskDelay(pdMS_TO_TICKS(2)); // Voorkomt dat de Watchdog Timer (WDT) ingrijpt op Kern 0
+  }
+  file.close();
+  
+  // 3. Schrijf de afsluiting van de body
+  client.print(bodyFooter);
+  client.flush();
+
+  // 4. Response statuscode uitlezen
+  int httpResponseCode = 0;
+  unsigned long timeout = millis();
+  
+  // Wacht maximaal 10 seconden op het antwoord van de server
+  while (client.connected() && millis() - timeout < 10000) {
+    if (client.available()) {
+      String line = client.readStringUntil('\n');
+      
+      // Zoek naar de HTTP-statusregel (bijv: "HTTP/1.1 200 OK")
+      if (line.startsWith("HTTP/1.")) {
+        int spaceIndex = line.indexOf(' ');
+        if (spaceIndex != -1) {
+          httpResponseCode = line.substring(spaceIndex + 1, spaceIndex + 4).toInt();
+        }
+        break; 
+      }
+    }
+    vTaskDelay(pdMS_TO_TICKS(10)); 
+  }
+
+  // Sluit de netwerkverbinding netjes af
+  client.stop();
+
+  // --- AFHANDELING EN CONTROLE STATUS CODES ---
+  if (httpResponseCode >= 200 && httpResponseCode < 300) {
+    Serial.println("[Upload] Geslaagd! HTTPS code: ");
+    Serial.println(httpResponseCode);
+    
+    // Hernoem het bestand van $.gpy naar .gpy zodat het gemarkeerd staat
+    gemarkeerdAlsVerzonden(filepath);
+  } 
+  else if (httpResponseCode == 401 || httpResponseCode == 403) {
+    apiKeyValid = false;
+    Serial.println("[Upload] Kritieke fout");
+    Serial.println(httpResponseCode);
+    Serial.println("API-sleutel is ongeldig. Uploads permanent gestopt!");
+    // Hier kun je jouw E-paper foutscherm aanroepen
+  } 
+  else {
+    auto_upload_time_out = true;
+    Serial.println("[Upload] Serverfout of timeout (");
+    Serial.println(httpResponseCode);
+    Serial.println("Bestand blijft behouden voor een volgende poging.");
+  }
+  
+  // === SET MERKER WEER OP FALSE (ALTIJD AAN HET EINDE) ===
+  isUploading = false; 
+}
+// === BESTAND HERNOMEN VAN '$.gpy' NAAR '.gpy' ===
+void gemarkeerdAlsVerzonden(const char* filepath) {
+  String oudPad = String(filepath);
+  String nieuwPad = oudPad;
+
+  if (oudPad.endsWith("$.gpy")) {
+    nieuwPad = oudPad.substring(0, oudPad.length() - 5) + ".gpy";
+  } else {
+    nieuwPad = oudPad + "v"; 
+  }
+
+  if (SD_MMC.exists(nieuwPad.c_str())) {
+    SD_MMC.remove(nieuwPad.c_str());
+  }
+
+  if (SD_MMC.rename(filepath, nieuwPad.c_str())) {
+    Serial.println("[Upload] Bestand succesvol gemarkeerd! Hernoemd naar: ");
+    Serial.println(nieuwPad);
+  } else {
+    Serial.println("[Upload] Fout: Kon de extensie van het bestand niet aanpassen.");
+  }
+  
+}
+// === VERWIJDER DE TAAK PERMANENT VAN KERN 0 BIJ START LOGGEN ===
+void Delete_uploadTask(void) {
+  if (UploadTaskHandle != NULL) {
+    TaskHandle_t taakOmTeVerwijderen = UploadTaskHandle;
+    UploadTaskHandle = NULL; 
+    vTaskDelete(taakOmTeVerwijderen);
+    isUploading = false; 
+    Serial.println("[GPS Task] Upload-manager PERMANENT VERWIJDERD. RAM is vrijgegeven.");
+  }
+}
+
 #endif

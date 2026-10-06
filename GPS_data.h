@@ -2,6 +2,7 @@
 #define GPS_DATA_H
 #include <stdint.h>
 #include <math.h>
+#include <Preferences.h>
 
 #define DEG2RAD 0.0174532925  //is PI/180 !!!
 #define BUFFER_SIZE 9000  //gewenste buffer grootte voor de GPS groundspeed data,opgelet voor 10Hz moet de buffer veel groter zijn !!! Vb 1852m bij 2000 samples is min 10m/s
@@ -17,6 +18,7 @@ extern  int index_GPS,run_count;
 extern  int index_sec;//index van laatste sample 
 extern uint16_t _secSpeed[BUFFER_SIZE];
 extern float alfa_exit;
+extern Preferences preferences;
 typedef struct {
     double lat; // breedtegraad in graden
     double lon; // lengtegraad in graden

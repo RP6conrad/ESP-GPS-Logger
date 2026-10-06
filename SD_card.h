@@ -36,6 +36,7 @@ extern char TimeZone[64];
 extern GPS_speed M100;
 extern GPS_speed M250;
 extern GPS_speed M1852;
+extern GPS_time S1;
 extern GPS_time S2;
 extern GPS_time s2;
 extern GPS_time S10;
@@ -94,6 +95,7 @@ struct Config {
   bool logUBX_nav_sat=0;// log nav sat msg to .ubx
   bool logSBP=1;//log to .sbp
   bool logGPY=1;//log to .gps
+  bool auto_upload_speedsurf=0;
   bool logGPX=0;//log to .gpx
   int file_date_time=2;//type of filenaming, with MAC adress or datetime
   char UBXfile[32]="My_ESP_GPS";//your preferred filename

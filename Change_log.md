@@ -1,3 +1,20 @@
+### Changes SW 7.0a
+* Added auto-upload to speedsurf.app. If wlan connected, al *$.gpy files are uploaded to speedsurf if api key is present
+* api key is stored in preferences.h
+* gpio12 is now ouput for screen T5 Version 2.4
+* New partition table with 1.9MB app, needed for https uploading
+* New gpy files are ending with $.gpy, after uploading name changes to *.gpy
+* Added compile macro AUTO_UPLOAD_SPEEDSURF (Definitions.h) for compiling without auto upload : bin still fitts in the old partition then
+* With auto-upload : Sketch uses 1376406 bytes (65%) of program storage space. Maximum is 2097152 bytes.
+* Without auto-upload : Sketch uses 1212586 bytes (92%) of program storage space. Maximum is 1310720 bytes.
+### Changes SW 6.05h
+* Added setting for screen T5 version 2.4 = gpio12 as output, setting high for screen on !
+* Bugfix setting knots / km/h in the OTA_html.h (no == with floats !!!)
+* Bugfix statscreen 7 : no negative bars
+* Added statscreens for Salvador F,G,H,I,J
+* Added sleepscreen 3 for Salvador
+* Bugfix screen orientation
+* Removed "M10 Full power"
 ### Changes SW 6.05g
 * bugfix screen 6 / shut down screen
 * Added maxSVS in config, to limit nr of sats in nav solution. This for "lost points" prevention

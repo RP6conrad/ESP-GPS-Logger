@@ -1,7 +1,6 @@
 #include <SD_MMC.h>
 #include <sd_defines.h>
 #include <sd_diskio.h>
-#include <ETH.h>
 #include <WiFi.h>
 #include <WiFiAP.h>
 #include <WiFiClient.h>
@@ -9,7 +8,6 @@
 #include <WiFiServer.h>
 #include <WiFiSTA.h>
 #include <WiFiType.h>
-#include <WiFiUdp.h> 
 #include "FS.h"
 #include "SPI.h"
 #include "sys/time.h"
@@ -30,51 +28,30 @@
 #include <lwip/apps/sntp.h>
 #include <esp32-hal.h>
 #include <time.h>
-#include <EEPROM.h>
+//#include <EEPROM.h>
 #include "Definitions.h"
 #include <LittleFS.h>
 #include "rom/rtc.h"
 #include "track_speed.h"
 #include "ESP_functions.h"
+#include <Preferences.h>
 
-//#def INCLUDE_BLE
-#ifdef INCLUDE_BLE
-    #include <NimBLEDevice.h>
-    // --- BLE CONFIGURATIE ---
-    #define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
-    #define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
-    NimBLECharacteristic* pBLECharacteristic = nullptr;
-    bool bleDeviceConnected = false;
-    // Variabele om de 10 Hz timing (elke 100 ms) bij te houden
-    unsigned long lastTransmitTime = 0;
-    // Compacte struct voor BLE-verzending naar de app (Exact 16 bytes)
-    struct __attribute__((__packed__)) BLEGPSData {
-        float latitude;     // 4 bytes
-        float longitude;    // 4 bytes
-        float dopplerSpeed; // 4 bytes
-        float heading;      // 4 bytes
-    };
-    // BLE Connectie callbacks
-    class MyBLEServerCallbacks: public NimBLEServerCallbacks {
-        void onConnect(NimBLEServer* pServer) { 
-            bleDeviceConnected = true; 
-            Serial.println("Apparaat verbonden via BLE!");
-        }
-        void onDisconnect(NimBLEServer* pServer) {
-            bleDeviceConnected = false;
-            Serial.println("Apparaat losgekoppeld. Starten met adverteren...");
-            pServer->startAdvertising(); // Automatisch opnieuw adverteren
-        }
-    };
-#endif
+//#include <WiFiClientSecure.h>
+//#include "freertos/FreeRTOS.h"
+//#include "freertos/semphr.h"
+
 const char* ssid = config.ssid; //WiFi SSID
 const char* password = config.password; //WiFi Password
 const char* ssid2 = config.ssid2; //WiFi SSID
 const char* password2 = config.password2; //WiFi Password
 const char* soft_ap_ssid = "ESP32AP"; //accespoint ssid
 const char* soft_ap_password = "password"; //accespoint password
+#define MAX_API_KEY_LENGTH 60
+//char apiKey[MAX_API_KEY_LENGTH] = ""; // Globale char-array voor je HTTPS-key
+Preferences preferences;
 bool ap_mode=false;
 bool sleep_mode=false;
+//bool isUploading=false;
 extern bool reset_boot; 
 // Globale variabelen voor het traject en de metingen
 Line_2D startLijn;
@@ -102,10 +79,25 @@ double track_time;
 LijnPassageResultaat startRes;
 LijnPassageResultaat finishRes;
 
+// Globale variabelen en handles voor de RTOS upload-taak
+//volatile bool isUploading = false;         // Geeft aan of er een actieve upload bezig is
+//bool apiKeyValid = true;                   // Wordt false bij een 401 of 403 fout
+//TaskHandle_t UploadTaskHandle = NULL;      // De handle waarmee we de taak kunnen beheren of deleten
+//SemaphoreHandle_t fileSystemMutex = NULL;  // Voorkomt dat de GPS-logger en de upload-taak tegelijk de SD-kaart gebruiken
+// Prototypes (Forward declarations) zodat setup() weet dat ze bestaan
+//void uploadTask(void * pvParameters);
+//void probeerUpload(const char* filepath);
+//void gemarkeerdAlsVerzonden(const char* filepath);
+
 void setup() {
   Serial.begin(115200);
   Serial.print("Actual CPU freq @ boot"); Serial.println (getCpuFrequencyMhz());
+  #ifdef T5_V2_4_GPIO12   //T5 board version 2.4 needs gpio12 high voor the e-paper
+   pinMode(12, OUTPUT);
+   digitalWrite(12, HIGH);
+  #endif
   pinMode(2, INPUT_PULLUP);//for SD_MMC mode....
+  /*
   EEPROM.begin(EEPROM_SIZE);
   config.ublox_type = EEPROM.readByte(0);Serial.print("EEPROM ublox_type=");Serial.println(config.ublox_type);
   config.M10_high_nav=EEPROM.readByte(1);
@@ -114,12 +106,49 @@ void setup() {
 //  config.ublox_type=255;
   if(config.M10_high_nav>3){config.M10_high_nav=0;EEPROM.writeByte(1,NO_M10_GPS);EEPROM.commit();} 
   Serial.print("EEPROM M10_high_nav=");Serial.println(config.M10_high_nav);
+  */
+    // Start Preferences in read-only modus (false)
+  preferences.begin("gps_config", false);
+  // Lees de waarden uit. Als een waarde nog niet bestaat in de NVS (bijv. eerste start),
+  // wordt automatisch de standaardwaarde (het 2e argument) geladen.
+  config.ublox_type = preferences.getUChar("ublox_type", AUTO_DETECT); 
+  Serial.print(F("Preferences ublox_type=")); 
+  Serial.println(config.ublox_type);
+
+  config.M10_high_nav = preferences.getUChar("M10_high_nav", NO_M10_GPS);
+  if (config.M10_high_nav > 3) {
+    config.M10_high_nav = 0;
+    // Sla direct de gecorrigeerde waarde op
+    preferences.putUChar("M10_high_nav", NO_M10_GPS);
+  } 
+  Serial.print(F("Preferences M10_high_nav=")); 
+  Serial.println(config.M10_high_nav);
+  // --- LEES DE API KEY UIT ---
+  // We halen de string op. Als deze nog niet bestaat, laden we "sk_live_leeg"
+  String geladenKey = preferences.getString("api_key", "sk_live_leeg");
+  geladenKey.toCharArray(apiKey, MAX_API_KEY_LENGTH); 
+  Serial.print(F("Preferences API Key Short = "));
+  Serial.println(apiKeyShort);
+  // Zet de globale char-array of string om naar een tijdelijke String om te bewerken
+  String apiKeyStr = String(apiKey);
+  //apiKeyShort = String("");
+  if (apiKeyStr.length() > 20) {
+    // Knip de eerste 20 karakters af (index 0 tot 20) en voeg puntjes toe
+    apiKeyShort = apiKeyStr.substring(0, 20) + "...";
+  } else {
+    // Als de key korter is dan 20 karakters, toon hem dan volledig
+    apiKeyShort = apiKeyStr;
+  }
+  // Sluit de preferences-namespace netjes af
+  preferences.end();
+
   //print_reset_reason(rtc_get_reset_reason(0));//Find out the reset reason, if no SW-reset-> back to deep sleep !
   if(reset_boot==true) {setCpuFrequencyMhz(80);}
   print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
   Serial.println("setup Serial");
   Serial.println("Serial Txd is on pin: "+String(TX));
   Serial.println("Serial Rxd is on pin: "+String(RX));
+  /*
   RTC_highest_read=EEPROM.readInt(2);
   if((RTC_highest_read<STARTVALUE_HIGHEST_READ)|(RTC_highest_read>MAXVALUE_HIGHEST_READ)){
     EEPROM.writeInt(2,STARTVALUE_HIGHEST_READ) ;
@@ -127,6 +156,7 @@ void setup() {
     RTC_highest_read=STARTVALUE_HIGHEST_READ;
     Serial.println("Eeprom highest read set to starting value !!");
     }
+  */  
   RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
   Serial.print("RTC_calibration_bat EEPROM = ");
   Serial.println(RTC_calibration_bat);
@@ -178,11 +208,10 @@ void setup() {
         testFileIO(SD_MMC, "/test.txt");
         Serial.println(F("Loading configuration..."));// Should load default config 
         loadConfiguration(filename, filename_backup, config); // load config file
-        //Short_push39.button_count=config.field;//set speed_field choice, so counting from correct speed_field !!
         Serial.print(F("Print config file...")); 
         printFile(filename); 
   } 
-  Short_push12.begin(12,1);
+  //Short_push12.begin(12,1); //gpio12 now as output for screen V2.4
   Short_push19.begin(19,0);
   Short_push39.begin(39,1);
   // 1. Voer hier je Google Maps coördinaten in van jouw windsurf speed-strip
@@ -267,29 +296,7 @@ void setup() {
       GPS_OK = setupGPS();
       Update_screen(GPS_INIT_SCREEN);
       }
-  delay(100);
-  #ifdef INCLUDE_BLE
-  // --- INITIALISEER NIMBLE v1.3.7 BLE ---
-    Serial.println("Initialiseren NimBLE Dummy GPS Service...");
-    NimBLEDevice::init("ESP32_Dummy_10Hz");
-    NimBLEServer* pBLEServer = NimBLEDevice::createServer();
-    pBLEServer->setCallbacks(new MyBLEServerCallbacks());
-    // Let op: in NimBLE 1.3.7 maken we de service rechtstreeks via pBLEServer aan
-    NimBLEService *pBLEService = pBLEServer->createService(SERVICE_UUID);
-    // Aanmaken karakteristiek met NimBLE v1.3.7 eigenschappen
-    pBLECharacteristic = pBLEService->createCharacteristic(
-                         CHARACTERISTIC_UUID,
-                         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
-                       );
-    // Handmatige aanmaak van de 0x2902 descriptor voor notificatie-ondersteuning
-    pBLECharacteristic->createDescriptor("2902", NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE);
-    pBLEService->start();
-    NimBLEAdvertising *pBLEAdvertising = NimBLEDevice::getAdvertising();
-    pBLEAdvertising->addServiceUUID(SERVICE_UUID);
-    pBLEAdvertising->setScanResponse(true);
-    NimBLEDevice::startAdvertising();
-    Serial.println("Systeem Online. Dummy 10Hz data start zodra verbonden...");
-#endif    
+  delay(100); 
   //Create RTOS task, so logging and e-paper update are separated (update e-paper is blocking, 800 ms !!)
   //xTaskCreate(
   xTaskCreatePinnedToCore(  
@@ -310,8 +317,26 @@ void setup() {
                     1,                /* Priority of the task. */
                     &t2,//&t2,
                     0);            /* Task handle. */
+
+  // 1. Maak de Mutex aan voor de beveiliging van de SD-kaart
+  fileSystemMutex = xSemaphoreCreateMutex();
+#ifdef AUTO_UPLOAD_SPEEDSURF
+  // 2. Start de upload-taak op KERN 0
+  if (fileSystemMutex != NULL) {
+    xTaskCreatePinnedToCore(
+      uploadTask,             // De functie die hieronder is gedefinieerd
+      "UploadTask",           // Naam van de taak (voor debugging)
+      8192,                   // Stack size in bytes (ruim genoeg voor WiFiClientSecure)
+      NULL,                   // Parameter die je eventueel meegeeft (niet nodig)
+      1,                      // Prioriteit van de taak (laag, GPS heeft voorrang)
+      &UploadTaskHandle,      // De globale handle
+      0                       // <--- Kern 0 (Kern 1 draait je GPS-logger en Webserver)
+    ); 
+    Serial.println("Upload-manager succesvol gestart op Kern 0.");
+  }
+#endif  
 }
- 
+
 void loop() { 
   int wdt_task0_duration=millis()-wdt_task0;
   int wdt_task1_duration=millis()-wdt_task1;

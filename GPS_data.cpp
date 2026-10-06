@@ -1,4 +1,4 @@
-#include <EEPROM.h>
+//#include <EEPROM.h>
 #include "GPS_data.h"
 #include "Ublox.h"
 #include "Definitions.h"
@@ -12,6 +12,7 @@ uint16_t _secSpeed[BUFFER_SIZE];
 int index_GPS=-1;//bij eerste doorgang op 0 beginnen !!
 int index_sec=-1;//bij eerste doorgang op 0 beginnen !!
 int alfa_counter;
+
 Point p1,p2,p3,p4;
 
 //Deze functie gaat telkens 3 variabelen van de GPS in een globale buffer steken : doppler snelheid, lat en long.
@@ -652,12 +653,15 @@ int setupGPS(void) {
               }
      delay(2);   //was delay (1)
      }
-  config.ublox_type = EEPROM.readByte(0);
+  //config.ublox_type = EEPROM.readByte(0);
   if(config.ublox_type==0xFF) {
     Auto_detect_ublox();//only test for ublox type and baudrate if unknown in configuration
     if(config.ublox_type!=UBLOX_TYPE_UNKNOWN){
-      EEPROM.writeByte(0, config.ublox_type);
-      EEPROM.commit();
+      //EEPROM.writeByte(0, config.ublox_type);
+      //EEPROM.commit();
+      preferences.begin("gps_config", false);
+      preferences.putUChar("ublox_type", config.ublox_type); 
+      preferences.end();
       }
     else{
        Serial.println("Can't detect type and or baudrate of ublox....");

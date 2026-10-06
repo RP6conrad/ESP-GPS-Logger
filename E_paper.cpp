@@ -216,7 +216,8 @@ int device_boot_log(int rows, int ws) {
 
 void Boot_screen(void) {
   display.init();
-  display.setRotation(1);
+  //display.setRotation(1);
+  display.setRotation(2*RTC_screen_orientation+1);//default 1, upside down = 3
   displayHeight = display.height();
   displayWidth = display.width();
   display.fillScreen(GxEPD_WHITE);
@@ -252,7 +253,8 @@ void Boot_screen(void) {
 void Off_screen(int choice) {  //choice 0 = old screen, otherwise Simon screens
   //int offset=0;
   float session_time = (millis() - start_logging_millis) / 1000;
-  display.setRotation(1);
+  //display.setRotation(1);
+  display.setRotation(2*RTC_screen_orientation+1);//default 1, upside down = 3
   display.fillScreen(GxEPD_WHITE);
   display.setTextColor(GxEPD_BLACK);
   int cursor = ROW_3_9PT + ROW_12PT_W_SPACING;
@@ -314,7 +316,8 @@ void Sleep_screen(int choice) {
   if (offset > 9) offset--;
   if (offset < 1) offset++;
   display.init();
-  display.setRotation(1);
+  //display.setRotation(1);
+  display.setRotation(2*RTC_screen_orientation+1);
   displayHeight = display.height();
   displayWidth = display.width();
   display.fillScreen(GxEPD_WHITE);
@@ -428,13 +431,15 @@ void Sleep_screen(int choice) {
     if (RTC_Sail_Logo == 16) {
       display.drawExampleBitmap(Logo_LISA_vertical, 195, 50, 48, 48, GxEPD_BLACK);  //Patrik_logoS_zwart
     } 
-    display.setRotation(0);
+    //display.setRotation(0);
+    display.setRotation(2*RTC_screen_orientation);
     display.setCursor(30, 249);  //was 30, 249
     display.setFont(&FreeSansBold6pt7b);
     if ((int)(calibration_speed * 100000) == 194) display.print("speed in knots");  //1.94384449 m/s to knots !!!
     if ((int)(calibration_speed * 1000000) == 3600) display.print("speed in km/h");
 
-    display.setRotation(1);
+    //display.setRotation(1);
+    display.setRotation(2*RTC_screen_orientation+1);
     if(true){
       display.setCursor(col1, 105);  // was 121
       display.setFont(&SF_Distant_Galaxy9pt7b);
@@ -468,6 +473,34 @@ void Sleep_screen(int choice) {
       display.println(RTC_R4_10s, 2);
       display.setCursor(col2, row6);
       display.println(RTC_R5_10s, 2);
+       // right column
+      display.setFont(&FreeMonoBold9pt7b);
+      display.setCursor(col3, row1);
+      display.print("2sec:");
+      display.setCursor(col3, row2);
+      display.print("Dist:");
+      display.setCursor(col3, row3);
+      display.print("Alph:");
+      display.setCursor(col3, row4);
+      display.print("1h:");  //
+      display.setCursor(col3, row5);
+      display.print("NM:");
+      display.setCursor(col3, row6);
+      display.print("500m:");
+
+      display.setFont(&FreeSansBold9pt7b);
+      display.setCursor(col4, row1);
+      display.println(RTC_max_2s, 2);
+      display.setCursor(col4, row2);
+      display.println(RTC_distance, 2);
+      display.setCursor(col4, row3);
+      display.println(RTC_alp, 2);
+      display.setCursor(col4, row4);
+      display.println(RTC_1h, 2);  //
+      display.setCursor(col4, row5);
+      display.println(RTC_mile, 2);
+      display.setCursor(col4, row6);
+      display.println(RTC_500m, 2);
     }
     if(choice==2){
       display.setFont(&FreeMonoBold8pt7b);
@@ -497,38 +530,7 @@ void Sleep_screen(int choice) {
       display.println(RTC_alp, 2);
       display.setCursor(col2, row6);
       display.println(RTC_avg_alp, 2);
-    }
-    // right column
-    if(choice==1){
-      display.setFont(&FreeMonoBold9pt7b);
-      display.setCursor(col3, row1);
-      display.print("2sec:");
-      display.setCursor(col3, row2);
-      display.print("Dist:");
-      display.setCursor(col3, row3);
-      display.print("Alph:");
-      display.setCursor(col3, row4);
-      display.print("1h:");  //
-      display.setCursor(col3, row5);
-      display.print("NM:");
-      display.setCursor(col3, row6);
-      display.print("500m:");
 
-      display.setFont(&FreeSansBold9pt7b);
-      display.setCursor(col4, row1);
-      display.println(RTC_max_2s, 2);
-      display.setCursor(col4, row2);
-      display.println(RTC_distance, 2);
-      display.setCursor(col4, row3);
-      display.println(RTC_alp, 2);
-      display.setCursor(col4, row4);
-      display.println(RTC_1h, 2);  //
-      display.setCursor(col4, row5);
-      display.println(RTC_mile, 2);
-      display.setCursor(col4, row6);
-      display.println(RTC_500m, 2);
-    }
-      if(choice==2){
       display.setFont(&FreeMonoBold8pt7b);  
       display.setCursor(col3, row1);
       display.print("2s:");
@@ -556,7 +558,65 @@ void Sleep_screen(int choice) {
       display.println(RTC_1h, 2);
       display.setCursor(col4, row6);
       display.println(RTC_distance, 2);
-    }  
+    }
+   
+    if(choice==3){
+      display.setFont(&FreeMonoBold8pt7b);
+      display.setCursor(col1, row1);
+      display.print("AV:");
+      display.setCursor(col1, row2);
+      display.print("R1:");
+      display.setCursor(col1, row3);
+      display.print("R2:");
+      display.setCursor(col1, row4);
+      display.print("R3:");
+      display.setCursor(col1, row5);
+      display.print("NM:");
+      display.setCursor(col1, row6);
+      display.print("DS:");
+
+      display.setFont(&FreeSansBold9pt7b);
+      display.setCursor(col2, row1);
+      display.println(RTC_avg_10s, 2);
+      display.setCursor(col2, row2);
+      display.println(RTC_R1_10s, 2);
+      display.setCursor(col2, row3);
+      display.println(RTC_R2_10s, 2);
+      display.setCursor(col2, row4);
+      display.println(RTC_R3_10s, 2);
+      display.setCursor(col2, row5);
+      display.println(RTC_mile, 2);
+      display.setCursor(col2, row6);
+      display.println(RTC_distance, 2);
+      display.setFont(&FreeMonoBold8pt7b);  
+
+      display.setCursor(col3, row1);
+      display.print("1s:");
+      display.setCursor(col3, row2);
+      display.print("2s:");
+      display.setCursor(col3, row3);
+      display.print("100m:");
+      display.setCursor(col3, row4);
+      display.print("250m:");  //
+      display.setCursor(col3, row5);
+      display.print("500m:");
+      display.setCursor(col3, row6);
+      display.print("Alph:");
+
+      display.setFont(&FreeSansBold9pt7b);
+      display.setCursor(col4, row1);
+      display.println(RTC_max_1s, 2);
+      display.setCursor(col4, row2);
+      display.println(RTC_max_2s, 2);
+      display.setCursor(col4, row3);
+      display.println(RTC_100m, 2);
+      display.setCursor(col4, row4);
+      display.println(RTC_250m, 2);  
+      display.setCursor(col4, row5);
+      display.println(RTC_500m, 2);
+      display.setCursor(col4, row6);
+      display.println(RTC_alp, 2);
+    }   
     display.update();
   }
 }
@@ -700,12 +760,14 @@ void InfoBarRtc(int offset) {
 }
 
 void Speed_in_Unit(int offset) {
-  display.setRotation(0);
+  //display.setRotation(0);
+  display.setRotation(2*RTC_screen_orientation);
   display.setFont(&FreeSansBold6pt7b);
   display.setCursor(30, offset + 245);                                            //was 30, 249
   if ((int)(calibration_speed * 100000) == 194) display.print("speed in knots");  //1.94384449 m/s to knots !!!
   if ((int)(calibration_speed * 1000000) == 3600) display.print("speed in km/h");
-  display.setRotation(1);
+  //display.setRotation(1);
+  display.setRotation(2*RTC_screen_orientation+1);
 }
 void sdCardInfo(void) {
   if (sdOK) display.printf("SD : %d Mb\n", freeSpace);
@@ -813,6 +875,9 @@ void Update_screen(int screen) {
     ESP_GPS_LOGO_40
     topLeft_Title("ESP-GPS connect");
     display.printf("SW : %s\n", SW_version); 
+    if(isUploading){display.setCursor(offset,46);display.print("Uploading...");};
+    if(!apiKeyValid){display.setCursor(offset,46);display.print("API Key not valid");};
+    if(auto_upload_time_out){display.setCursor(offset,46);display.print("Upload time-out!");};
     //DEVICE_BOOT_LOG(2);
     if (SoftAP_connection != true) {
       display.setCursor(offset, 102);
@@ -1362,6 +1427,7 @@ void Update_screen(int screen) {
       barPitch = (barWidth) + barSpace;
       for (int i = 0; i < r; i++) {
         int barHeight = (S10.speed_run[i] * calibration_speed - min_bar) * scale;
+        if(barHeight<0) barHeight = 0;
         display.fillRect(offset + posX + (i * barPitch), posY - barHeight, barWidth, barHeight, GxEPD_BLACK);
       }
     } else {
@@ -1369,6 +1435,7 @@ void Update_screen(int screen) {
       barPitch = (barWidth) + barSpace;
       for (int i = 0; i < MaxNumberBar; i++) {
         int barHeight = (S10.speed_run[(i + r) % NR_OF_BAR] * calibration_speed - min_bar) * scale;  //was S10.speed_run[i+r%NR_OF_BAR-42]
+        if(barHeight<0) barHeight = 0;
         display.fillRect(offset + posX + (i * barPitch), posY - barHeight, barWidth, barHeight, GxEPD_BLACK);
       }
     }
@@ -1415,6 +1482,27 @@ void Update_screen(int screen) {
         track.minutes[i]=track_minute[4-i];
         }
       Top_5("Track", track,5);  
+    }
+    if (screen == STATSF) {  //top 5 100m
+      Rank_best Rank = copyGps_speedToRank(M100);
+      Top_5("100m ", Rank,0);
+    }
+    if (screen == STATSG) {  //top 5 Nautical mile
+      Rank_best Rank = copyGps_speedToRank(M1852);
+      Top_5("1852m ", Rank,0);
+    }
+    
+    if (screen == STATSH) {  //last 100m, 250m, 500m, Alfa
+      Stats_4lines("100 lst", "250 lst", "500 lst", "Alfa lst", M100.display_last_run * calibration_speed, M250.display_last_run * calibration_speed, M500.display_last_run * calibration_speed,A500.alfa_speed_max * calibration_speed);
+    }
+    if (screen == STATSI) {  //100m,250m, 500m,Alfa
+      Stats_4lines("1s", "2s:", "10s:", "Mile:", S1.display_speed[9] * calibration_speed, S2.display_speed[9] * calibration_speed, S10.display_speed[9] * calibration_speed, M1852.avg_speed[9] * calibration_speed);
+    }
+    if (screen == STATSJ) {  //last 1s, 2s, 10s, Mile
+      Stats_4lines("1s last:", "2s last:", "10s last:", "Mile last:", S1.display_last_run * calibration_speed, S2.display_last_run * calibration_speed, S10.display_last_run * calibration_speed, M1852.display_last_run * calibration_speed);
+    }
+    if (screen == STATSK) {  //Distance, AVG 2s, AVG 10s, AVG 500m
+      Stats_4lines("Dist: ", "Avg 2s:", "Avg 10s:", "Avg 500:",  Ublox.total_distance / 1000, S2.avg_5runs * calibration_speed, S10.avg_5runs * calibration_speed, M500.avg_5runs * calibration_speed);
     }
     #endif
   if (count % 200 == 0) {  //was 200

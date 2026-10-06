@@ -1,6 +1,6 @@
 #include "Ublox.h"
 #include "Definitions.h"
-#include <EEPROM.h>
+//#include <EEPROM.h>
 int Time_Set_OK;
 bool Nav_rate_NACK = false;
 bool High_nav_rate_ACK = false;
@@ -340,6 +340,7 @@ void Init_ubloxM10(void){
   for(int i = 0; i < sizeof(UBLOX_M10_NAV_DOP); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_M10_NAV_DOP+i) );
         }
+  /**     
   if(config.M10_full_power){
     Serial.println("Set ublox M10 full power ON ");   
     for(int i = 0; i < sizeof(UBX_M10_FULL_POWER_MODE); i++) {                        
@@ -347,6 +348,7 @@ void Init_ubloxM10(void){
           }      
     Ublox_serial2(wait);
     } 
+  */  
   Serial.println("Set ublox max_Svs ");   
   sendNavSpgInfilMaxSvs(config.max_Svs); //max satellites in nav solution  
   Serial.println("Set ublox min elevation Sats ");  
@@ -725,11 +727,16 @@ int Auto_detect_ublox(){
       }  
     Serial.println(ubxMessage.monVER.hwVersion[3]) ; 
     if(Ublox_M10==true){
-    config.M10_high_nav=Check_M10_nav_rate();
-    EEPROM.write(1,config.M10_high_nav);EEPROM.commit();
-    }
+      config.M10_high_nav=Check_M10_nav_rate();
+      //EEPROM.write(1,config.M10_high_nav);EEPROM.commit();
+      preferences.begin("gps_config", false);
+      config.M10_high_nav=Check_M10_nav_rate();
+      preferences.putUChar("M10_high_nav",config.M10_high_nav);
+      preferences.end();
+      }
     return config.ublox_type;  
 }
+/*
 int Check_M10_nav_rate(void){
   int result=NO_M10_GPS;
   check_M10_nav_rate=true;
@@ -753,6 +760,48 @@ int Check_M10_nav_rate(void){
     } 
     return result;       
   }
+*/  
+int Check_M10_nav_rate(void){
+  int result = NO_M10_GPS;
+  check_M10_nav_rate = true;
+  Serial.println(F("Get M10 NAV Rate "));
+  
+  for(int i = 0; i < sizeof(UBX_M10_GET_NAV_RATE); i++) {                        
+    Serial2.write( pgm_read_byte(UBX_M10_GET_NAV_RATE+i) );
+  }
+  
+  Nav_rate_NACK = false;
+  High_nav_rate_ACK = false;      
+  Ublox_serial2(500);
+  check_M10_nav_rate = false;
+  
+  if(Nav_rate_NACK){ 
+    Serial.println(F("M10 Default Nav Rate"));
+    result = M10_DEFAULT_NAV;
+    
+    // --- PREFERENCES UPDATE BIJ DEFAULT NAV ---
+    preferences.begin("gps_config", false); // Open namespace in read-write modus
+    if (preferences.getUChar("M10_high_nav", NO_M10_GPS) != M10_DEFAULT_NAV) {
+      preferences.putUChar("M10_high_nav", M10_DEFAULT_NAV);
+    }
+    preferences.end(); // Sluit en sla direct op
+  }
+  
+  if(High_nav_rate_ACK){
+    Serial.println(F("M10 High Nav Rate set"));
+    result = M10_HIGH_NAV_RATE;
+    
+    // --- PREFERENCES UPDATE BIJ HIGH NAV ---
+    preferences.begin("gps_config", false); // Open namespace in read-write modus
+    if (preferences.getUChar("M10_high_nav", NO_M10_GPS) != M10_HIGH_NAV_RATE) {
+      preferences.putUChar("M10_high_nav", M10_HIGH_NAV_RATE);
+    }
+    preferences.end(); // Sluit en sla direct op
+  }   
+  return result;       
+}
+
+/*
 int Set_M10_high_nav_rate(void){
   Serial.println("Set ublox UBX_M10 High Nav Rate");
   for(int i = 0; i < sizeof(UBX_M10_SET_HIGH_NAV_RATE); i++) {                        
@@ -765,6 +814,30 @@ int Set_M10_high_nav_rate(void){
   EEPROM.writeByte(1,M10_HIGH_NAV_RATE); EEPROM.commit();//always set EEPROM to default nav rate.....
   return config.M10_high_nav;
 }  
+*/
+int Set_M10_high_nav_rate(void){
+  Serial.println(F("Set ublox UBX_M10 High Nav Rate"));
+  
+  for(int i = 0; i < sizeof(UBX_M10_SET_HIGH_NAV_RATE); i++) {                        
+     Serial2.write( pgm_read_byte(UBX_M10_SET_HIGH_NAV_RATE+i) );
+  }
+  Ublox_serial2(500); 
+  
+  config.ublox_type = UBLOX_TYPE_UNKNOWN;
+  config.M10_high_nav = M10_HIGH_NAV_RATE;
+  
+  // --- PREFERENCES UPDATE ---
+  preferences.begin("gps_config", false); // Open namespace in read-write modus
+  
+  preferences.putUChar("ublox_type", UBLOX_TYPE_UNKNOWN);
+  preferences.putUChar("M10_high_nav", M10_HIGH_NAV_RATE);
+  
+  preferences.end(); // Sluit de namespace en sla direct permanent op (vervangt commit)
+  
+  return config.M10_high_nav;
+}
+
+
 
 /**
  * Bouwt een UBX-CFG-VALSET pakket om de minimale satelliethoek (elevation mask) in te stellen.

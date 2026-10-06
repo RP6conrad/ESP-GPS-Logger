@@ -74,10 +74,15 @@ Flip: horizontally
 #define STATSB 66  //asci code for B
 #define STATSC 67  //asci code for C
 #define STATSD 68  //asci code for D
-#define STATSE 69  //asci code for D
-#define STATSF 70  //asci code for D
-#define STATSG 71  //asci code for D
-
+#define STATSE 69  //asci code for E
+#define STATSF 70  //asci code for F
+#define STATSG 71  //asci code for G
+#define STATSH 72  //asci code for H
+#define STATSI 73  //asci code for I
+#define STATSJ 74  //asci code for J
+#define STATSK 75  //asci code for K
+#define STATSL 76  //asci code for L
+#define STATSL 77  //asci code for K
 
 
 #define SPEED1 49
@@ -114,6 +119,9 @@ extern bool Wifi_on;
 extern bool SoftAP_connection;
 extern bool GPS_Signal_OK;
 extern bool Shut_down_Save_session;
+extern bool auto_upload_time_out;
+extern volatile bool isUploading;
+extern bool apiKeyValid;
 extern float RTC_voltage_bat,alfa_window;
 extern float RTC_minimum_voltage_bat;
 extern  double delta_heading,ref_heading;
@@ -125,6 +133,8 @@ extern const char E_paper_version[16];
 extern const char SW_version[16];
 extern UBXMessage ubxMessage;
 extern int freeSpace;
+extern int RTC_screen_orientation;
+extern bool downloading_file;
 /*
 extern float Afstand_lijn;
 extern float Afstand_lijn2;
@@ -136,6 +146,7 @@ extern RTC_DATA_ATTR int offset;
 extern RTC_DATA_ATTR float RTC_distance;
 extern RTC_DATA_ATTR float RTC_avg_10s;
 extern RTC_DATA_ATTR float RTC_max_2s;
+extern RTC_DATA_ATTR float RTC_max_1s;
 //Simon
 extern RTC_DATA_ATTR short RTC_year;
 extern RTC_DATA_ATTR short RTC_month;
@@ -148,6 +159,7 @@ extern RTC_DATA_ATTR float RTC_500m;
 extern RTC_DATA_ATTR float RTC_30m;
 extern RTC_DATA_ATTR float RTC_1h;
 extern RTC_DATA_ATTR float RTC_mile;
+
 extern RTC_DATA_ATTR float RTC_R1_10s;
 extern RTC_DATA_ATTR float RTC_R2_10s;
 extern RTC_DATA_ATTR float RTC_R3_10s;
@@ -156,6 +168,7 @@ extern RTC_DATA_ATTR float RTC_R5_10s;
 extern RTC_DATA_ATTR float RTC_100m;
 extern RTC_DATA_ATTR float RTC_250m;
 extern RTC_DATA_ATTR int RTC_counter;
+
 //Simon
 extern GPS_speed M100;
 extern GPS_speed M250;

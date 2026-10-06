@@ -6,16 +6,19 @@ https://github.com/italocjs/ESP32_OTA_APMODE/blob/main/Main.cpp
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <Update.h>
-#include <EEPROM.h>
+//#include <EEPROM.h>
 #include <LITTLEFS.h>
 #include "Definitions.h"
 #include "OTA_html.h"
+#include <Preferences.h>
 //#include "ESP_functions.h"
 bool downloading_file = false;
 const char* host = "esp32";
 extern const char E_paper_version[16];
 extern RTC_DATA_ATTR float RTC_calibration_bat;
 extern RTC_DATA_ATTR int RTC_highest_read;
+extern Preferences preferences;
+extern char apiKey[MAX_API_KEY_LENGTH] ;
 WebServer server(80);
 
 //SD Card webinterface download section
@@ -493,6 +496,7 @@ void handleConfigUpload() {
     doc["logUBX"] = server.arg("logUBX").toInt();
     doc["logUBX_nav_sat"] = server.arg("logUBX_nav_sat").toInt();
     doc["logGPY"] = server.arg("logGPY").toInt();
+    doc["auto_upload_speedsurf"] = server.arg("auto_upload").toInt();
     doc["logGPX"] = server.arg("logGPX").toInt();
     doc["file_date_time"] = server.arg("file_date_time").toInt();
     doc["dynamic_model"] = server.arg("dynamic_model").toInt();
@@ -507,6 +511,9 @@ void handleConfigUpload() {
     doc["password"] = server.arg("password");
     doc["ssid2"] = server.arg("ssid2");
     doc["password2"] = server.arg("password2");
+    apiKeyShort = server.arg("apiKeyShort");
+    // Kopiëer de String veilig naar de globale char-array 'apiKey'
+    //apiKeyString.toCharArray(apiKey, MAX_API_KEY_LENGTH);
     doc["shutdown_voltage"] = serialized(server.arg("shutdown_voltage"));
     config.shutdown_voltage = server.arg("shutdown_voltage").toFloat();
     doc["track_distance"] = server.arg("track_distance").toInt();
@@ -517,22 +524,38 @@ void handleConfigUpload() {
 
     int Ublox_type = server.arg("GPS_Type").toInt();
     if(Ublox_type == 0xFF) {  //not in config.txt but saved in EEPROM !!!)
-      EEPROM.writeByte(0, Ublox_type);
-      EEPROM.commit();
+      //EEPROM.writeByte(0, Ublox_type);
+      //EEPROM.commit();
+      preferences.begin("gps_config", false); 
+      preferences.putUChar("ublox_type", Ublox_type);
+      preferences.end();
     }
     config.M10_high_nav = server.arg("M10_high_nav").toInt();
     if( config.M10_high_nav == SET_M10_HIGH_NAV) {  //not in config.txt but saved in EEPROM !!!)
-      EEPROM.writeByte(1,SET_M10_HIGH_NAV);
-      EEPROM.commit();
+      //EEPROM.writeByte(1,SET_M10_HIGH_NAV);
+      //EEPROM.commit();
+      preferences.begin("gps_config", false);
+      preferences.putUChar("M10_high_nav", SET_M10_HIGH_NAV);
+      preferences.end();
       //config.M10_high_nav=SET_M10_HIGH_NAV;
     }
-    // RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
+    apiKeyShort.trim();
+    if(apiKeyShort.length()>35){
+      preferences.begin("gps_config", false); // Open namespace in read-write modus
+      // Sla de string permanent op onder de naam "api_key"
+      preferences.putString("api_key", apiKeyShort);  
+      preferences.end(); // Sluit en sla fysiek op 
+      // Update direct de actieve globale char-array voor de uploadTask
+      apiKeyShort.toCharArray(apiKey, MAX_API_KEY_LENGTH);
+    }
+    /* RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
     if(abs(RTC_calibration_bat-config.cal_bat)>0.02){
       int new_calibration=FULLY_CHARGED_LIPO_VOLTAGE/config.cal_bat;
       Serial.printf("New calibration in EEPROM = %d, %f",new_calibration,config.cal_bat);
       EEPROM.writeInt(2,new_calibration);
       EEPROM.commit();
       } 
+    */  
     // Pretty Serialize JSON to file
     if (serializeJsonPretty(doc, file) == 0) {
       Serial.println(F("Failed to write to file"));

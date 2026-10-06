@@ -81,15 +81,16 @@ void Open_files(void) {
     }
   }
   strcpy(filename_NO_EXT, filenameERR);
-  filename_NO_EXT[strlen(filename_NO_EXT) - 3] = 0;  // move null-terminator three positions back
+  filename_NO_EXT[strlen(filename_NO_EXT) - 4 ] = 0;  // move null-terminator three positions back
   strcpy(filenameUBX, filename_NO_EXT);
-  strcat(filenameUBX, "ubx");
+  strcat(filenameUBX, ".ubx");
   strcpy(filenameSBP, filename_NO_EXT);
-  strcat(filenameSBP, "sbp");
+  strcat(filenameSBP, ".sbp");
   strcpy(filenameGPY, filename_NO_EXT);
-  strcat(filenameGPY, "gpy");
+  if(config.auto_upload_speedsurf){strcat(filenameGPY, "&.gpy");}//add $ to recognize .gpy file for auto-upload to speedsurf.app
+  else {strcat(filenameGPY, ".gpy"); }  
   strcpy(filenameGPX, filename_NO_EXT);
-  strcat(filenameGPX, "gpx");
+  strcat(filenameGPX, ".gpx");
   if (config.logUBX == true) {
     if (sdOK) ubxfile = SD_MMC.open(filenameUBX, FILE_APPEND);
     if (LITTLEFS_OK) ubxfile = LITTLEFS.open(filenameUBX, FILE_APPEND);
@@ -255,6 +256,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   }
   config.logSBP = doc["logSBP"] | 0;
   config.logGPY = doc["logGPY"] | 1;
+  config.auto_upload_speedsurf = doc["auto_upload_speedsurf"] | 0;
   config.logGPX = doc["logGPX"] | 0;
   config.file_date_time = doc["file_date_time"] | 1;
   config.dynamic_model = doc["dynamic_model"] | 0;  //sea model does not give a gps-fix if actual height is not on sea-level, better use model "portable"=0 !!!
