@@ -6,11 +6,11 @@ https://github.com/italocjs/ESP32_OTA_APMODE/blob/main/Main.cpp
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <Update.h>
-//#include <EEPROM.h>
 #include <LITTLEFS.h>
 #include "Definitions.h"
 #include "OTA_html.h"
 #include <Preferences.h>
+#include "esp_ota_ops.h"
 //#include "ESP_functions.h"
 bool downloading_file = false;
 const char* host = "esp32";
@@ -610,7 +610,7 @@ String style =
   "form{background:#fff;max-width:358px;margin:75px auto;padding:30px;border-radius:5px;text-align:center}"
   ".btn{background:#3498db;color:#fff;cursor:pointer}</style>";
 
-/* Login page */
+/* Login page *//*
 void makeLoginString(void) {
   String actual_SW = SW_version;
   String e_type = E_paper_version;
@@ -634,6 +634,42 @@ void makeLoginString(void) {
   loginIndex += F("</script>");
   loginIndex += style;
 }
+*/
+void makeLoginString(void) {
+  String actual_SW = SW_version;
+  String e_type = E_paper_version; 
+  // Haal de partitiegrootte op en bereken het aantal MB (met 2 decimalen)
+  String partition_size_str = "Onbekend";
+  const esp_partition_t* running_partition = esp_ota_get_running_partition();
+  if (running_partition != NULL) {
+    float size_mb = (float)running_partition->size / 1024.0 / 1024.0;
+    partition_size_str = String(size_mb, 2) + " MB";
+  }
+  loginIndex = "";
+  loginIndex += F("<form name=loginForm>");
+  loginIndex += F("<h1>ESP32 Login</h1>");
+  loginIndex += F("<h2>Actual firmware : ");
+  loginIndex += actual_SW + "</h2>";
+  // --- HIER IS DE PARTITIE GROOTTE TOEGEVOEGD ---
+  loginIndex += F("<h2>.bin has to fit in this Partition : ");
+  loginIndex += partition_size_str + "</h2>";
+  // ----------------------------------------------
+  loginIndex += F("<h2>");
+  loginIndex += e_type + "</h2>";
+  loginIndex += F("<input name=userid placeholder='User ID'> ");
+  loginIndex += F("<input name=pwd placeholder=Password type=Password> ");
+  loginIndex += F("<input type=submit onclick=check(this.form) class=btn value=Login></form>");
+  loginIndex += F("<script>");
+  loginIndex += F("function check(form) {");
+  loginIndex += F("if(form.userid.value=='admin' && form.pwd.value=='admin')");  //hier wordt het paswoord bepaald !!
+  loginIndex += F("{window.open('/serverIndex')}");
+  loginIndex += F("else");
+  loginIndex += F("{alert('Error Password or Username')}");
+  loginIndex += F("}");
+  loginIndex += F("</script>");
+  loginIndex += style;
+}
+
 /* Server Index Page */
 //https://github.com/italocjs/ESP32_OTA_APMODE/blob/main/Main.cpp
 String serverIndex =

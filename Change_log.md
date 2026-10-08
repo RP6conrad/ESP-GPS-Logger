@@ -1,4 +1,10 @@
-### Changes SW 7.0a
+### Changes SW 7.0c
+* Added actual partition size in firmware webpage
+* Bugfix naming &.gpy -> $.gpy
+* Bugfix calibration bat in configuration (was stuck on 1.83)
+* Watchdog now default functions
+* infobar removed vor statscreen F and G (top5 100m / NM)
+### Changes SW 7.0beta
 * Added auto-upload to speedsurf.app. If wlan connected, al *$.gpy files are uploaded to speedsurf if api key is present
 * api key is stored in preferences.h
 * gpio12 is now ouput for screen T5 Version 2.4

@@ -4,7 +4,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="V 7.0betaB74";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 6.06BN";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -59,8 +59,8 @@ int S10_previous_run;
 float alfa_window;
 float analog_mean=2000;
 float Mean_heading,heading_SD;
-int wdt_task0,wdt_task1;
-int max_count_wdt_task0;
+//int wdt_task0,wdt_task1;
+//int max_count_wdt_task0;
 int freeSpace;
 
 char apiKey[MAX_API_KEY_LENGTH] = ""; // Wordt nu dynamisch gevuld vanuit Preferences
@@ -468,7 +468,7 @@ void printLocalTime(){
   Serial.print("NTP Time = ");
   Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
 }  
-//For RTOS, the watchdog has to be triggered
+/*For RTOS, the watchdog has to be triggered
 void feedTheDog_Task0(){
   //esp_task_wdt_reset();
   TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
@@ -480,7 +480,7 @@ void feedTheDog_Task1(){
   TIMERG1.wdt_feed=1;                       // feed dog
   TIMERG1.wdt_wprotect=0;                   // write protect
 } 
-
+*/
 void OnWiFiEvent(WiFiEvent_t event){
   switch (event) {
     case SYSTEM_EVENT_STA_CONNECTED:

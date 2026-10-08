@@ -69,7 +69,7 @@
 #define uS_TO_S_FACTOR 1000000UL /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP  3600UL   //1800UL        /* Time ESP32 will go to sleep (no for 60min, only refresh screen if delta bat > 0.1 V) */
 #define WDT_TIMEOUT 120             //120 seconds WDT, opgelet zoeken naar ssid time-out<dan 10s !!!
-#define MAX_COUNT_WDT_TASK0 10   // 600 seconds max downloadtime for files !!!
+//#define MAX_COUNT_WDT_TASK0 10   // 600 seconds max downloadtime for files !!!
 #define MIN_numSV_FIRST_FIX 5     //alvorens start loggen, changed from 4 to 5 7.1/2023
 #define MAX_Sacc_FIRST_FIX 2     //alvorens start loggen
 #define MIN_numSV_GPS_SPEED_OK 4  //min aantal satellieten voor berekenen snelheid, anders 
@@ -79,5 +79,5 @@
 #define TIME_OUT_NAV_PVT 10000    //10s time out ubx nav-pvt msg before screen "TROUBLE" 
 #define FORMAT_LITTLEFS_IF_FAILED true
 #define MAX_API_KEY_LENGTH 50
-#define AUTO_UPLOAD_SPEEDSURF
+//#define AUTO_UPLOAD_SPEEDSURF
 #endif

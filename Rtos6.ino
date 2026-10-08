@@ -36,10 +36,6 @@
 #include "ESP_functions.h"
 #include <Preferences.h>
 
-//#include <WiFiClientSecure.h>
-//#include "freertos/FreeRTOS.h"
-//#include "freertos/semphr.h"
-
 const char* ssid = config.ssid; //WiFi SSID
 const char* password = config.password; //WiFi Password
 const char* ssid2 = config.ssid2; //WiFi SSID
@@ -211,6 +207,9 @@ void setup() {
         Serial.print(F("Print config file...")); 
         printFile(filename); 
   } 
+  RTC_calibration_bat= config.cal_bat;
+  Serial.print("RTC_calibration_bat = ");
+  Serial.println(RTC_calibration_bat);
   //Short_push12.begin(12,1); //gpio12 now as output for screen V2.4
   Short_push19.begin(19,0);
   Short_push39.begin(39,1);
@@ -338,6 +337,7 @@ void setup() {
 }
 
 void loop() { 
+  /*
   int wdt_task0_duration=millis()-wdt_task0;
   int wdt_task1_duration=millis()-wdt_task1;
   int task_timeout=(WDT_TIMEOUT -1)*1000;//1 second less then reboot timeout 
@@ -353,6 +353,9 @@ void loop() {
     }     
   if((wdt_task0_duration>task_timeout)&(!downloading_file)) Serial.println("Watchdog task0 triggered");
   if(wdt_task1_duration>task_timeout) Serial.println("Watchdog task1 triggered");
+  */
+  vTaskDelay(1);         //dit moet normaal volstaan voor watchdog
+  esp_task_wdt_reset();  //en dit... Al de rest opkuisen
   Update_bat();
   delay(100); 
 }
@@ -360,7 +363,9 @@ void loop() {
 void taskOne( void * parameter )
 {
  while(true){ 
-   wdt_task0=millis();
+   vTaskDelay(1);         //dit moet normaal volstaan voor watchdog
+   esp_task_wdt_reset();  //en dit... Al de rest opkuisen
+   //wdt_task0=millis();
    #if defined (GPIO12_ACTIF)
    if (Short_push12.Button_pushed())GPIO12_screen++;//toggle screen
    if (GPIO12_screen>config.gpio12_count)GPIO12_screen=0;
@@ -580,7 +585,9 @@ void taskOne( void * parameter )
 void taskTwo( void * parameter)
 {
   while(true){ 
-    wdt_task1=millis();
+    vTaskDelay(1);
+    esp_task_wdt_reset();
+    //wdt_task1=millis();
     if(config.Stat_screens_time!=0)stat_count++;//alleen auto switch stat screen als time>0 !!
     if (stat_count>config.screen_count)stat_count=0;//screen_count = 2
     Update_bat();
@@ -592,6 +599,7 @@ void taskTwo( void * parameter)
         Serial.println("RTC_OFF_screen");
         delay(2000);
         Shut_down();
+        esp_task_wdt_delete(NULL); //verwijder de watdchdog van deze taak
         vTaskDelete(NULL);//to avoid that screen get new updates !!!!
     }
     else if(low_bat_count>10){

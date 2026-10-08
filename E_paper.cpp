@@ -838,7 +838,8 @@ void Update_screen(int screen) {
   if (offset < 0) offset = 0;
   int cursor = 0;
   display.fillScreen(GxEPD_WHITE);
-  if ((screen != SPEED) & (screen != STATS5) & (screen != STATS8) & (screen != STATS9) & (screen != STATSA) & (screen != STATSD) & (screen != STATSE)) InfoBar(offset);
+  if ((screen != SPEED) & (screen != STATS5) & (screen != STATS8) & (screen != STATS9) & (screen != STATSA) & (screen != STATSD) &
+   (screen != STATSE)&(screen != STATSF)&(screen != STATSG)) InfoBar(offset);
   if (screen == BOOT_SCREEN) {
     update_delay = 1000;
     ESP_GPS_LOGO_40
