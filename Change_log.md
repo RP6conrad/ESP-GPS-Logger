@@ -1,3 +1,5 @@
+### Changes SW 7.0e
+* Changes from pull Ron : upload time out 10s -> 90s
 ### Changes SW 7.0d
 * Add "upload done" to wifi screen
 * Wait for IP adres before upload start
