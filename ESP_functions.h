@@ -658,27 +658,55 @@ void probeerUpload(const char* filepath) {
   client.print("Connection: close\r\n\r\n");
 
   // 1. Schrijf de start van de multipart body
-  client.print(bodyHeader);
-  
+  // Elke write wordt gecontroleerd: Content-Length belooft het hele bestand,
+  // dus een write die vastloopt (bv. een hotspot die grote pakketten laat vallen)
+  // laat de server anders eindeloos wachten op bytes die nooit komen.
+  size_t bytesSent = client.print(bodyHeader);
+  bool writeOk = (bytesSent == bodyHeader.length());
+
   // 2. Stream het bestand in brokken van 1024 bytes
-  uint8_t buffer[1024]; 
-  while (file.available()) {
+  uint8_t buffer[1024];
+  while (writeOk && file.available()) {
     size_t bytesRead = file.read(buffer, sizeof(buffer));
-    client.write(buffer, bytesRead);
+    size_t bytesWritten = client.write(buffer, bytesRead);
+    bytesSent += bytesWritten;
+    if (bytesWritten != bytesRead) writeOk = false;
     vTaskDelay(pdMS_TO_TICKS(2)); // Voorkomt dat de Watchdog Timer (WDT) ingrijpt op Kern 0
   }
   file.close();
-  
+
   // 3. Schrijf de afsluiting van de body
-  client.print(bodyFooter);
+  if (writeOk) {
+    size_t footerWritten = client.print(bodyFooter);
+    bytesSent += footerWritten;
+    if (footerWritten != bodyFooter.length()) writeOk = false;
+  }
+
+  if (!writeOk) {
+    // Breek af en laat zien hoe ver het kwam: blijft dit steeds op een paar KB
+    // steken, dan ligt het aan het netwerk (MTU), niet aan de server.
+    client.stop();
+    auto_upload_time_out = true;
+    Serial.print("[Upload] Verzenden vastgelopen na ");
+    Serial.print(bytesSent);
+    Serial.print(" van ");
+    Serial.print(totalLength);
+    Serial.println(" bytes. Bestand blijft behouden voor een volgende poging.");
+    isUploading = false;
+    return;
+  }
   client.flush();
 
   // 4. Response statuscode uitlezen
   int httpResponseCode = 0;
   unsigned long timeout = millis();
-  
-  // Wacht maximaal 10 seconden op het antwoord van de server
-  while (client.connected() && millis() - timeout < 10000) {
+
+  // Wacht maximaal 90 seconden op het antwoord van de server: speedsurf.app
+  // berekent en bewaart de sessie (metrics, spot, wind, getij) voordat het
+  // antwoordt, en dat duurt bij een lange sessie tot ongeveer een minuut.
+  // Met 10 s ging de ESP te vroeg uit van een time-out en stuurde het bestand
+  // een tweede keer.
+  while (client.connected() && millis() - timeout < 90000) {
     if (client.available()) {
       String line = client.readStringUntil('\n');
       
