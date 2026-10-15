@@ -505,6 +505,33 @@ void OnWiFiEvent(WiFiEvent_t event){
     default: break;
   }
 }
+// === REDEN VAN EEN WI-FI-ONDERBREKING ===
+// ESP-IDF geeft bij elke onderbreking een redencode mee. Zonder die code is
+// niet te zien of de telefoon de ESP afmeldt (8, 3) of de ESP de telefoon
+// kwijtraakt (200). De core logt hem zelf alleen bij Core Debug Level Warning.
+const char* wifiReasonNaam(uint8_t reason) {
+  switch (reason) {
+    case WIFI_REASON_AUTH_EXPIRE:            return "AUTH_EXPIRE";
+    case WIFI_REASON_AUTH_LEAVE:             return "AUTH_LEAVE";
+    case WIFI_REASON_ASSOC_EXPIRE:           return "ASSOC_EXPIRE";
+    case WIFI_REASON_ASSOC_LEAVE:            return "ASSOC_LEAVE";
+    case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT: return "4WAY_HANDSHAKE_TIMEOUT";
+    case WIFI_REASON_BEACON_TIMEOUT:         return "BEACON_TIMEOUT";
+    case WIFI_REASON_NO_AP_FOUND:            return "NO_AP_FOUND";
+    case WIFI_REASON_AUTH_FAIL:              return "AUTH_FAIL";
+    case WIFI_REASON_ASSOC_FAIL:             return "ASSOC_FAIL";
+    case WIFI_REASON_HANDSHAKE_TIMEOUT:      return "HANDSHAKE_TIMEOUT";
+    case WIFI_REASON_CONNECTION_FAIL:        return "CONNECTION_FAIL";
+    default:                                 return "zie esp_wifi_types.h";
+  }
+}
+void OnWiFiDisconnectReason(system_event_t *event) {
+  uint8_t reason = event->event_info.disconnected.reason;
+  Serial.print("[WiFi] Verbinding verbroken, reden ");
+  Serial.print(reason);
+  Serial.print(" - ");
+  Serial.println(wifiReasonNaam(reason));
+}
 
 /*Eenmaal flankdetectie indien GPIO langer dan push_time gedrukt
 * Ook variabele die dan long_pulse_time hoog blijft
@@ -594,8 +621,13 @@ void uploadTask(void * pvParameters) {
               file.close(); // Sluit handlers direct vóór de upload start
               root.close();
               
-              // Start de HTTPS multipart upload procedure
+              // Start de HTTPS multipart upload procedure. Zolang de upload
+              // loopt geen Wi-Fi-energiebesparing (modem sleep): met sommige
+              // telefoonhotspots valt de verbinding anders weg tijdens het
+              // versturen. Daarna weer aan, de standaard in station-modus.
+              WiFi.setSleep(false);
               probeerUpload(fullPath.c_str());
+              WiFi.setSleep(true);
               
               break; // Verbreek de lus om de SD-kaart direct vrij te geven
             }

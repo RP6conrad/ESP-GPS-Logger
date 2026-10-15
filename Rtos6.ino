@@ -227,6 +227,7 @@ void setup() {
   Serial.print("Actual CPU freq before Wifi.begin(): "); Serial.println (getCpuFrequencyMhz());
   // Koppel de event handler
   WiFi.onEvent(OnWiFiEvent);
+  WiFi.onEvent(OnWiFiDisconnectReason, SYSTEM_EVENT_STA_DISCONNECTED);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   Serial.print("T5 MAC adress: ");
