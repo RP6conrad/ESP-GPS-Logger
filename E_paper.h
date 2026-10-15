@@ -122,6 +122,7 @@ extern bool Shut_down_Save_session;
 extern bool auto_upload_time_out;
 extern volatile bool isUploading;
 extern bool upload_OK;
+extern bool upload_file_rejected;
 extern bool apiKeyValid;
 extern float RTC_voltage_bat,alfa_window;
 extern float RTC_minimum_voltage_bat;

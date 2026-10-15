@@ -72,6 +72,7 @@ volatile bool isUploading = false;         // Geeft aan of er een actieve upload
 bool apiKeyValid = true;                   // Wordt false bij een 401 of 403 fout
 bool auto_upload_time_out = false;
 bool upload_OK = false;                     //wordt true indien upload geslaagd is
+bool upload_file_rejected = false;          // Wordt true bij een 400, 413 of 422: de server keurt het bestand af
 TaskHandle_t UploadTaskHandle = NULL;      // De handle waarmee we de taak kunnen beheren of deleten
 SemaphoreHandle_t fileSystemMutex = NULL;  // Voorkomt dat de GPS-logger en de upload-taak tegelijk de SD-kaart gebruiken
 
@@ -559,6 +560,7 @@ void Search_for_wifi(void) {
 void uploadTask(void * pvParameters);
 void probeerUpload(const char* filepath);
 void gemarkeerdAlsVerzonden(const char* filepath);
+void gemarkeerdAlsAfgekeurd(const char* filepath);
 #include <WiFiClientSecure.h>
 void uploadTask(void * pvParameters) {
    // Een vlag om bij te houden of we in de vorige loop al stabiel verbonden waren
@@ -620,6 +622,7 @@ void probeerUpload(const char* filepath) {
   isUploading = true; 
   auto_upload_time_out = false;
   upload_OK = false;
+  upload_file_rejected = false;
   size_t fileSize = file.size();
   
   WiFiClientSecure client; // Gebruik van de beveiligde TLS client
@@ -739,7 +742,18 @@ void probeerUpload(const char* filepath) {
     Serial.println(httpResponseCode);
     Serial.println("API-sleutel is ongeldig. Uploads permanent gestopt!");
     // Hier kun je jouw E-paper foutscherm aanroepen
-  } 
+  }
+  else if (httpResponseCode == 400 || httpResponseCode == 413 || httpResponseCode == 422) {
+    // De server heeft het hele bestand gezien en keurt het af: geen sessie erin
+    // (422), te groot (413) of geen geldig bestand (400). Een volgende poging
+    // geeft hetzelfde antwoord, dus het bestand krijgt een merkteken en de scan
+    // gaat door met de rest. Zonder dat ging hetzelfde bestand elke 10 seconden
+    // opnieuw, en blokkeerde het vooraan in de map alle andere bestanden.
+    upload_file_rejected = true;
+    Serial.println("[Upload] Bestand afgekeurd door de server, code: ");
+    Serial.println(httpResponseCode);
+    gemarkeerdAlsAfgekeurd(filepath);
+  }
   else {
     auto_upload_time_out = true;
     Serial.println("[Upload] Serverfout of timeout (");
@@ -771,7 +785,26 @@ void gemarkeerdAlsVerzonden(const char* filepath) {
   } else {
     Serial.println("[Upload] Fout: Kon de extensie van het bestand niet aanpassen.");
   }
-  
+
+}
+// === BESTAND HERNOEMEN VAN '$.gpy' NAAR '!.gpy' (AFGEKEURD DOOR DE SERVER) ===
+// Het bestand blijft op de kaart en in de bestandslijst, maar wordt niet meer
+// aangeboden. Het '!' is een keuze; elk teken dat niet '$' is doet het werk.
+void gemarkeerdAlsAfgekeurd(const char* filepath) {
+  String oudPad = String(filepath);
+  if (!oudPad.endsWith("$.gpy")) return;
+  String nieuwPad = oudPad.substring(0, oudPad.length() - 5) + "!.gpy";
+
+  if (SD_MMC.exists(nieuwPad.c_str())) {
+    SD_MMC.remove(nieuwPad.c_str());
+  }
+
+  if (SD_MMC.rename(filepath, nieuwPad.c_str())) {
+    Serial.println("[Upload] Afgekeurd bestand hernoemd naar: ");
+    Serial.println(nieuwPad);
+  } else {
+    Serial.println("[Upload] Fout: Kon het afgekeurde bestand niet hernoemen.");
+  }
 }
 // === VERWIJDER DE TAAK PERMANENT VAN KERN 0 BIJ START LOGGEN ===
 void Delete_uploadTask(void) {
