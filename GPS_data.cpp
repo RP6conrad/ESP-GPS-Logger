@@ -1,4 +1,3 @@
-//#include <EEPROM.h>
 #include "GPS_data.h"
 #include "Ublox.h"
 #include "Definitions.h"
@@ -653,12 +652,9 @@ int setupGPS(void) {
               }
      delay(2);   //was delay (1)
      }
-  //config.ublox_type = EEPROM.readByte(0);
   if(config.ublox_type==0xFF) {
     Auto_detect_ublox();//only test for ublox type and baudrate if unknown in configuration
     if(config.ublox_type!=UBLOX_TYPE_UNKNOWN){
-      //EEPROM.writeByte(0, config.ublox_type);
-      //EEPROM.commit();
       preferences.begin("gps_config", false);
       preferences.putUChar("ublox_type", config.ublox_type); 
       preferences.end();

@@ -467,9 +467,6 @@ void handleConfigUpload() {
     //gnss 2 = GPS + GLONASS (default M8 ROM 2)
     //gnss 1 = GPS + GALILEO (not working for M8)
     //gnss 0 = GPS + BEIDOU
-    //EEPROM.readInt(2,RTC_highest_read);
-    //RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
-    //doc["cal_bat"] = RTC_calibration_bat;
     doc["cal_bat"] = serialized(server.arg("cal_bat"));
     config.cal_bat = server.arg("cal_bat").toFloat();
     doc["cal_speed"] = serialized(server.arg("cal_speed"));
@@ -524,16 +521,12 @@ void handleConfigUpload() {
 
     int Ublox_type = server.arg("GPS_Type").toInt();
     if(Ublox_type == 0xFF) {  //not in config.txt but saved in EEPROM !!!)
-      //EEPROM.writeByte(0, Ublox_type);
-      //EEPROM.commit();
       preferences.begin("gps_config", false); 
       preferences.putUChar("ublox_type", Ublox_type);
       preferences.end();
     }
     config.M10_high_nav = server.arg("M10_high_nav").toInt();
     if( config.M10_high_nav == SET_M10_HIGH_NAV) {  //not in config.txt but saved in EEPROM !!!)
-      //EEPROM.writeByte(1,SET_M10_HIGH_NAV);
-      //EEPROM.commit();
       preferences.begin("gps_config", false);
       preferences.putUChar("M10_high_nav", SET_M10_HIGH_NAV);
       preferences.end();
@@ -547,15 +540,7 @@ void handleConfigUpload() {
       preferences.end(); // Sluit en sla fysiek op 
       // Update direct de actieve globale char-array voor de uploadTask
       apiKeyShort.toCharArray(apiKey, MAX_API_KEY_LENGTH);
-    }
-    /* RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
-    if(abs(RTC_calibration_bat-config.cal_bat)>0.02){
-      int new_calibration=FULLY_CHARGED_LIPO_VOLTAGE/config.cal_bat;
-      Serial.printf("New calibration in EEPROM = %d, %f",new_calibration,config.cal_bat);
-      EEPROM.writeInt(2,new_calibration);
-      EEPROM.commit();
-      } 
-    */  
+    } 
     // Pretty Serialize JSON to file
     if (serializeJsonPretty(doc, file) == 0) {
       Serial.println(F("Failed to write to file"));

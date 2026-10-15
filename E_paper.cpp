@@ -877,6 +877,7 @@ void Update_screen(int screen) {
     topLeft_Title("ESP-GPS connect");
     display.printf("SW : %s\n", SW_version); 
     if(isUploading){display.setCursor(offset,46);display.print("Uploading...");};
+    if(upload_OK){display.setCursor(offset,46);display.print("Upload done");};
     if(!apiKeyValid){display.setCursor(offset,46);display.print("API Key not valid");};
     if(auto_upload_time_out){display.setCursor(offset,46);display.print("Upload time-out!");};
     //DEVICE_BOOT_LOG(2);

@@ -1,6 +1,5 @@
 #include "Ublox.h"
 #include "Definitions.h"
-//#include <EEPROM.h>
 int Time_Set_OK;
 bool Nav_rate_NACK = false;
 bool High_nav_rate_ACK = false;
@@ -728,7 +727,6 @@ int Auto_detect_ublox(){
     Serial.println(ubxMessage.monVER.hwVersion[3]) ; 
     if(Ublox_M10==true){
       config.M10_high_nav=Check_M10_nav_rate();
-      //EEPROM.write(1,config.M10_high_nav);EEPROM.commit();
       preferences.begin("gps_config", false);
       config.M10_high_nav=Check_M10_nav_rate();
       preferences.putUChar("M10_high_nav",config.M10_high_nav);
@@ -736,31 +734,7 @@ int Auto_detect_ublox(){
       }
     return config.ublox_type;  
 }
-/*
-int Check_M10_nav_rate(void){
-  int result=NO_M10_GPS;
-  check_M10_nav_rate=true;
-  Serial.println("Get M10 NAV Rate ");
-    for(int i = 0; i < sizeof(UBX_M10_GET_NAV_RATE); i++) {                        
-    Serial2.write( pgm_read_byte(UBX_M10_GET_NAV_RATE+i) );
-    }
-  Nav_rate_NACK = false;
-  High_nav_rate_ACK = false;      
-  Ublox_serial2(500);
-  check_M10_nav_rate = false;
-  if(Nav_rate_NACK){ 
-    Serial.println("M10 Default Nav Rate");
-    result=M10_DEFAULT_NAV;
-    if(EEPROM.readByte(1)!=M10_DEFAULT_NAV)EEPROM.writeByte(1,M10_DEFAULT_NAV); EEPROM.commit();
-  }
-  if(High_nav_rate_ACK){
-    Serial.println("M10 High Nav Rate set");
-    result=M10_HIGH_NAV_RATE;
-    if(EEPROM.readByte(1)!=M10_HIGH_NAV_RATE)EEPROM.writeByte(1,M10_HIGH_NAV_RATE); EEPROM.commit();
-    } 
-    return result;       
-  }
-*/  
+
 int Check_M10_nav_rate(void){
   int result = NO_M10_GPS;
   check_M10_nav_rate = true;
@@ -801,20 +775,6 @@ int Check_M10_nav_rate(void){
   return result;       
 }
 
-/*
-int Set_M10_high_nav_rate(void){
-  Serial.println("Set ublox UBX_M10 High Nav Rate");
-  for(int i = 0; i < sizeof(UBX_M10_SET_HIGH_NAV_RATE); i++) {                        
-     Serial2.write( pgm_read_byte(UBX_M10_SET_HIGH_NAV_RATE+i) );
-     }
-  Ublox_serial2(500); 
-  config.ublox_type= UBLOX_TYPE_UNKNOWN;
-  config.M10_high_nav= M10_HIGH_NAV_RATE;
-  EEPROM.writeByte(0,UBLOX_TYPE_UNKNOWN);
-  EEPROM.writeByte(1,M10_HIGH_NAV_RATE); EEPROM.commit();//always set EEPROM to default nav rate.....
-  return config.M10_high_nav;
-}  
-*/
 int Set_M10_high_nav_rate(void){
   Serial.println(F("Set ublox UBX_M10 High Nav Rate"));
   

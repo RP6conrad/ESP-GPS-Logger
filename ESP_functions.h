@@ -4,7 +4,7 @@
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
 String IP_adress="0.0.0.0";
-const char SW_version[16]="V 6.06BN";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 7.0dB74";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -67,9 +67,11 @@ char apiKey[MAX_API_KEY_LENGTH] = ""; // Wordt nu dynamisch gevuld vanuit Prefer
 String apiKeyShort = "" ;
 const char* uploadUrl = "https://speedsurf.app/api/device/upload";
 // Globale variabelen en handles voor de RTOS upload-taak
+volatile bool ipGekregen = false; // Wordt true zodra we écht een IP-adres hebben
 volatile bool isUploading = false;         // Geeft aan of er een actieve upload bezig is
 bool apiKeyValid = true;                   // Wordt false bij een 401 of 403 fout
 bool auto_upload_time_out = false;
+bool upload_OK = false;                     //wordt true indien upload geslaagd is
 TaskHandle_t UploadTaskHandle = NULL;      // De handle waarmee we de taak kunnen beheren of deleten
 SemaphoreHandle_t fileSystemMutex = NULL;  // Voorkomt dat de GPS-logger en de upload-taak tegelijk de SD-kaart gebruiken
 
@@ -233,22 +235,10 @@ void print_wakeup_reason(){
                                  break;
     case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); 
                                  break;
-    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer");   
-                                  /*
-                                  if((int)analog_mean>(RTC_highest_read+TOLERANCE)){ 
-                                    RTC_highest_read=(int)analog_mean; 
-                                    EEPROM.writeInt(2,RTC_highest_read) ;
-                                    EEPROM.commit();
-                                    RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
-                                    Serial.print("New RTC_highest_read = ");
-                                    Serial.println(RTC_highest_read);
-                                    } 
-                                  */    
+    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer");     
                                   if(abs(RTC_voltage_bat-RTC_old_voltage_bat)>MINIMUM_VOLTAGE_CHANGE){
                                     Sleep_screen(RTC_SLEEP_screen);
                                     display.powerDown();
-                                   // delay(500);
-                                    //digitalWrite(HOLD_PIN,LOW);
                                     RTC_old_voltage_bat=RTC_voltage_bat;
                                     }
                                   if(RTC_voltage_bat<RTC_minimum_voltage_bat){
@@ -490,11 +480,13 @@ void OnWiFiEvent(WiFiEvent_t event){
       break;
     case SYSTEM_EVENT_STA_DISCONNECTED:         //test
       Serial.println("ESP32 disconnected to WIFI");
+      ipGekregen = false;
       //SoftAP_connection=false;
       break;
     case SYSTEM_EVENT_STA_GOT_IP://  @this event no IP !!!         ARDUINO__EVENT_STA_CONNECTED:
       Serial.println("ESP32 Connected to WiFi Network");
       IP_adress =  WiFi.localIP().toString();
+      ipGekregen = true;
       break;
     case SYSTEM_EVENT_AP_START:
       WiFi.softAPConfig(local_IP, gateway, subnet);  
@@ -569,11 +561,18 @@ void probeerUpload(const char* filepath);
 void gemarkeerdAlsVerzonden(const char* filepath);
 #include <WiFiClientSecure.h>
 void uploadTask(void * pvParameters) {
+   // Een vlag om bij te houden of we in de vorige loop al stabiel verbonden waren
+  bool wasConnected = false; 
   for(;;) {
     // Alleen scannen als er Wi-Fi verbinding is, de API-sleutel geldig is én de GPS NIET logt
-    if (WiFi.status() == WL_CONNECTED && apiKeyValid) {
-      Serial.println("[Upload] WL connected! Start scan...");
-      
+    if (WiFi.status() == WL_CONNECTED && apiKeyValid&& ipGekregen) {
+       // FIX: Als we net pas verbonden zijn, wacht dan 5 seconden tot de IP-stack 100% stabiel is
+      if (!wasConnected) {
+        Serial.println("[Upload] Wi-Fi net verbonden. Wacht 5 seconden op stabiele IP/DHCP...");
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        wasConnected = true; // Zet op true zodat we de volgende loop direct doorgaan
+        continue;            // Spring direct naar de volgende loop-iteratie om de status opnieuw te checken
+      }
       // Vraag toegang tot de SD-kaart via de Mutex
       if (xSemaphoreTake(fileSystemMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         
@@ -620,6 +619,7 @@ void probeerUpload(const char* filepath) {
   // === SET UPLOAD MERKER OP TRUE ===
   isUploading = true; 
   auto_upload_time_out = false;
+  upload_OK = false;
   size_t fileSize = file.size();
   
   WiFiClientSecure client; // Gebruik van de beveiligde TLS client
@@ -701,7 +701,7 @@ void probeerUpload(const char* filepath) {
   if (httpResponseCode >= 200 && httpResponseCode < 300) {
     Serial.println("[Upload] Geslaagd! HTTPS code: ");
     Serial.println(httpResponseCode);
-    
+    upload_OK = true;
     // Hernoem het bestand van $.gpy naar .gpy zodat het gemarkeerd staat
     gemarkeerdAlsVerzonden(filepath);
   } 
@@ -755,5 +755,7 @@ void Delete_uploadTask(void) {
     Serial.println("[GPS Task] Upload-manager PERMANENT VERWIJDERD. RAM is vrijgegeven.");
   }
 }
+
+
 
 #endif

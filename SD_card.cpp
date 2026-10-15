@@ -300,7 +300,6 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   RTC_Board_Logo = config.Board_Logo;  //copy RTC memory !!
   RTC_Sail_Logo = config.Sail_Logo;    //copy to RTC memory !!
   RTC_calibration_bat = config.cal_bat;
-  //config.cal_bat=RTC_calibration_bat; //stored in EEPROM !!!
   calibration_speed = config.cal_speed / 1000;  //3.6=km/h, 1.94384449 = knots, speed is now in mm/s
   //time_out_nav_pvt=(1000/config.sample_rate+75);//max time out = 175 ms
   RTC_SLEEP_screen = config.sleep_off_screen % 10;

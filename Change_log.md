@@ -1,3 +1,7 @@
+### Changes SW 7.0d
+* Add "upload done" to wifi screen
+* Wait for IP adres before upload start
+* Add 5 sec waiting time before auto upload start
 ### Changes SW 7.0c
 * Added actual partition size in firmware webpage
 * Bugfix naming &.gpy -> $.gpy

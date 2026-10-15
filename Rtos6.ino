@@ -28,7 +28,6 @@
 #include <lwip/apps/sntp.h>
 #include <esp32-hal.h>
 #include <time.h>
-//#include <EEPROM.h>
 #include "Definitions.h"
 #include <LittleFS.h>
 #include "rom/rtc.h"
@@ -42,7 +41,7 @@ const char* ssid2 = config.ssid2; //WiFi SSID
 const char* password2 = config.password2; //WiFi Password
 const char* soft_ap_ssid = "ESP32AP"; //accespoint ssid
 const char* soft_ap_password = "password"; //accespoint password
-#define MAX_API_KEY_LENGTH 60
+//#define MAX_API_KEY_LENGTH 60
 //char apiKey[MAX_API_KEY_LENGTH] = ""; // Globale char-array voor je HTTPS-key
 Preferences preferences;
 bool ap_mode=false;
@@ -93,17 +92,7 @@ void setup() {
    digitalWrite(12, HIGH);
   #endif
   pinMode(2, INPUT_PULLUP);//for SD_MMC mode....
-  /*
-  EEPROM.begin(EEPROM_SIZE);
-  config.ublox_type = EEPROM.readByte(0);Serial.print("EEPROM ublox_type=");Serial.println(config.ublox_type);
-  config.M10_high_nav=EEPROM.readByte(1);
- // Serial.println("Force setting to autodetect!");
-//  EEPROM.writeByte(0,255);EEPROM.commit();
-//  config.ublox_type=255;
-  if(config.M10_high_nav>3){config.M10_high_nav=0;EEPROM.writeByte(1,NO_M10_GPS);EEPROM.commit();} 
-  Serial.print("EEPROM M10_high_nav=");Serial.println(config.M10_high_nav);
-  */
-    // Start Preferences in read-only modus (false)
+  // Start Preferences in read-only modus (false)
   preferences.begin("gps_config", false);
   // Lees de waarden uit. Als een waarde nog niet bestaat in de NVS (bijv. eerste start),
   // wordt automatisch de standaardwaarde (het 2e argument) geladen.
@@ -144,16 +133,8 @@ void setup() {
   Serial.println("setup Serial");
   Serial.println("Serial Txd is on pin: "+String(TX));
   Serial.println("Serial Rxd is on pin: "+String(RX));
-  /*
-  RTC_highest_read=EEPROM.readInt(2);
-  if((RTC_highest_read<STARTVALUE_HIGHEST_READ)|(RTC_highest_read>MAXVALUE_HIGHEST_READ)){
-    EEPROM.writeInt(2,STARTVALUE_HIGHEST_READ) ;
-    EEPROM.commit();
-    RTC_highest_read=STARTVALUE_HIGHEST_READ;
-    Serial.println("Eeprom highest read set to starting value !!");
-    }
-  */  
-  RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;
+ 
+  RTC_calibration_bat= FULLY_CHARGED_LIPO_VOLTAGE/RTC_highest_read;//???
   Serial.print("RTC_calibration_bat EEPROM = ");
   Serial.println(RTC_calibration_bat);
   Serial.println("Configuring WDT...");
@@ -244,6 +225,7 @@ void setup() {
   setCpuFrequencyMhz(240);
   Update_screen(BOOT_SCREEN);
   Serial.print("Actual CPU freq before Wifi.begin(): "); Serial.println (getCpuFrequencyMhz());
+  // Koppel de event handler
   WiFi.onEvent(OnWiFiEvent);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
@@ -320,8 +302,8 @@ void setup() {
   // 1. Maak de Mutex aan voor de beveiliging van de SD-kaart
   fileSystemMutex = xSemaphoreCreateMutex();
 #ifdef AUTO_UPLOAD_SPEEDSURF
-  // 2. Start de upload-taak op KERN 0
-  if (fileSystemMutex != NULL) {
+  // 2. Start de upload-taak op KERN 0 if set in config
+  if ((fileSystemMutex != NULL)&(config.auto_upload_speedsurf)) {
     xTaskCreatePinnedToCore(
       uploadTask,             // De functie die hieronder is gedefinieerd
       "UploadTask",           // Naam van de taak (voor debugging)

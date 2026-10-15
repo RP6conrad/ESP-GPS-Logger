@@ -75,9 +75,8 @@
 #define MIN_numSV_GPS_SPEED_OK 4  //min aantal satellieten voor berekenen snelheid, anders 
 #define MAX_Sacc_GPS_SPEED_OK 1   //max waarde Sacc voor berekenen snelheid, anders 0
 #define MAX_GPS_SPEED_OK 40       //max snelheid in m/s voor berekenen snelheid, anders 0
-#define EEPROM_SIZE 32            //use 8 bytes in eeprom for saving type of ublox
 #define TIME_OUT_NAV_PVT 10000    //10s time out ubx nav-pvt msg before screen "TROUBLE" 
 #define FORMAT_LITTLEFS_IF_FAILED true
 #define MAX_API_KEY_LENGTH 50
-//#define AUTO_UPLOAD_SPEEDSURF
+#define AUTO_UPLOAD_SPEEDSURF
 #endif
