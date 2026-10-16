@@ -367,7 +367,25 @@ void taskOne( void * parameter )
     if (stat_count>config.screen_count)stat_count=0;
     config.field_actual=config.speed_screen[actual_speed_field];
     Field_choice=((Short_push39.long_pulse|Short_push19.long_pulse)&(config.Stat_screens_time!=0));//10s wachttijd voor menu field keuze....
-   if((WiFi.status() != WL_CONNECTED)&(Wifi_on==true)&(SoftAP_connection==false)){
+   // Valt de Wi-Fi weg terwijl er nog een bestand klaarstaat voor speedsurf.app,
+   // geef de verbinding dan WIFI_HERSTEL_MS de tijd om terug te komen (de core
+   // verbindt zelf opnieuw na o.a. reden 2 en 200) in plaats van de Wi-Fi meteen
+   // uit te zetten: via een telefoonhotspot valt de verbinding soms even weg, en
+   // een tweede poging lukt dan meestal wel. Zonder wachtrij: zoals altijd.
+   static unsigned long wifiWegSinds = 0;
+   bool wifiHerstel = false;
+   if((WiFi.status() != WL_CONNECTED)&(Wifi_on==true)&(SoftAP_connection==false)&uploadWachtrij){
+        if (wifiWegSinds == 0) {
+          wifiWegSinds = millis();
+          Serial.println("[WiFi] Weg terwijl er nog een upload klaarstaat, opnieuw verbinden...");
+          WiFi.reconnect();
+        }
+        wifiHerstel = (millis() - wifiWegSinds) < WIFI_HERSTEL_MS;
+        if (!wifiHerstel) Serial.println("[WiFi] Niet teruggekomen, upload volgende keer");
+        }
+   else if (WiFi.status() == WL_CONNECTED) wifiWegSinds = 0;
+   if (wifiHerstel) { vTaskDelay(pdMS_TO_TICKS(100)); continue; }  //nog geen GPS: die start pas als de Wi-Fi echt uit gaat
+   if((WiFi.status() != WL_CONNECTED)&(Wifi_on==true)&(SoftAP_connection==false)&!wifiHerstel){
         Serial.println("No Wifi connection !");
         server.close();
         WiFi.disconnect(true);

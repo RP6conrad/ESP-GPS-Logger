@@ -79,4 +79,5 @@
 #define FORMAT_LITTLEFS_IF_FAILED true
 #define MAX_API_KEY_LENGTH 50
 #define AUTO_UPLOAD_SPEEDSURF
+#define WIFI_HERSTEL_MS 60000   //zo lang mag de Wi-Fi terugkomen als er nog een upload klaarstaat
 #endif
