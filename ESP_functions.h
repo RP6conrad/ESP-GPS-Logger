@@ -69,6 +69,7 @@ const char* uploadUrl = "https://speedsurf.app/api/device/upload";
 // Globale variabelen en handles voor de RTOS upload-taak
 volatile bool ipGekregen = false; // Wordt true zodra we écht een IP-adres hebben
 volatile bool isUploading = false;         // Geeft aan of er een actieve upload bezig is
+volatile bool uploadWachtrij = false;      // Er staat nog een $.gpy klaar: Wi-Fi niet opgeven bij een korte onderbreking
 bool apiKeyValid = true;                   // Wordt false bij een 401 of 403 fout
 bool auto_upload_time_out = false;
 bool upload_OK = false;                     //wordt true indien upload geslaagd is
@@ -606,6 +607,7 @@ void uploadTask(void * pvParameters) {
       if (xSemaphoreTake(fileSystemMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         
         File root = SD_MMC.open("/");
+        bool gevonden = false;
         if (root) {
           File file = root.openNextFile();
           
@@ -614,6 +616,8 @@ void uploadTask(void * pvParameters) {
             
             // Controleer of het bestand eindigt op $.gpy
             if (filename.endsWith("$.gpy")) {
+              gevonden = true;
+              uploadWachtrij = apiKeyValid;  // al vóór de upload: valt de Wi-Fi tijdens deze upload weg, dan herstellen
               String fullPath = filename;
               Serial.println("[Upload Task] Gevonden bestand voor HTTPS upload: ");
               Serial.println(fullPath);
@@ -635,6 +639,9 @@ void uploadTask(void * pvParameters) {
           }
           if (root) root.close();
         }
+        // Na een geslaagde upload is het bestand hernoemd: de volgende scan vindt
+        // dan niets meer en de wachtrij is leeg. Mislukt, dan blijft hij staan.
+        uploadWachtrij = gevonden && apiKeyValid;
         
         // Geef de SD-kaart weer vrij
         xSemaphoreGive(fileSystemMutex);
@@ -720,6 +727,12 @@ void probeerUpload(const char* filepath) {
   if (!writeOk) {
     // Breek af en laat zien hoe ver het kwam: blijft dit steeds op een paar KB
     // steken, dan ligt het aan het netwerk (MTU), niet aan de server.
+    // Waarom de write faalde: -80 (0x50) is een TCP-reset van de andere kant,
+    // gezien via telefoonhotspots terwijl de Wi-Fi zelf verbonden bleef.
+    char tlsFout[100] = "";
+    int tlsCode = client.lastError(tlsFout, sizeof(tlsFout));
+    Serial.printf("[Upload] Write faalde: fout %d (%s), Wi-Fi status %d, RSSI %d\n",
+                  tlsCode, tlsCode < 0 ? tlsFout : "socket", WiFi.status(), WiFi.RSSI());
     client.stop();
     auto_upload_time_out = true;
     Serial.print("[Upload] Verzenden vastgelopen na ");
