@@ -128,6 +128,10 @@ void setup() {
   preferences.end();
 
   //print_reset_reason(rtc_get_reset_reason(0));//Find out the reset reason, if no SW-reset-> back to deep sleep !
+  // Waarom de ESP opnieuw startte: een inzakkende voeding tijdens het zenden
+  // geeft BROWNOUT (9), een gewone start POWERON (1), slaap DEEPSLEEP (8).
+  { esp_reset_reason_t rr = esp_reset_reason();
+    Serial.printf("Reset reason: %d%s\n", rr, rr == ESP_RST_BROWNOUT ? " (BROWNOUT)" : rr == ESP_RST_PANIC ? " (PANIC)" : rr == ESP_RST_TASK_WDT || rr == ESP_RST_INT_WDT || rr == ESP_RST_WDT ? " (WATCHDOG)" : ""); }
   if(reset_boot==true) {setCpuFrequencyMhz(80);}
   print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
   Serial.println("setup Serial");
@@ -349,6 +353,15 @@ void taskOne( void * parameter )
    vTaskDelay(1);         //dit moet normaal volstaan voor watchdog
    esp_task_wdt_reset();  //en dit... Al de rest opkuisen
    //wdt_task0=millis();
+   // Tijdens een upload elke halve seconde: bytes bij TCP, RSSI en vrije heap.
+   // De laatste regel vóór "disconnected" is de echte RSSI op dat moment (na
+   // de drop geeft WiFi.RSSI() 0), en bytes die stilstaan terwijl de Wi-Fi
+   // nog verbonden is, laten zien of de link al stil was vóór de drop.
+   static unsigned long uploadLog = 0;
+   if (isUploading && (millis() - uploadLog) >= 500) {
+     uploadLog = millis();
+     Serial.printf("[Upload] %u B, RSSI %d, heap %u\n", (unsigned)uploadBytes, WiFi.RSSI(), ESP.getFreeHeap());
+   }
    #if defined (GPIO12_ACTIF)
    if (Short_push12.Button_pushed())GPIO12_screen++;//toggle screen
    if (GPIO12_screen>config.gpio12_count)GPIO12_screen=0;
