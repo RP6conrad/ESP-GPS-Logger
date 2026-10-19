@@ -1303,7 +1303,7 @@ void Update_screen(int screen) {
     Top_5("Alfa ", Rank,0);
   }
   if (screen == STATS6) {  //Simon stat screen
-    Serial.println("STATS6_Simon_screen");
+    //Serial.println("STATS6_Simon_screen");
     int row1 = 15;
     int row = 17;
     int row2 = row1 + row;
@@ -1385,7 +1385,7 @@ void Update_screen(int screen) {
   }
 
   if (screen == STATS7) {  //Simon bar graph screen
-    Serial.println("STATS7_Simon_bar graph");
+    //Serial.println("STATS7_Simon_bar graph");
     int posX = 5;
     int posY = INFO_BAR_TOP;
     int MaxNumberBar = NR_OF_BAR;  //is 42, zie GPS_data.h
@@ -1449,11 +1449,11 @@ void Update_screen(int screen) {
     }
     if (screen == STATS9) {
       Rank_best Rank = copyGps_timeToRank(S10);
-      Top_5("S10 ", Rank,0);
+      Top_5("10s ", Rank,0);
     }
     if (screen == STATSA) {
       Rank_best Rank = copyGps_timeToRank(S2);
-      Top_5("S2 ", Rank,0);
+      Top_5("2s ", Rank,0);
     }
     if (screen == STATSB) {
     Stats_2s_3_lines("10sLast: ", "10sBest: ", "AVG :  ", S10.display_last_run * calibration_speed, S10.display_speed[9] * calibration_speed, S10.avg_5runs * calibration_speed);
@@ -1512,9 +1512,13 @@ void Update_screen(int screen) {
     if (update_epaper > 0) display.update();
     offset = 0;
   } else {
-    if (update_epaper == 2) { display.fillScreen(GxEPD_WHITE); }                           //test
+    if (update_epaper == 2) { display.fillScreen(GxEPD_WHITE); }  
+    static int e_paper_refresh_time;
+    static int e_paper_timer;                         //test
+    e_paper_timer = millis();
     if (update_epaper > 0) display.updateWindow(0, 0, displayWidth, displayHeight, true);  //was 244,122, true !!!
-    if (screen >= STATS1) update_delay = (config.Stat_screens_time - 2) * 1000;            //set delay for all stats screens !
+    e_paper_refresh_time = millis()-e_paper_timer;
+    if (screen >= STATS1) update_delay = (config.Stat_screens_time  * 1000) - e_paper_refresh_time;            //set delay for all stats screens !
     if(update_delay<100)update_delay=100;//never delay with a negative number.....
     delay(update_delay);                                                                   //update delay function of screen to show
   }

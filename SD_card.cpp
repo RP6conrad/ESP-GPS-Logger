@@ -328,7 +328,6 @@ void printFile(const char *filename) {
   while (file.available()) {
     Serial.print((char)file.read());
   }
-  Serial.println();
   // Close the file
   file.close();
 }

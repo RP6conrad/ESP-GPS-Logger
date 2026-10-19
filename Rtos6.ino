@@ -320,23 +320,6 @@ void setup() {
 }
 
 void loop() { 
-  /*
-  int wdt_task0_duration=millis()-wdt_task0;
-  int wdt_task1_duration=millis()-wdt_task1;
-  int task_timeout=(WDT_TIMEOUT -1)*1000;//1 second less then reboot timeout 
-  if((wdt_task0_duration<task_timeout)&(wdt_task1_duration<task_timeout)){
-    feedTheDog_Task0();
-    feedTheDog_Task1();
-    }
-  if((wdt_task0_duration>task_timeout)&(downloading_file)&(max_count_wdt_task0<MAX_COUNT_WDT_TASK0)) {
-    max_count_wdt_task0++;
-    feedTheDog_Task0();
-    wdt_task0=millis();
-    Serial.println("Extend watchdog_timeout due long download"); 
-    }     
-  if((wdt_task0_duration>task_timeout)&(!downloading_file)) Serial.println("Watchdog task0 triggered");
-  if(wdt_task1_duration>task_timeout) Serial.println("Watchdog task1 triggered");
-  */
   vTaskDelay(1);         //dit moet normaal volstaan voor watchdog
   esp_task_wdt_reset();  //en dit... Al de rest opkuisen
   Update_bat();
@@ -445,8 +428,8 @@ void taskOne( void * parameter )
               GPS_delay++;
               }
         if ((Time_Set_OK==false)&(GPS_Signal_OK==true)&(GPS_delay>(TIME_DELAY_FIRST_FIX*config.sample_rate))){//vertraging Time_Set_OK is nu 10 s!!
-         static int avg_speed;
-          avg_speed=(avg_speed+ubxMessage.navPvt.gSpeed*19)/20; //FIR filter gem. snelheid laatste 20 metingen in mm/s
+          static float avg_speed = 0.0f; // filter gem. snelheid laatste 10 metingen in mm/s 0.1 + 0.9
+          avg_speed = (avg_speed * 0.9f) + ((float)ubxMessage.navPvt.gSpeed * 0.1f);
           if(avg_speed>(config.start_logging_speed*1000)){
             if(Set_GPS_Time(config.timezone)){            
                 Time_Set_OK=true;
@@ -512,12 +495,14 @@ void taskOne( void * parameter )
                         projected_doppler_speed[0]= projected_doppler_track_speed;
                         
                         sort_track(track_speed,doppler_speed,projected_doppler_speed,10,track_hour,track_minute);
+                        /*
                         Serial.println("\n=========================================");
                         Serial.println("       >>> RUN SUCCESVOL VOLTOOID <<<     ");
                         Serial.print(" Trajectafstand : "); Serial.print(trajectAfstandMeters, 2); Serial.println(" meter");
                         Serial.print(" Exacte Vaartijd: "); Serial.print(vaartijd_Seconden, 3); Serial.println(" seconden");
                         //Serial.print(" GEM. SNELHEID  : "); Serial.print(gemiddeldeSnelheidKmu, 3); Serial.println(" km/u");
                         Serial.println("=========================================\n");
+                        */
                         // Reset de states handmatig voor een eventuele volgende run op de terugweg
                         startState.eersteFixIngevuld = false;
                         finishState.eersteFixIngevuld = false;

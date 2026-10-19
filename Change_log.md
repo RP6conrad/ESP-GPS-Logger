@@ -1,3 +1,7 @@
+### Changes SW 7.0f  : Bug fixes Mike report
+* Start logging after average 10 speed telegrams
+* Added average 5 runs to speed distance function
+* Time between stat screens now exact as in the config
 ### Changes SW 7.0e
 * Changes from pull Ron : upload time out 10s -> 90s
 ### Changes SW 7.0d

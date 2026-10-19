@@ -302,6 +302,11 @@ double GPS_speed::Update_distance(int actual_run){
       sort_run_alfa(avg_speed,m_Distance,message_nr,time_hour,time_min,time_sec,this_run,nr_samples,10);
       avg_speed[0]=0;
       m_max_speed=0;
+      avg_5runs=0;
+      for(int i=5;i<10;i++){
+          avg_5runs=avg_5runs+avg_speed[i];
+          }
+      avg_5runs=avg_5runs/5;        
       }
   if((actual_run!=reset_display_last_run)&(m_speed>DISPLAY_RESET_SPEED)){//speed  > 18 km/h om display last run reset
       reset_display_last_run=actual_run;
