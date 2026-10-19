@@ -3,6 +3,8 @@
 
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
+#include <esp_wifi.h>    //esp_wifi_set_inactive_time: beacon-geduld
+#include <esp_system.h>  //esp_reset_reason
 String IP_adress="0.0.0.0";
 const char SW_version[16]="V 7.0iB74";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -69,6 +71,7 @@ const char* uploadUrl = "https://speedsurf.app/api/device/upload";
 // Globale variabelen en handles voor de RTOS upload-taak
 volatile bool ipGekregen = false; // Wordt true zodra we écht een IP-adres hebben
 volatile bool isUploading = false;         // Geeft aan of er een actieve upload bezig is
+volatile size_t uploadBytes = 0;           // Bytes van de lopende upload die aan TCP zijn overhandigd (taskOne logt ze mee)
 volatile bool uploadWachtrij = false;      // Er staat nog een $.gpy klaar: Wi-Fi niet opgeven bij een korte onderbreking
 bool apiKeyValid = true;                   // Wordt false bij een 401 of 403 fout
 bool auto_upload_time_out = false;
@@ -473,12 +476,35 @@ void feedTheDog_Task1(){
   TIMERG1.wdt_wprotect=0;                   // write protect
 } 
 */
+// === BEACON-GEDULD ===
+// De Wi-Fi-driver van deze core (ESP-IDF 3.3) meldt de verbinding verbroken
+// na 6 s zonder beacons van het accesspoint (reden 200, BEACON_TIMEOUT), ook
+// als de eigen dataframes nog gewoon bevestigd worden. Via een telefoonhotspot
+// zijn de beacons de zwakste schakel: de telefoon zendt zacht, en zodra de
+// ESP zelf vol aan het zenden is (de upload), hoort hij ze niet meer. Bij
+// Paco viel de hotspot daardoor 8 van de 8 keer weg, steeds 8,5 s na het
+// begin van de upload (6 s + 2,5 s probes), terwijl thuis alles lukte.
+// Nieuwere drivers (IDF 5) laten een station doorleven zolang zijn data
+// aankomen; deze driver kan alleen meer geduld krijgen. Zestig seconden is
+// ruim voor een upload van een paar honderd KB; is de link echt dood, dan
+// valt hij alsnog weg en doet taskOne zijn herkansing. De waarde zit niet
+// in flash en gaat verloren bij WiFi.mode(WIFI_OFF): daarom bij elke
+// STA_CONNECTED opnieuw gezet (eerste verbinding, ssid2, reconnect).
+const uint16_t BEACON_GEDULD_S = 60;
+void zetBeaconGeduld(void) {
+  esp_err_t r = esp_wifi_set_inactive_time(WIFI_IF_STA, BEACON_GEDULD_S);
+  uint16_t nu = 0;
+  esp_wifi_get_inactive_time(WIFI_IF_STA, &nu);
+  Serial.printf("[WiFi] Beacon-geduld %u s (%s)\n", nu, r == ESP_OK ? "ok" : esp_err_to_name(r));
+}
+
 void OnWiFiEvent(WiFiEvent_t event){
   switch (event) {
     case SYSTEM_EVENT_STA_CONNECTED:
       Serial.println("ESP32 Connected to SSID Station mode");
       WiFi.mode(WIFI_MODE_STA);//switch off softAP
       Serial.println("ESP32 Soft AP switched off");
+      zetBeaconGeduld();
       break;
     case SYSTEM_EVENT_STA_DISCONNECTED:         //test
       Serial.println("ESP32 disconnected to WIFI");
@@ -658,7 +684,8 @@ void probeerUpload(const char* filepath) {
   if (!file) return;
 
   // === SET UPLOAD MERKER OP TRUE ===
-  isUploading = true; 
+  isUploading = true;
+  uploadBytes = 0;
   auto_upload_time_out = false;
   upload_OK = false;
   upload_file_rejected = false;
@@ -705,6 +732,7 @@ void probeerUpload(const char* filepath) {
   // laat de server anders eindeloos wachten op bytes die nooit komen.
   size_t bytesSent = client.print(bodyHeader);
   bool writeOk = (bytesSent == bodyHeader.length());
+  uploadBytes = bytesSent;
 
   // 2. Stream het bestand in brokken van 1024 bytes
   uint8_t buffer[1024];
@@ -712,6 +740,7 @@ void probeerUpload(const char* filepath) {
     size_t bytesRead = file.read(buffer, sizeof(buffer));
     size_t bytesWritten = client.write(buffer, bytesRead);
     bytesSent += bytesWritten;
+    uploadBytes = bytesSent;
     if (bytesWritten != bytesRead) writeOk = false;
     vTaskDelay(pdMS_TO_TICKS(2)); // Voorkomt dat de Watchdog Timer (WDT) ingrijpt op Kern 0
   }
