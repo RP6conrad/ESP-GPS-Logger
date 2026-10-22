@@ -8,7 +8,7 @@
 #include <esp_system.h>  //esp_reset_reason
 String IP_adress="0.0.0.0";
 
-const char SW_version[16]="V 7.0iB74";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 7.0lB74";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -478,6 +478,19 @@ void feedTheDog_Task1(){
   TIMERG1.wdt_wprotect=0;                   // write protect
 } 
 */
+// === ALLEEN 802.11b/g (testschakelaar WIFI_ALLEEN_BG in Definitions.h) ===
+// Zet het station op b/g zodat het niet met 802.11n bundelt (AMPDU met
+// block ack). Bedoeld om op de werkbank te vergelijken met n; standaard uit.
+// Moet na WiFi.mode(WIFI_STA) en vóór WiFi.begin().
+void zetWifiProtocol(void) {
+#if defined(WIFI_ALLEEN_BG)
+  esp_err_t r = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G);
+  uint8_t p = 0;
+  esp_wifi_get_protocol(WIFI_IF_STA, &p);
+  Serial.printf("[WiFi] Protocol b/g zonder n (0x%02x, %s)\n", p, r == ESP_OK ? "ok" : esp_err_to_name(r));
+#endif
+}
+
 // === BEACON-GEDULD ===
 // De Wi-Fi-driver van deze core (ESP-IDF 3.3) meldt de verbinding verbroken
 // na 6 s zonder beacons van het accesspoint (reden 200, BEACON_TIMEOUT), ook
@@ -487,12 +500,14 @@ void feedTheDog_Task1(){
 // Paco viel de hotspot daardoor 8 van de 8 keer weg, steeds 8,5 s na het
 // begin van de upload (6 s + 2,5 s probes), terwijl thuis alles lukte.
 // Nieuwere drivers (IDF 5) laten een station doorleven zolang zijn data
-// aankomen; deze driver kan alleen meer geduld krijgen. Zestig seconden is
-// ruim voor een upload van een paar honderd KB; is de link echt dood, dan
-// valt hij alsnog weg en doet taskOne zijn herkansing. De waarde zit niet
+// aankomen; deze driver kan alleen meer geduld krijgen.
+// Paco (20-10) en de werkbank thuis (22-10) lieten met 60 s zien dat de
+// link bij zo'n stilstand echt dood is: in die minuut komt er geen byte
+// bij, en de herkansing daarna lukt vaak meteen. Lang wachten kost dus
+// alleen tijd; BEACON_GEDULD_S (Definitions.h) houdt korte haperingen
+// heel en laat een dode link snel opnieuw beginnen. De waarde zit niet
 // in flash en gaat verloren bij WiFi.mode(WIFI_OFF): daarom bij elke
 // STA_CONNECTED opnieuw gezet (eerste verbinding, ssid2, reconnect).
-const uint16_t BEACON_GEDULD_S = 60;
 void zetBeaconGeduld(void) {
   esp_err_t r = esp_wifi_set_inactive_time(WIFI_IF_STA, BEACON_GEDULD_S);
   uint16_t nu = 0;
@@ -617,6 +632,7 @@ void uploadTask(void * pvParameters);
 void probeerUpload(const char* filepath);
 void gemarkeerdAlsVerzonden(const char* filepath);
 void gemarkeerdAlsAfgekeurd(const char* filepath);
+bool isUploadBestand(const String& naam);
 #include <WiFiClientSecure.h>
 void uploadTask(void * pvParameters) {
    // Een vlag om bij te houden of we in de vorige loop al stabiel verbonden waren
@@ -642,8 +658,7 @@ void uploadTask(void * pvParameters) {
           while (file) {
             String filename = String(file.name());
             
-            // Controleer of het bestand eindigt op $.gpy
-            if (filename.endsWith("$.gpy")) {
+            if (isUploadBestand(filename)) {
               gevonden = true;
               uploadWachtrij = apiKeyValid;  // al vóór de upload: valt de Wi-Fi tijdens deze upload weg, dan herstellen
               String fullPath = filename;
@@ -840,47 +855,50 @@ void probeerUpload(const char* filepath) {
   // === SET MERKER WEER OP FALSE (ALTIJD AAN HET EINDE) ===
   isUploading = false; 
 }
-// === BESTAND HERNOMEN VAN '$.gpy' NAAR '.gpy' ===
+// === UPLOAD-BESTANDSNAMEN: drie bouwstenen ===
+// Een kort bestandsnaam (8.3) kan op de kaart in andere hoofdletters staan
+// dan hij geschreven is: een via FTP gezet "KTEST1$.gpy" heet daarna
+// "KTEST1$.Gpy" (werkbank 22-10). De scan zocht letterlijk "$.gpy" en sloeg
+// zo'n bestand voor altijd over; daarom kijkt alles hier zonder hoofdletters.
+
+// Staat dit bestand klaar voor upload (eindigt op GPY_WACHTRIJ, hoofdletters
+// maken niet uit)?
+bool isUploadBestand(const String& naam) {
+  String klein = naam;
+  klein.toLowerCase();
+  return klein.endsWith(GPY_WACHTRIJ);
+}
+
+// Dezelfde naam met een andere uitgang: "/x$.gpy" -> "/x" + nieuweUitgang.
+String metUitgang(const String& pad, const char* nieuweUitgang) {
+  return pad.substring(0, pad.length() - strlen(GPY_WACHTRIJ)) + nieuweUitgang;
+}
+
+// Hernoem op de kaart; een oud bestand met de nieuwe naam gaat eerst weg.
+void hernoemOpKaart(const char* oud, const String& nieuw, const char* wat) {
+  if (SD_MMC.exists(nieuw.c_str())) SD_MMC.remove(nieuw.c_str());
+  if (SD_MMC.rename(oud, nieuw.c_str())) {
+    Serial.printf("[Upload] %s hernoemd naar: \n", wat);
+    Serial.println(nieuw);
+  } else {
+    Serial.printf("[Upload] Fout: kon %s niet hernoemen.\n", wat);
+  }
+}
+
+// === VERZONDEN: '$.gpy' -> '.gpy' ===
 void gemarkeerdAlsVerzonden(const char* filepath) {
   String oudPad = String(filepath);
-  String nieuwPad = oudPad;
-
-  if (oudPad.endsWith("$.gpy")) {
-    nieuwPad = oudPad.substring(0, oudPad.length() - 5) + ".gpy";
-  } else {
-    nieuwPad = oudPad + "v"; 
-  }
-
-  if (SD_MMC.exists(nieuwPad.c_str())) {
-    SD_MMC.remove(nieuwPad.c_str());
-  }
-
-  if (SD_MMC.rename(filepath, nieuwPad.c_str())) {
-    Serial.println("[Upload] Bestand succesvol gemarkeerd! Hernoemd naar: ");
-    Serial.println(nieuwPad);
-  } else {
-    Serial.println("[Upload] Fout: Kon de extensie van het bestand niet aanpassen.");
-  }
-
+  String nieuwPad = isUploadBestand(oudPad) ? metUitgang(oudPad, GPY_VERZONDEN) : oudPad + "v";
+  hernoemOpKaart(filepath, nieuwPad, "Verzonden bestand");
 }
-// === BESTAND HERNOEMEN VAN '$.gpy' NAAR '!.gpy' (AFGEKEURD DOOR DE SERVER) ===
+
+// === AFGEKEURD DOOR DE SERVER: '$.gpy' -> '!.gpy' ===
 // Het bestand blijft op de kaart en in de bestandslijst, maar wordt niet meer
 // aangeboden. Het '!' is een keuze; elk teken dat niet '$' is doet het werk.
 void gemarkeerdAlsAfgekeurd(const char* filepath) {
   String oudPad = String(filepath);
-  if (!oudPad.endsWith("$.gpy")) return;
-  String nieuwPad = oudPad.substring(0, oudPad.length() - 5) + "!.gpy";
-
-  if (SD_MMC.exists(nieuwPad.c_str())) {
-    SD_MMC.remove(nieuwPad.c_str());
-  }
-
-  if (SD_MMC.rename(filepath, nieuwPad.c_str())) {
-    Serial.println("[Upload] Afgekeurd bestand hernoemd naar: ");
-    Serial.println(nieuwPad);
-  } else {
-    Serial.println("[Upload] Fout: Kon het afgekeurde bestand niet hernoemen.");
-  }
+  if (!isUploadBestand(oudPad)) return;
+  hernoemOpKaart(filepath, metUitgang(oudPad, GPY_AFGEKEURD), "Afgekeurd bestand");
 }
 // === VERWIJDERDelete_upload DE TAAK PERMANENT VAN KERN 0 BIJ START LOGGEN ===
 void Delete_uploadTask(void) {

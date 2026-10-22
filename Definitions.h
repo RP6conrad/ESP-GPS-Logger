@@ -80,4 +80,11 @@
 #define MAX_API_KEY_LENGTH 50
 #define AUTO_UPLOAD_SPEEDSURF
 #define WIFI_HERSTEL_MS 60000   //zo lang mag de Wi-Fi terugkomen als er nog een upload klaarstaat
+#define BEACON_GEDULD_S 15      //zo lang zonder beacons van het accesspoint voor de ESP de verbinding opgeeft (driver: 6 s)
+//#define WIFI_ALLEEN_BG        //testschakelaar: station alleen 802.11b/g, geen n
+// De drie namen van een .gpy op de kaart, hier en nergens anders:
+// wacht op upload, verzonden, afgekeurd door de server.
+#define GPY_WACHTRIJ  "$.gpy"
+#define GPY_VERZONDEN ".gpy"
+#define GPY_AFGEKEURD "!.gpy"
 #endif

@@ -225,6 +225,7 @@ void setup() {
   WiFi.onEvent(OnWiFiEvent);
   WiFi.onEvent(OnWiFiDisconnectReason, SYSTEM_EVENT_STA_DISCONNECTED);
   WiFi.mode(WIFI_STA);
+  zetWifiProtocol();
   WiFi.begin(ssid, password);
   Serial.print("T5 MAC adress: ");
   WiFi.macAddress(mac);
