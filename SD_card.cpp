@@ -87,8 +87,8 @@ void Open_files(void) {
   strcpy(filenameSBP, filename_NO_EXT);
   strcat(filenameSBP, ".sbp");
   strcpy(filenameGPY, filename_NO_EXT);
-  if(config.auto_upload_speedsurf){strcat(filenameGPY, "$.gpy");}//add $ to recognize .gpy file for auto-upload to speedsurf.app
-  else {strcat(filenameGPY, ".gpy"); }  
+  if(config.auto_upload_speedsurf){strcat(filenameGPY, GPY_WACHTRIJ);}//add $ to recognize .gpy file for auto-upload to speedsurf.app
+  else {strcat(filenameGPY, GPY_VERZONDEN); }
   strcpy(filenameGPX, filename_NO_EXT);
   strcat(filenameGPX, ".gpx");
   if (config.logUBX == true) {
