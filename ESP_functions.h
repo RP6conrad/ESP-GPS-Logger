@@ -3,7 +3,9 @@
 
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
+
 String IP_adress="0.0.0.0";
+
 const char SW_version[16]="V 7.0iB74";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
@@ -851,7 +853,7 @@ void gemarkeerdAlsAfgekeurd(const char* filepath) {
     Serial.println("[Upload] Fout: Kon het afgekeurde bestand niet hernoemen.");
   }
 }
-// === VERWIJDER DE TAAK PERMANENT VAN KERN 0 BIJ START LOGGEN ===
+// === VERWIJDERDelete_upload DE TAAK PERMANENT VAN KERN 0 BIJ START LOGGEN ===
 void Delete_uploadTask(void) {
   if (UploadTaskHandle != NULL) {
     TaskHandle_t taakOmTeVerwijderen = UploadTaskHandle;
@@ -861,7 +863,6 @@ void Delete_uploadTask(void) {
     Serial.println("[GPS Task] Upload-manager PERMANENT VERWIJDERD. RAM is vrijgegeven.");
   }
 }
-
 
 
 #endif

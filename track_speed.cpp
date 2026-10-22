@@ -217,7 +217,7 @@ Doppler_track doppler_speed_calculation(long ground_speed,long ground_heading,do
 // Deze functie gaat de start en finish vastleggen op het begin en einde van de laatste 500 meter run
 // Nuttig voor testdoeleinden !!
 void Auto_set_track(void){
-    static Point P1,P2; //These 2 points determinate the reference line for the track_speed !!!
+   // static Point P1,P2; //These 2 points determinate the reference line for the track_speed !!!
     config.p2_lat=_lat[M500.m_index%BUFFER_ALFA];//dit is het punt op -500 m van de actuele positie
     config.p2_lon=_long[M500.m_index%BUFFER_ALFA];
     config.p1_lat=_lat[index_GPS%BUFFER_ALFA];//dit is de actuele positie

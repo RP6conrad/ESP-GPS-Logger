@@ -35,6 +35,7 @@
 #include "ESP_functions.h"
 #include <Preferences.h>
 
+
 const char* ssid = config.ssid; //WiFi SSID
 const char* password = config.password; //WiFi Password
 const char* ssid2 = config.ssid2; //WiFi SSID
@@ -74,15 +75,6 @@ double track_time;
 LijnPassageResultaat startRes;
 LijnPassageResultaat finishRes;
 
-// Globale variabelen en handles voor de RTOS upload-taak
-//volatile bool isUploading = false;         // Geeft aan of er een actieve upload bezig is
-//bool apiKeyValid = true;                   // Wordt false bij een 401 of 403 fout
-//TaskHandle_t UploadTaskHandle = NULL;      // De handle waarmee we de taak kunnen beheren of deleten
-//SemaphoreHandle_t fileSystemMutex = NULL;  // Voorkomt dat de GPS-logger en de upload-taak tegelijk de SD-kaart gebruiken
-// Prototypes (Forward declarations) zodat setup() weet dat ze bestaan
-//void uploadTask(void * pvParameters);
-//void probeerUpload(const char* filepath);
-//void gemarkeerdAlsVerzonden(const char* filepath);
 
 void setup() {
   Serial.begin(115200);
@@ -304,7 +296,7 @@ void setup() {
   fileSystemMutex = xSemaphoreCreateMutex();
 #ifdef AUTO_UPLOAD_SPEEDSURF
   // 2. Start de upload-taak op KERN 0 if set in config
-  if ((fileSystemMutex != NULL)&(config.auto_upload_speedsurf)) {
+  if ((fileSystemMutex != NULL)&(config.auto_upload_speedsurf)&(Wifi_on)) {
     xTaskCreatePinnedToCore(
       uploadTask,             // De functie die hieronder is gedefinieerd
       "UploadTask",           // Naam van de taak (voor debugging)
@@ -316,7 +308,7 @@ void setup() {
     ); 
     Serial.println("Upload-manager succesvol gestart op Kern 0.");
   }
-#endif  
+#endif   
 }
 
 void loop() { 
@@ -331,7 +323,6 @@ void taskOne( void * parameter )
  while(true){ 
    vTaskDelay(1);         //dit moet normaal volstaan voor watchdog
    esp_task_wdt_reset();  //en dit... Al de rest opkuisen
-   //wdt_task0=millis();
    #if defined (GPIO12_ACTIF)
    if (Short_push12.Button_pushed())GPIO12_screen++;//toggle screen
    if (GPIO12_screen>config.gpio12_count)GPIO12_screen=0;
@@ -374,6 +365,7 @@ void taskOne( void * parameter )
         WiFi.disconnect(true);
         WiFi.mode(WIFI_OFF);
         Wifi_on=false; 
+        Delete_uploadTask();
         sntp_stop();//no messing around with time synchronization anymore, EPOCH time is set to 0 !!! 
         printLocalTime();
         NTP_time_set=false;
@@ -391,6 +383,7 @@ void taskOne( void * parameter )
             configTime(0,0,"pool.ntp.org");
             setenv("TZ",TimeZone,1);
             tzset();
+            delay(500); //wait for getting NTP time
             printLocalTime();
             NTP_time_set=true;
             }

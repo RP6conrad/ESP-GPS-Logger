@@ -36,19 +36,19 @@ void Open_files(void) {
     char timestamp[16];
 
     if (config.file_date_time == 1) {
-      sprintf(timestamp, "_%u%02u%02u%02u%02u", tmstruct.tm_year - 100, tmstruct.tm_mon + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
+      sprintf(timestamp, "_%u-%02u-%02u_%02u-%02u", tmstruct.tm_year - 100, tmstruct.tm_mon + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
       strcat(filenameERR, config.UBXfile);  //copy filename from config
       strcat(filenameERR, timestamp);       //add timestamp
       strcat(filenameERR, extension);       //add extension.txt
     }
     if (config.file_date_time == 2) {
-      sprintf(timestamp, "%u%02u%02u%02u%02u_", tmstruct.tm_year - 100, tmstruct.tm_mon + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
+      sprintf(timestamp, "%u-%02u-%02u_%02u-%02u_", tmstruct.tm_year - 100, tmstruct.tm_mon + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
       strcat(filenameERR, timestamp);       //add timestamp
       strcat(filenameERR, config.UBXfile);  //copy filename from config
       strcat(filenameERR, extension);       //add extension.txt
     }
     if (config.file_date_time == 3) {
-      sprintf(timestamp, "_%u%02u%02u%02u%02u", tmstruct.tm_year - 100, tmstruct.tm_mon + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
+      sprintf(timestamp, "_%u-%02u-%02u_%02u-%02u", tmstruct.tm_year - 100, tmstruct.tm_mon + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
       sprintf(macAddr, "_%2X%2X%2X", mac[3], mac[4], mac[5]);  //3 last bytes from MAC
       strcat(filenameERR, config.UBXfile);                    //copy filename from config
       strcat(filenameERR, timestamp);                         //add timestamp
@@ -356,6 +356,8 @@ void Session_info(GPS_data G) {
   for (int i = 0; i < 6; i++) errorfile.print(mac[i], HEX);
   errorfile.println(" ");
   errorfile.println(SW_version);
+  errorfile.print("Core Debug Level = ");
+  errorfile.println(CORE_DEBUG_LEVEL);
   if(sdOK){
     sprintf(tekst,"SD_MMC Read speed= %d ms/MB Write speed= %d ms/MB s\n",SD_MMC_read_speed,SD_MMC_write_speed);
     strcat(message, tekst);
