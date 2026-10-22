@@ -1,7 +1,15 @@
-### Changes SW 7.0f  : Bug fixes Mike report
+### Changes SW 7.0i
+* Date and time format in file names now with - (ESP-Discussions)
+* Function Stats_4lines() and Stats_2s_3lines() now layout Message and float fix decimal point (ESP-Discussions)
+* Stat4 screen : smaller font for better layout (ESP-Discussions)
+### Changes SW 7.0h
+* Pull request Ron for auto-upload issue : possible beacon time-out
+### Changes SW 7.0g  : Bug fixes Mike report
 * Start logging after average 10 speed telegrams
 * Added average 5 runs to speed distance function
 * Time between stat screens now exact as in the config
+### Changes SW 7.0f
+* Changes from pull Ron : rejected files are marked with !.gpy to prevent endless uploads...
 ### Changes SW 7.0e
 * Changes from pull Ron : upload time out 10s -> 90s
 ### Changes SW 7.0d

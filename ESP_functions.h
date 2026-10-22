@@ -3,9 +3,11 @@
 
 #ifndef ESP_FUNCTIONS
 #define ESP_FUNCTIONS
+
 #include <esp_wifi.h>    //esp_wifi_set_inactive_time: beacon-geduld
 #include <esp_system.h>  //esp_reset_reason
 String IP_adress="0.0.0.0";
+
 const char SW_version[16]="V 7.0lB74";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if defined(_GxGDEH0213B73_H_) 
@@ -898,7 +900,7 @@ void gemarkeerdAlsAfgekeurd(const char* filepath) {
   if (!isUploadBestand(oudPad)) return;
   hernoemOpKaart(filepath, metUitgang(oudPad, GPY_AFGEKEURD), "Afgekeurd bestand");
 }
-// === VERWIJDER DE TAAK PERMANENT VAN KERN 0 BIJ START LOGGEN ===
+// === VERWIJDERDelete_upload DE TAAK PERMANENT VAN KERN 0 BIJ START LOGGEN ===
 void Delete_uploadTask(void) {
   if (UploadTaskHandle != NULL) {
     TaskHandle_t taakOmTeVerwijderen = UploadTaskHandle;
@@ -908,7 +910,6 @@ void Delete_uploadTask(void) {
     Serial.println("[GPS Task] Upload-manager PERMANENT VERWIJDERD. RAM is vrijgegeven.");
   }
 }
-
 
 
 #endif

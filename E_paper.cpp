@@ -778,55 +778,59 @@ void sdCardInfo(void) {
 void Stats_4lines(String Message1, String Message2, String Message3, String Message4, float Value1, float Value2, float Value3, float Value4) {
 #define STAT4_ROW2 150
 #define DIS_WIDTH 240
-  display.setCursor(offset, ROW_1_18PT);
+  int y_cursor;
   display.setFont(&FreeSansBold18pt7b);
-  display.print(Message1);
-  display.setCursor(STAT4_ROW2, ROW_1_18PT);
-  // display.setFont(&FreeSansBold18pt7b);
-  if (Value1 < 100.0) display.println(Value1, 2);
-  else if (Value1 < 1000.0) display.println(Value1, 1);
-  else display.println(Value1, 0);
-  display.setCursor(offset, ROW_2_18PT);
-  // display.setFont(&FreeSansBold12pt7b);
-  display.print(Message2);
-  display.setCursor(STAT4_ROW2, ROW_2_18PT);
-  // display.setFont(&FreeSansBold18pt7b);
-  display.println(Value2, 2);
-  display.setCursor(offset, ROW_3_18PT);
-  //display.setFont(&FreeSansBold12pt7b);
+  display.setCursor(offset, ROW_1_18PT);
+  display.print(Message1);// %-20s = Tekst links uitgelijnd,  6 tekens breed
+  if(Value1<10) y_cursor=STAT4_ROW2+18;else y_cursor=STAT4_ROW2;
+  display.setCursor(y_cursor, ROW_1_18PT);
+  display.print(Value1);
+  display.setCursor(offset, ROW_2_18PT); 
+  display.print(Message2);// %2.2f  = Float rechts uitgelijnd, 5 tekens totale breedte, 2 decimalen
+  if(Value2<10) y_cursor=STAT4_ROW2+18;else y_cursor=STAT4_ROW2;
+  display.setCursor(y_cursor, ROW_2_18PT);
+  display.print(Value2);
+  display.setCursor(offset, ROW_3_18PT); 
   display.print(Message3);
-  display.setCursor(STAT4_ROW2, ROW_3_18PT);
-  // display.setFont(&FreeSansBold18pt7b);
-  display.println(Value3, 2);
-  display.setCursor(offset, ROW_4_18PT);
-  //display.setFont(&FreeSansBold12pt7b);
+  if(Value3<10) y_cursor=STAT4_ROW2+18;else y_cursor=STAT4_ROW2;
+  display.setCursor(y_cursor, ROW_3_18PT);
+  display.print(Value3);
+  display.setCursor(offset, ROW_4_18PT); 
   display.print(Message4);
-  display.setCursor(STAT4_ROW2, ROW_4_18PT);
-  // if(Value4<0) display.print("-");
-  //display.setFont(&FreeSansBold18pt7b);
-  //if(Value4>=0) display.println(Value4,2);
-  display.println(Value4, 2);
+  if(Value4<10) y_cursor=STAT4_ROW2+18;else y_cursor=STAT4_ROW2;
+  display.setCursor(y_cursor, ROW_4_18PT);
+  display.print(Value4); 
 }
 void Stats_2s_3_lines(String Message1, String Message2, String Message3, float Value1, float Value2, float Value3) {
+  int y_cursor;float S2_speed;
   display.setFont(&FreeSansBold12pt7b);
   display.setCursor(offset, ROW_1_18PT);
   display.print("2l: ");
   display.setFont(&FreeSansBold18pt7b);
   display.print(S2.display_last_run * calibration_speed, 1);  //last 2s max from rundisplay.print(S2.avg_speed[9]*calibration_speed);
   display.setFont(&FreeSansBold12pt7b);
-  display.setCursor(120 + offset % 2, ROW_1_18PT);  //zodat SXX niet groter wordt dan 244 pix
+  display.setCursor(110 + offset % 2, ROW_1_18PT);  //zodat SXX niet groter wordt dan 244 pix
   display.print("2s: ");
   display.setFont(&FreeSansBold18pt7b);
-  display.print(S2.display_speed[9] * calibration_speed);  //best 2s, was avg_speed[9]
+  S2_speed=S2.display_speed[9] * calibration_speed;
+  if(S2_speed<10)y_cursor=STAT4_ROW2+18;else y_cursor=STAT4_ROW2;
+  display.setCursor(y_cursor, ROW_1_18PT);
+  display.print(S2_speed);  //best 2s, was avg_speed[9]
   display.setCursor(offset, ROW_2_18PT);
   display.print(Message1);
-  display.println(Value1);  //best 10s(Fast), was avg_speed[9]
+  if(Value1<10) y_cursor=STAT4_ROW2+18;else y_cursor=STAT4_ROW2;
+  display.setCursor(y_cursor, ROW_2_18PT);
+  display.print(Value1);
   display.setCursor(offset, ROW_3_18PT);
   display.print(Message2);
-  display.println(Value2);  //langzaamste 10s(Slow) run van de sessie
+  if(Value2<10) y_cursor=STAT4_ROW2+18;else y_cursor=STAT4_ROW2;
+  display.setCursor(y_cursor, ROW_3_18PT);
+  display.print(Value2);
   display.setCursor(offset, ROW_4_18PT);
   display.print(Message3);
-  display.println(Value3);  //average 5*10s
+  if(Value3<10) y_cursor=STAT4_ROW2+18;else y_cursor=STAT4_ROW2;
+  display.setCursor(y_cursor, ROW_4_18PT);
+  display.print(Value3);
 }
 void Update_screen(int screen) {
   static int count, old_screen, update_delay;
@@ -1261,10 +1265,10 @@ void Update_screen(int screen) {
   if (screen == STATS2) {  //alfa 500m,1852m, 1800s,total_dist
     static int toggle = 0;
     if (toggle == 0) {
-      Stats_4lines("Dist: ", "1852m: ", "1800s: ", "Alfa: ", Ublox.total_distance / 1000, M1852.display_speed[9] * calibration_speed, S1800.display_max_speed * calibration_speed, A500.avg_speed[9] * calibration_speed);
+      Stats_4lines("Dist: ", "1852m: ", "1800s: ", "Alfa: ", Ublox.total_distance / 1000000, M1852.display_speed[9] * calibration_speed, S1800.display_max_speed * calibration_speed, A500.avg_speed[9] * calibration_speed);
       toggle = 1;
     } else {
-      Stats_4lines("Dist: ", "1852m: ", "3600s: ", "Alfa: ", Ublox.total_distance / 1000, M1852.display_speed[9] * calibration_speed, S3600.display_max_speed * calibration_speed, A500.avg_speed[9] * calibration_speed);
+      Stats_4lines("Dist: ", "1852m: ", "3600s: ", "Alfa: ", Ublox.total_distance / 1000000, M1852.display_speed[9] * calibration_speed, S3600.display_max_speed * calibration_speed, A500.avg_speed[9] * calibration_speed);
       toggle = 0;
     }
   }
@@ -1275,7 +1279,8 @@ void Update_screen(int screen) {
     display.setFont(&FreeSansBold12pt7b);
     display.setCursor(offset, ROW_1_18PT);
     display.print("10s Avg: ");
-    display.setFont(&FreeSansBold18pt7b);
+    //display.setFont(&FreeSansBold18pt7b);
+    display.setFont(&Open_Sans_Bold_33);
     display.println(s10.avg_5runs * calibration_speed, 2);  //eerste regel, avg_5runs krijgt update tijdens run !!
     for (int i = 9; i > 6; i--) {
       display.setCursor(offset, ROW_2_18PT + (9 - i) * ROW_18PT);
@@ -1283,7 +1288,8 @@ void Update_screen(int screen) {
       display.print("R");
       display.print(10 - i);
       display.print(" ");
-      display.setFont(&FreeSansBold18pt7b);
+      //display.setFont(&FreeSansBold18pt7b);
+      display.setFont(&Open_Sans_Bold_33);
       display.print(s10.display_speed[i] * calibration_speed, 1);
       display.setCursor(offset + 118, ROW_2_18PT + (9 - i) * ROW_18PT);
       if (i > 7) {
@@ -1291,7 +1297,8 @@ void Update_screen(int screen) {
         display.print(" R");
         display.print(13 - i);
         display.print(" ");
-        display.setFont(&FreeSansBold18pt7b);
+        //display.setFont(&FreeSansBold18pt7b);
+        display.setFont(&Open_Sans_Bold_33);
         display.print(s10.display_speed[i - 3] * calibration_speed, 1);
       } else {
         display.print(time_now);
@@ -1505,7 +1512,7 @@ void Update_screen(int screen) {
       Stats_4lines("1s last:", "2s last:", "10s last:", "Mile last:", S1.display_last_run * calibration_speed, S2.display_last_run * calibration_speed, S10.display_last_run * calibration_speed, M1852.display_last_run * calibration_speed);
     }
     if (screen == STATSK) {  //Distance, AVG 2s, AVG 10s, AVG 500m
-      Stats_4lines("Dist: ", "Avg 2s:", "Avg 10s:", "Avg 500:",  Ublox.total_distance / 1000, S2.avg_5runs * calibration_speed, S10.avg_5runs * calibration_speed, M500.avg_5runs * calibration_speed);
+      Stats_4lines("Dist: ", "Avg 2s:", "Avg 10s:", "Avg 500:",  Ublox.total_distance / 1000000, S2.avg_5runs * calibration_speed, S10.avg_5runs * calibration_speed, M500.avg_5runs * calibration_speed);
     }
     #endif
   if (count % 200 == 0) {  //was 200
