@@ -1,6 +1,8 @@
 #include "GPS_data.h"
 #include "Ublox.h"
 #include "Definitions.h"
+#include <driver/uart.h>
+#include <soc/uart_reg.h> // Vereist in V1.06 voor directe registertoegang
 
 #define DISPLAY_RESET_SPEED 4000  //reset speed in mm/sek for last run display
 uint16_t _gSpeed[BUFFER_SIZE]; 
@@ -647,8 +649,8 @@ int setupGPS(void) {
     Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2  
     }
   if((config.ublox_type==M8_38400BD)|(config.ublox_type==M9_38400BD)|  (config.ublox_type==M10_38400BD)){
-    Serial2.begin(38400, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2  
-    }  
+    Serial2.begin(38400, SERIAL_8N1, RXD2, TXD2); //connection to ublox over serial2   
+  }  
   Serial.println("Serial2 Txd is on pin: "+String(TXD2));
   Serial.println("Serial2 Rxd is on pin: "+String(RXD2));
   for(int i=0;i<425;i++){//Startup string van ublox to serial, ca 424 char !!
@@ -674,7 +676,7 @@ int setupGPS(void) {
         Serial2.write( pgm_read_byte(UBLOX_UBX_BD38400+i) );
         }
       delay(100) ; 
-      Serial2.begin(38400, SERIAL_8N1, RXD2, TXD2);  
+      Serial2.begin(38400, SERIAL_8N1, RXD2, TXD2); 
   }      
   if((config.ublox_type==M8_9600BD)|(config.ublox_type==M8_38400BD)|(config.ublox_type==M8_115200BD)){
     Init_ublox(); //switch to ubx protocol
@@ -682,6 +684,19 @@ int setupGPS(void) {
   if((config.ublox_type==M9_9600BD)|(config.ublox_type==M9_38400BD)|(config.ublox_type==M9_115200BD)|(config.ublox_type==M10_9600BD)|(config.ublox_type==M10_38400BD)|(config.ublox_type==M10_115200BD)){
     Init_ubloxM10(); //switch to ubx protocol, same for M9/M10
     }
+  // 1. Na ublox init : Stel de hardware FIFO-drempelwaarde in op 63 bytes
+  UART2.conf1.rxfifo_full_thrhd = 63;  //nav pvt = 100, nav dop = 26, dus totaal 126 bytes
+  // 2. Schakel de timeout-functionaliteit in op hardwareniveau (niet nodig, init is al gebeurd !!)
+  UART2.conf1.rx_tout_en = 1;   //was 1, maar dit triggert elke x ms de ISR
+  // 3. Configureer de interrupts zonder punt-notatie (volgorde van de struct)
+  // We maken de struct leeg en vullen de variabelen handmatig één voor één in.
+  uart_intr_config_t uart_intr;  
+  uart_intr.intr_enable_mask = (UART_RXFIFO_FULL_INT_ENA_M);// | UART_RXFIFO_TOUT_INT_ENA_M); //geen time out !!
+  uart_intr.rxfifo_full_thresh = 63;
+  uart_intr.rx_timeout_thresh = 50; // Trigger na 50 bytes stilte,  1 byte duurt 10*50/38400 s = 13 ms
+  uart_intr.txfifo_empty_intr_thresh = 50;
+  // Breng de configuratie over naar UART2
+  uart_intr_config(UART_NUM_2, &uart_intr);  
   Serial.print("SW Ublox=");
   Serial.println(ubxMessage.monVER.swVersion);
   Serial.print ("HW Ublox=");

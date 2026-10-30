@@ -339,15 +339,7 @@ void Init_ubloxM10(void){
   for(int i = 0; i < sizeof(UBLOX_M10_NAV_DOP); i++) {                        
         Serial2.write( pgm_read_byte(UBLOX_M10_NAV_DOP+i) );
         }
-  /**     
-  if(config.M10_full_power){
-    Serial.println("Set ublox M10 full power ON ");   
-    for(int i = 0; i < sizeof(UBX_M10_FULL_POWER_MODE); i++) {                        
-          Serial2.write( pgm_read_byte(UBX_M10_FULL_POWER_MODE+i) );
-          }      
-    Ublox_serial2(wait);
-    } 
-  */  
+ 
   Serial.println("Set ublox max_Svs ");   
   sendNavSpgInfilMaxSvs(config.max_Svs); //max satellites in nav solution  
   Serial.println("Set ublox min elevation Sats ");  

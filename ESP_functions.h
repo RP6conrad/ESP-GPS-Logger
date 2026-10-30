@@ -6,10 +6,13 @@
 
 #include <esp_wifi.h>    //esp_wifi_set_inactive_time: beacon-geduld
 #include <esp_system.h>  //esp_reset_reason
+#include "definitions.h"
 String IP_adress="0.0.0.0";
-
-const char SW_version[16]="V 7.0lB74";//Hier staat de software versie !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+#ifdef AUTO_UPLOAD_SPEEDSURF
+const char SW_version[16]="V 7.1betaB74";//Hier staat de software versie voor partitie 2MB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#else
+const char SW_version[16]="V 6.1betaB74";//Hier staat de software versie voor partitie 1.2MB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#endif
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
 #endif
@@ -168,14 +171,14 @@ GPS_speed M500(500);
 GPS_speed M1852(1852);
 GPS_time S1(1);
 GPS_time S2(2);
-GPS_time s2(2);
+//GPS_time s2(2);
 GPS_time S10(10);
-GPS_time s10(10);//for  stats GPIO_12 screens, reset possible !!
+//GPS_time s10(10);//for  stats GPIO_12 screens, reset possible !!
 GPS_time S1800(1800);
 GPS_time S3600(3600);
 Alfa_speed A250(50);
 Alfa_speed A500(50);
-Alfa_speed a500(50);//for  Alfa stats GPIO_12 screens, reset possible !!
+//Alfa_speed a500(50);//for  Alfa stats GPIO_12 screens, reset possible !!
 //Button_push Short_push12 (12,50,15,1,1); //GPIO12 pull up, 100ms push time, 15s long_pulse, count 1, STAT screen 4&5
 //Button_push Long_push12 (12,2000,10,4,1); //GPIO12 pull up, 2000ms push time, 10s long_pulse, count 4, reset STAT screen 4&5
 Button_push Short_push39 (GO_TO_SLEEP_GPIO,10,10,9,1);//was 39 GO_TO_SLEEP_GPIO

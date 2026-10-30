@@ -8,9 +8,9 @@
 //  if you are not sure which version, please test each one,
 //  if it is successful then it belongs to the model of the file name
 // The 2.66 screen has other SPI pins, and more pixels. Partof the pixels are now unused.
-#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen, 212*104
+//#include <GxDEPG0213BN/GxDEPG0213BN.h>  //Huidige schermen, 212*104
 //#include <GxGDEH0213B73/GxGDEH0213B73.h>  //Eerste schermen, 212*104
-//#include <GxGDEM0213B74/GxGDEM0213B74.h> // 2.13", 212*104 
+#include <GxGDEM0213B74/GxGDEM0213B74.h> // 2.13", 212*104 
 //#include <GxDEPG0266BN/GxDEPG0266BN.h>  //2.66 screen for rollz...
 //#include <GxGDEW0213M21/GxGDEW0213M21.h>  //nog een andere versie, resolutie NIET OK vanwege resolutie !!!
 //#include <GxGDEP015OC1/GxGDEP015OC1.h>    //  GDEH015OC1 1.54" screen for Jeff Turner !!!
@@ -181,7 +181,7 @@ extern GPS_speed M250;
 extern GPS_speed M500;
 extern Alfa_speed A250;
 extern Alfa_speed A500;
-extern Alfa_speed a500;
+//extern Alfa_speed a500;
 extern GPS_time S1800;
 extern GPS_time S3600;
 

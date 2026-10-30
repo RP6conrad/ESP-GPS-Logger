@@ -42,6 +42,8 @@ const char* ssid2 = config.ssid2; //WiFi SSID
 const char* password2 = config.password2; //WiFi Password
 const char* soft_ap_ssid = "ESP32AP"; //accespoint ssid
 const char* soft_ap_password = "password"; //accespoint password
+const char* netwerkNaam = "esp32"; 
+
 //#define MAX_API_KEY_LENGTH 60
 //char apiKey[MAX_API_KEY_LENGTH] = ""; // Globale char-array voor je HTTPS-key
 Preferences preferences;
@@ -224,6 +226,7 @@ void setup() {
   // Koppel de event handler
   WiFi.onEvent(OnWiFiEvent);
   WiFi.onEvent(OnWiFiDisconnectReason, SYSTEM_EVENT_STA_DISCONNECTED);
+  WiFi.setHostname(netwerkNaam);
   WiFi.mode(WIFI_STA);
   zetWifiProtocol();
   WiFi.begin(ssid, password);
@@ -260,6 +263,8 @@ void setup() {
       Serial.println(actual_ssid);
       Serial.print("IP address: ");
       Serial.println(IP_adress);
+      Serial.print("Actieve Hostname op ESP32: ");
+      Serial.println(WiFi.getHostname()); 
       Wifi_on=true;
       ftpSrv.begin("esp32","esp32");    //username, password for ftp
       OTA_setup();  //start webserver for over the air update
@@ -283,7 +288,7 @@ void setup() {
                     "TaskOne",        /* String with name of task. */
                     10000,            /* Stack size in bytes. */
                     NULL,             /* Parameter passed as input of the task */
-                    1,                /* Priority of the task. */
+                    1,                /* Priority of the task, 2 has higher priority then 1 ! */
                     &t1,  //&t1,
                     1);            /* Task handle. */
  
@@ -536,14 +541,14 @@ void taskOne( void * parameter )
                   M1852.Update_distance(run_count);
                   S1.Update_speed(run_count); 
                   S2.Update_speed(run_count); 
-                  s2.Update_speed(run_count);      
+                  //s2.Update_speed(run_count);      
                   S10.Update_speed(run_count);
-                  s10.Update_speed(run_count);
+                  //s10.Update_speed(run_count);
                   S1800.Update_speed(run_count);
                   S3600.Update_speed(run_count);
                   A250.Update_Alfa(M250);
                   A500.Update_Alfa(M500);
-                  a500.Update_Alfa(M500);
+                  //a500.Update_Alfa(M500);
                   //M_500.Update_Track();
                   if(S2.avg_s>4000) S10_previous_run=S10.s_max_speed;//only update to new run value if actual speed > 4 m/s
                   }     

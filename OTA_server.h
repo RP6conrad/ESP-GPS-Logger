@@ -328,7 +328,7 @@ void SD_dir(int archive) {
       if (((config.gnss == 3) & (config.sample_rate> 5)) | ((config.gnss== 4) & (config.sample_rate > 8)) | ((config.gnss== 5) & (config.sample_rate > 4))) {GPS_warning=true;}
        }
     if(config.M10_high_nav) {GPS_warning=false;} 
-    if(((config.sample_rate==5)&(config.cpu_freq<160))|((config.sample_rate==10)&!(config.cpu_freq<240)))CPU_freq_warning=true;
+    if(((config.sample_rate==5)&(config.cpu_freq<80))|((config.sample_rate==10)&!(config.cpu_freq<160)))CPU_freq_warning=true;
     if(config.shutdown_voltage<3.1) Shutdown_warning=true;
     if (root) {
       root.rewindDirectory();

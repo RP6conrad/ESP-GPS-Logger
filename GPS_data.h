@@ -4,6 +4,7 @@
 #include <math.h>
 #include <Preferences.h>
 
+
 #define DEG2RAD 0.0174532925  //is PI/180 !!!
 #define BUFFER_SIZE 9000  //gewenste buffer grootte voor de GPS groundspeed data,opgelet voor 10Hz moet de buffer veel groter zijn !!! Vb 1852m bij 2000 samples is min 10m/s
 //buffer verkleinen van 5000 tot 1000, zodat bij 2Hz en 600s toch 1 sec takt

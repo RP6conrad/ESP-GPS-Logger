@@ -345,12 +345,12 @@ void html_config(String& webpage){
   webpage += "<tr><td colspan='3'>\n";
   webpage += "<button type='button' id='toggleBtn' onclick='toggleMenu()' style='background-color: #4CAF50; color: white; padding: 8px 16px; border: none; cursor: pointer;'>GPS Nerd settings !</button>\n";
   webpage += "</td></tr>\n";
-  //ssid
+  //ssid1
   String ssid="\"" + String(config.ssid) + "\"";//problem with white space in SSID depends on position in webpage ???
   webpage += "<tr>\n<td>ssid</td><td>\n";
   webpage += "<input size='21' type='text' required name='ssid' value="+ssid+">\n";//input size 20->30 if SSID name exceeds input size, full name is not visible
   webpage += "</td><td>ssid: the name of the wlan where the esp-logger should connect to</td>\n</tr>\n";  
-   //password
+  //password
   webpage += "<tr>\n<td>password</td><td>\n";
   webpage += "<input size='20' type='text' required name='password' value="+String(config.password)+">\n";
   webpage += "</td><td>password: the password of the wlan where the esp-logger should connect to</td>\n</tr>\n"; 
@@ -554,7 +554,7 @@ void html_config(String& webpage){
   webpage += "</td><td>max_Svs: Default max of 32 satellites in nav solution M10</td>\n</tr>\n";
   //M10_min_elevation
   webpage += "<tr>\n<td>minimal elevation Satellites</td><td>\n";
-  webpage += "<input size='2' type='number' required name='M10_min_elevation' min='5' max='25' value="+String(config.M10_min_elevation)+" step='1'>\n";
+  webpage += "<input size='2' type='number' required name='M10_min_elevation' min='0' max='15' value="+String(config.M10_min_elevation)+" step='1'>\n";
   webpage += "</td><td>M10 : minimal elevation Satellites above horizon, default 5 degree</td>\n</tr>\n";
   /*M10_full power
   webpage += "<tr><td>M10_full_power</td><td>\n<select id='M10_full_power' name='M10_full_power'>\n";

@@ -1281,7 +1281,7 @@ void Update_screen(int screen) {
     display.print("10s Avg: ");
     //display.setFont(&FreeSansBold18pt7b);
     display.setFont(&Open_Sans_Bold_33);
-    display.println(s10.avg_5runs * calibration_speed, 2);  //eerste regel, avg_5runs krijgt update tijdens run !!
+    display.println(S10.avg_5runs * calibration_speed, 2);  //eerste regel, avg_5runs krijgt update tijdens run !!
     for (int i = 9; i > 6; i--) {
       display.setCursor(offset, ROW_2_18PT + (9 - i) * ROW_18PT);
       display.setFont(&FreeSansBold12pt7b);
@@ -1290,7 +1290,7 @@ void Update_screen(int screen) {
       display.print(" ");
       //display.setFont(&FreeSansBold18pt7b);
       display.setFont(&Open_Sans_Bold_33);
-      display.print(s10.display_speed[i] * calibration_speed, 1);
+      display.print(S10.display_speed[i] * calibration_speed, 1);
       display.setCursor(offset + 118, ROW_2_18PT + (9 - i) * ROW_18PT);
       if (i > 7) {
         display.setFont(&FreeSansBold12pt7b);
@@ -1299,7 +1299,7 @@ void Update_screen(int screen) {
         display.print(" ");
         //display.setFont(&FreeSansBold18pt7b);
         display.setFont(&Open_Sans_Bold_33);
-        display.print(s10.display_speed[i - 3] * calibration_speed, 1);
+        display.print(S10.display_speed[i - 3] * calibration_speed, 1);
       } else {
         display.print(time_now);
       }
@@ -1527,7 +1527,8 @@ void Update_screen(int screen) {
     e_paper_refresh_time = millis()-e_paper_timer;
     if (screen >= STATS1) update_delay = (config.Stat_screens_time  * 1000) - e_paper_refresh_time;            //set delay for all stats screens !
     if(update_delay<100)update_delay=100;//never delay with a negative number.....
-    delay(update_delay);                                                                   //update delay function of screen to show
+    //delay(update_delay);  
+    vTaskDelay(update_delay / portTICK_PERIOD_MS);//update delay function of screen to show
   }
   old_screen = screen;
   count++;

@@ -1,7 +1,11 @@
-### Changes SW 7.0i
+### Changes SW 7.1beta
 * Date and time format in file names now with - (ESP-Discussions)
 * Function Stats_4lines() and Stats_2s_3lines() now layout Message and float fix decimal point (ESP-Discussions)
 * Stat4 screen : smaller font for better layout (ESP-Discussions)
+* Removed s1,s10,a500 instances (not used anymore)
+* Minimal elevation sats in config now 0°, max 15°
+* Set read-out ISR hardware buffer Serial2 to max 63 bytes (default 120 bytes, buffer = 128 bytes)
+* CPU clock warning 5 Hz < 80MHz, 10 Hz < 160 MHz, but it looks that even 80 MHz & 10 Hz will work without lost points.
 ### Changes SW 7.0h
 * Pull request Ron for auto-upload issue : possible beacon time-out
 ### Changes SW 7.0g  : Bug fixes Mike report
