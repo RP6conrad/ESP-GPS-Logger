@@ -286,29 +286,47 @@ const char html_header[] PROGMEM = R"=====(
     function confirmdelete() {
         return !0 == confirm("Want to delete?");
     }
-    window.addEventListener('DOMContentLoaded', (event) => {
-    if ((location.pathname == "/")|(location.pathname == "/archive")) sortTable();
+    // File table sorting (issue #13) : newest files first after loading, click on the column
+    // header "Name", "Size" or "Timestamp" to sort by it, click again to reverse the order.
+    // Works on every page with the file table (Files, Archive Files, Archive List), the check
+    // on the "Timestamp" header skips the config table.
+    var sortCol = 2, sortDesc = true;
+    window.addEventListener('DOMContentLoaded', function () {
+      var table = document.getElementById("esplogger");
+      if (!table) return;
+      var ths = table.getElementsByTagName("TH");
+      if (ths.length < 3 || ths[2].textContent.indexOf("Timestamp") < 0) return;
+      for (let c = 0; c < 3; c++) {
+        ths[c].setAttribute("data-label", ths[c].textContent);
+        ths[c].style.cursor = "pointer";
+        ths[c].title = "Click to sort";
+        ths[c].addEventListener("click", function () {
+          sortDesc = (sortCol == c) ? !sortDesc : (c != 0);  //new column : name A-Z, size/date largest first
+          sortCol = c;
+          sortTable();
+        });
+      }
+      sortTable();
     });
     function sortTable() {
-      var table, rows, switching, i, x, y, shouldSwitch;
-      table = document.getElementById("esplogger");
-      switching = true;
-      while (switching) {
-        switching = false;
-        rows = table.rows;
-        for (i = 1; i < (rows.length - 1); i++) {
-          shouldSwitch = false;
-          x = rows[i].getElementsByTagName("TD")[2];
-          y = rows[i + 1].getElementsByTagName("TD")[2];
-          if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-            shouldSwitch = true;
-            break;
-          }
-        }
-        if (shouldSwitch) {
-          rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-          switching = true;
-        }
+      var table = document.getElementById("esplogger");
+      var rows = Array.prototype.filter.call(table.rows, function (r) {
+        return r.cells.length > sortCol && r.cells[0].tagName == "TD";  //only data rows, not the header
+      });
+      if (!rows.length) return;
+      var body = rows[0].parentNode;
+      function key(r) {
+        var t = r.cells[sortCol].textContent.trim();
+        return (sortCol == 1) ? (parseFloat(t) || 0) : t.toLowerCase();  //size "1.234 MB" -> number
+      }
+      rows.sort(function (a, b) {
+        var x = key(a), y = key(b);
+        return (x < y ? -1 : (x > y ? 1 : 0)) * (sortDesc ? -1 : 1);
+      });
+      rows.forEach(function (r) { body.appendChild(r); });  //moves the rows, header row stays on top
+      var ths = table.getElementsByTagName("TH");
+      for (var c = 0; c < 3; c++) {
+        ths[c].textContent = ths[c].getAttribute("data-label") + (c == sortCol ? (sortDesc ? " ▼" : " ▲") : "");
       }
     }
 </script>
@@ -325,6 +343,18 @@ const char html_config_header[] PROGMEM = R"=====(
             <th>Info</th>
         </tr>
   )=====";
+//Returns a value as a quoted, HTML-escaped attribute value: value=attr(x) -> value="x".
+//Without quotes a value is cut at the first space (e.g. wlan password "my pass" -> "my"),
+//and a " or < in the value breaks the page (see issue #12).
+String attr(const String& s){
+  String r = s;
+  r.replace("&", "&amp;");  //first, otherwise the other replacements get escaped twice
+  r.replace("\"", "&quot;");
+  r.replace("'", "&#39;");
+  r.replace("<", "&lt;");
+  r.replace(">", "&gt;");
+  return "\"" + r + "\"";
+}
 void Drop_down_menu(int config_item,int value,String drop_text,String& webpage){
   webpage += "<option value='";
   webpage += String(value);
@@ -346,28 +376,26 @@ void html_config(String& webpage){
   webpage += "<button type='button' id='toggleBtn' onclick='toggleMenu()' style='background-color: #4CAF50; color: white; padding: 8px 16px; border: none; cursor: pointer;'>GPS Nerd settings !</button>\n";
   webpage += "</td></tr>\n";
   //ssid1
-  String ssid="\"" + String(config.ssid) + "\"";//problem with white space in SSID depends on position in webpage ???
   webpage += "<tr>\n<td>ssid</td><td>\n";
-  webpage += "<input size='21' type='text' required name='ssid' value="+ssid+">\n";//input size 20->30 if SSID name exceeds input size, full name is not visible
-  webpage += "</td><td>ssid: the name of the wlan where the esp-logger should connect to</td>\n</tr>\n";  
-  //password
+  webpage += "<input size='21' type='text' required name='ssid' value="+attr(config.ssid)+">\n";//input size 20->30 if SSID name exceeds input size, full name is not visible
+  webpage += "</td><td>ssid: the name of the wlan where the esp-logger should connect to</td>\n</tr>\n";
+  //password (not required: open wlan without password is possible)
   webpage += "<tr>\n<td>password</td><td>\n";
-  webpage += "<input size='20' type='text' required name='password' value="+String(config.password)+">\n";
-  webpage += "</td><td>password: the password of the wlan where the esp-logger should connect to</td>\n</tr>\n"; 
-  //ssid2
-  String ssid2="\"" + String(config.ssid2) + "\"";//problem with white space in SSID depends on position in webpage ???
+  webpage += "<input size='20' type='text' name='password' value="+attr(config.password)+">\n";
+  webpage += "</td><td>password: the password of the wlan where the esp-logger should connect to</td>\n</tr>\n";
+  //ssid2 (optional)
   webpage += "<tr>\n<td>ssid2</td><td>\n";
-  webpage += "<input size='21' type='text' required name='ssid2' value="+ssid2+">\n";//input size 20->30 if SSID name exceeds input size, full name is not visible
-  webpage += "</td><td>ssid2: wlan2, usefull for connection to your smartphone hotspot !</td>\n</tr>\n";  
-   //password2
+  webpage += "<input size='21' type='text' name='ssid2' value="+attr(config.ssid2)+">\n";//input size 20->30 if SSID name exceeds input size, full name is not visible
+  webpage += "</td><td>ssid2: wlan2, usefull for connection to your smartphone hotspot ! (optional)</td>\n</tr>\n";
+   //password2 (optional)
   webpage += "<tr>\n<td>password2</td><td>\n";
-  webpage += "<input size='20' type='text' required name='password2' value="+String(config.password2)+">\n";
-  webpage += "</td><td>password2: the password of the wlan2 where the esp-logger should connect to</td>\n</tr>\n"; 
+  webpage += "<input size='20' type='text' name='password2' value="+attr(config.password2)+">\n";
+  webpage += "</td><td>password2: the password of the wlan2 where the esp-logger should connect to (optional)</td>\n</tr>\n";
   #ifdef AUTO_UPLOAD_SPEEDSURF
-   // apiKey for speedsurf.app
+   // apiKey for speedsurf.app (optional, not everybody uses speedsurf.app)
   webpage += "<tr>\n<td>apiKey</td><td>\n";
   // We gebruiken de macro 'MAX_API_KEY_LENGTH' dynamisch voor de grootte van de inputbox
-  webpage += "<input size='" + String(MAX_API_KEY_LENGTH) + "' type='text' required name='apiKeyShort' value='" + apiKeyShort + "'>\n";
+  webpage += "<input size='" + String(MAX_API_KEY_LENGTH) + "' type='text' name='apiKeyShort' value=" + attr(apiKeyShort) + ">\n";
   webpage += "</td><td>apiKey: first 20 chars from apiKey for auto-upload your .gpy files to speedsurf.app</td>\n</tr>\n"; 
   // name new  .gpy files $.gpy  so auto-upload is activated
   webpage += "<tr><td>auto_upload</td><td>\n<select id='auto_upload' name='auto_upload'>\n";
@@ -377,7 +405,7 @@ void html_config(String& webpage){
   #endif
     //speed_screen
   webpage += "<tr>\n<td>speed_screen</td><td>\n";
-  webpage += "<input size='9' type='text' required name='speed_screen' value="+String(config.speed_screen)+">\n";//input size 9
+  webpage += "<input size='9' type='text' required name='speed_screen' value="+attr(config.speed_screen)+">\n";//input size 9
   webpage += "</td><td>Speed_screens choice :  1=Auto switching between Run, Alfa & NM, 2=Run & NM, 3=Alfa, 4=NM, 5= Total distance, 6= 2s/10s, 7= Auto switching between Alfa & 500m, 8= Auto switching between Alfa & 1h, 9= Alfa, 1h, and good run. If more then 1 digit, toggle between separat digits : 841 toggle between 1,4 and 8 !</td>\n</tr>\n";  
   //speed_large_font
   webpage += "<tr><td>speed_large_font</td><td>\n<select id='speed_large_font' name='speed_large_font'>\n";
@@ -393,7 +421,7 @@ void html_config(String& webpage){
   webpage += "</td><td>bar_length: Default length = 1852 m for 100% bar (=Nautical mile)</td>\n</tr>\n";
   //stat_screen
   webpage += "<tr>\n<td>stat_screen</td><td>\n";
-  webpage += "<input size='20' type='text' required name='stat_screen' value="+String(config.stat_screen)+">\n";//input size 20
+  webpage += "<input size='20' type='text' required name='stat_screen' value="+attr(config.stat_screen)+">\n";//input size 20
   webpage += "</td><td>Stat_screens choice : every character shows the according stat_screen after each other</td>\n</tr>\n";  
   
   //Stat_screens_time
@@ -411,7 +439,7 @@ void html_config(String& webpage){
   //GPIO12_screens
   #ifdef GPIO12_ACTIF
   webpage += "<tr>\n<td>gpio12_screen</td><td>\n";
-  webpage += "<input size='9' type='text' required name='gpio12_screen' value="+String(config.gpio12_screen)+">\n";//input size 9
+  webpage += "<input size='9' type='text' required name='gpio12_screen' value="+attr(config.gpio12_screen)+">\n";//input size 9
   webpage += "</td><td>gpio12_screens choice : Every digit shows the according GPIO_screen after each push. Screen 4 = s10 runs, screen 5 = alfa's.</td>\n</tr>\n";  
   #endif
   //Board_Logo
@@ -671,12 +699,11 @@ void html_config(String& webpage){
   webpage += "</select>\n</td><td>file_date_time: To choose the type of filenaming between filename_MAC_count or filename_date_time or date_time_filename or name_date_time_MAC.</td>\n</tr>\n"; 
   //UBXfile
   webpage += "<tr>\n<td>UBXfile</td><td>\n";
-  webpage += "<input size='10' type='text' required name='UBXfile' value="+String(config.UBXfile)+">\n";
+  webpage += "<input size='10' type='text' required name='UBXfile' value="+attr(config.UBXfile)+">\n";
   webpage += "</td><td>UBXfile: Here you can set the desired file name (max 10 char!), this is completed with the (unique) MAC address of the ESP32 and a suffix from 000 to 999 or the timestamp when the logging started.</td>\n</tr>\n";
   //Sleep_info
-  String Sleep_info="\"" + String(config.Sleep_info) + "\"";
   webpage += "<tr>\n<td>Sleep_info</td><td>\n";
-  webpage += "<input size='21' type='text' required name='Sleep_info' value="+Sleep_info+">\n";//size 20 -> 21
+  webpage += "<input size='21' type='text' required name='Sleep_info' value="+attr(config.Sleep_info)+">\n";//size 20 -> 21
   webpage += "</td><td>Sleep_info:  Text appears in sleep_screen.</td>\n</tr>\n";
   
 
