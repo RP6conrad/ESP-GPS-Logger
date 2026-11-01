@@ -139,6 +139,14 @@ void printDirectory(const char* dirname, uint8_t levels) {
   File file = root.openNextFile();
   int i = 0;
   while (file) {
+    //Skip hidden / system files from macOS and Windows (._name, .Trashes, .Spotlight-V100,
+    //System Volume Information...), they are not log files (issue #13).
+    String fname = String(file.name());
+    String base = fname.substring(fname.lastIndexOf('/') + 1);
+    if (base.startsWith(".") || base == "System Volume Information") {
+      file = root.openNextFile();
+      continue;
+    }
     time_t now;
     time(&now);
     if (webpage.length() > 1000) {
@@ -152,8 +160,9 @@ void printDirectory(const char* dirname, uint8_t levels) {
         }
       }
     } else if ((config.archive_days > 0) & (levels == 2) & (file.getLastWrite() < (now - config.archive_days * 24 * 3600)) & (file.getLastWrite() > EPOCH_2022)) {  //older then xx days but younger then 2021, copy to archive, but not config.txt !!
-      char buffer[40] = "/Archive";                                                                                                                                 //&(file.getLastWrite()>EPOCH_2022)
-      strcat(buffer, file.name());                                                                                                                                  //only rename if not Archive listing !!!
+      //buffer was 40 bytes : with file_date_time = name_date_time_MAC the name is longer -> stack overflow
+      char buffer[96];
+      snprintf(buffer, sizeof(buffer), "/Archive%s", file.name());  //only rename if not Archive listing !!!
       if ((String(file.name()) != "config.txt") & (String(file.name()) != "/config.txt") & (String(file.name()) != "/config_backup.txt") & (String(file.name()) != "config_backup.txt")) {
         if (sdOK|LITTLEFS_OK) SD_MMC.rename(file.name(), buffer);
       }
@@ -433,31 +442,56 @@ void Config_TXT() {
   server.send(200, "text/html", webpage);
 }
 
+//Result page of the config upload, also used for all error cases (the browser always gets an answer)
+void sendConfigResult(const String& message) {
+  SendHTML_Header();
+  webpage += F("<div style='overflow-x:auto;'><table id='esplogger'>");
+  webpage += "<tr><th>" + message + "</th></tr></table></div>";
+  webpage += F("<a href='/config'>[Back]</a><br><br>");
+  append_page_footer();
+  SendHTML_Content();
+  SendHTML_Stop();
+}
+
+//Returns a form field as raw JSON number text (for serialized()), or the fallback if the field
+//is empty or not a plain decimal number. serialized() writes the text 1:1 into the json, so an
+//empty field would give "cal_bat": , = invalid json -> config_fail @ boot -> wlan settings lost !
+//A comma as decimal separator ("3,6") is accepted and converted to a point.
+String jsonNumber(const String& name, const char* fallback) {
+  String v = server.arg(name);
+  v.trim();
+  v.replace(',', '.');
+  if (v.length() == 0 || v.length() > 12) return fallback;
+  bool digit = false, point = false;
+  int decimals = 0;
+  for (unsigned int i = 0; i < v.length(); i++) {
+    char c = v[i];
+    if (c >= '0' && c <= '9') {
+      digit = true;
+      if (point) decimals++;
+    } else if (c == '.' && !point) point = true;
+    else if (c == '-' && i == 0) continue;
+    else return fallback;
+  }
+  if (!digit) return fallback;
+  if (decimals > 6) decimals = 6;
+  //Re-format, so "1." / ".5" / "01" (not valid json) become "1" / "0.5" / "1",
+  //but the number of decimals stays as typed : "1.9438" stays "1.9438", "3.60" stays "3.60".
+  return String(v.toDouble(), (unsigned int)decimals);
+}
+
 void handleConfigUpload() {
-  if (sdOK | LITTLEFS_OK) {
-    File file;
-    if (sdOK) {
-      SD_MMC.remove("/config_backup.txt");
-      SD_MMC.rename("/config.txt", "/config_backup.txt");
-      SD_MMC.remove("/config.txt");
-      // Open file for writing
-      file = SD_MMC.open("/config.txt", FILE_WRITE);
-      if (!file) {
-        Serial.println(F("Failed to create file"));
-        return;
-      }
-    }
-    if (LITTLEFS_OK) {
-      LITTLEFS.remove("/config_backup.txt");
-      LITTLEFS.rename("/config.txt", "/config_backup.txt");
-      LITTLEFS.remove("/config.txt");
-      // Open file for writing
-      file = LITTLEFS.open("/config.txt", FILE_WRITE);
-      if (!file) {
-        Serial.println(F("Failed to create file"));
-        return;
-      }
-    }
+  if (!(sdOK | LITTLEFS_OK)) {
+    ReportSDNotPresent();
+    return;
+  }
+  //Only accept a complete form. A request without the form fields (old browser tab, history,
+  //typing the url) would otherwise write a config.txt with only empty / zero values.
+  if (!server.hasArg("ssid") || !server.hasArg("sample_rate") || !server.hasArg("UBXfile")) {
+    sendConfigResult(F("Incomplete form, config.txt was NOT changed"));
+    return;
+  }
+  {  //own scope : the 2 KB json document is freed before the answer page is built
     StaticJsonDocument<2048> doc;
     // Set the values in the document
     //Serial.println("calspeed:"+server.arg("cal_speed"));
@@ -467,9 +501,10 @@ void handleConfigUpload() {
     //gnss 2 = GPS + GLONASS (default M8 ROM 2)
     //gnss 1 = GPS + GALILEO (not working for M8)
     //gnss 0 = GPS + BEIDOU
-    doc["cal_bat"] = serialized(server.arg("cal_bat"));
-    config.cal_bat = server.arg("cal_bat").toFloat();
-    doc["cal_speed"] = serialized(server.arg("cal_speed"));
+    String cal_bat = jsonNumber("cal_bat", "1.75");
+    doc["cal_bat"] = serialized(cal_bat);
+    config.cal_bat = cal_bat.toFloat();
+    doc["cal_speed"] = serialized(jsonNumber("cal_speed", "3.6"));
     doc["sample_rate"] = server.arg("sample_rate").toInt();
     doc["gnss"] = server.arg("gnss").toInt();
     doc["max_Svs"] = server.arg("max_Svs").toInt();
@@ -498,9 +533,9 @@ void handleConfigUpload() {
     doc["file_date_time"] = server.arg("file_date_time").toInt();
     doc["dynamic_model"] = server.arg("dynamic_model").toInt();
     doc["GPIO12_screens"] = server.arg("GPIO12_screens").toInt();
-    doc["ublox_type"] = server.arg("GPS_type").toInt();//is overwritten @ boot by EEPROM value !!!
+    doc["ublox_type"] = server.arg("GPS_Type").toInt();//select is named GPS_Type, is overwritten @ boot by EEPROM value !!!
     doc["cpu_freq"] = server.arg("CPU_freq").toInt();
-    doc["timezone"] = serialized(server.arg("timezone"));
+    doc["timezone"] = serialized(jsonNumber("timezone", "1.0"));
     doc["timezone_DST"] = server.arg("timezone_DST").toInt();
     doc["UBXfile"] = server.arg("UBXfile");
     doc["Sleep_info"] = server.arg("Sleep_info");
@@ -511,8 +546,9 @@ void handleConfigUpload() {
     apiKeyShort = server.arg("apiKeyShort");
     // Kopiëer de String veilig naar de globale char-array 'apiKey'
     //apiKeyString.toCharArray(apiKey, MAX_API_KEY_LENGTH);
-    doc["shutdown_voltage"] = serialized(server.arg("shutdown_voltage"));
-    config.shutdown_voltage = server.arg("shutdown_voltage").toFloat();
+    String shutdown_voltage = jsonNumber("shutdown_voltage", "3.2");
+    doc["shutdown_voltage"] = serialized(shutdown_voltage);
+    config.shutdown_voltage = shutdown_voltage.toFloat();
     doc["track_distance"] = server.arg("track_distance").toInt();
     doc["p1_lon"] = server.arg("p1_lon");
     doc["p1_lat"] = server.arg("p1_lat");
@@ -541,45 +577,37 @@ void handleConfigUpload() {
       // Update direct de actieve globale char-array voor de uploadTask
       apiKeyShort.toCharArray(apiKey, MAX_API_KEY_LENGTH);
     } 
-    // Pretty Serialize JSON to file
-    if (serializeJsonPretty(doc, file) == 0) {
-      Serial.println(F("Failed to write to file"));
-      SendHTML_Header();
-      webpage += F("<div style='overflow-x:auto;'><table id='esplogger'>");
-      webpage += F("<tr><th>failed to Upload the file</th></tr></table></div>");
-      webpage += F("<a href='/config");
-      webpage += "'>[Back]</a><br><br>";
-      append_page_footer();
-      SendHTML_Content();
-      SendHTML_Stop();
-    } else {
-      // Close the file
-      file.close();
-      SendHTML_Header();
-      webpage += F("<div style='overflow-x:auto;'><table id='esplogger'>");
-      webpage += F("<tr><th>Upload was successful!</th></tr></table>");  //</table></div>");
-      //webpage += F("<tr><th><p style=\"color:red;\"/p>Sample-rate too high for the actual gnss setting, possible lost points in the log file !!</th></tr></div>");
-      /*
-      if ((config.ublox_type == M10_9600BD) | (config.ublox_type == M10_38400BD) | (config.ublox_type == AUTO_DETECT)) {  //limit sample rate for 3/4 GNSS M10, prevent lost points
-        if (((doc["gnss"] == 3) & (doc["sample_rate"] > 5)) | ((doc["gnss"] == 4) & (doc["sample_rate"] > 8)) | ((doc["gnss"] == 5) & (doc["sample_rate"] > 4))) {
-          webpage += F("<tr><th><p style=\"color:red;\"/p><b>Sample-rate too high for the actual gnss setting, possible lost points in the log file !!</b></th></tr></div>");
-        }
-      } else {
-      */  
-        webpage += F("</div>");
-      //}
-
-      webpage += F("<a href='/config");
-      webpage += "'>[Back]</a><br><br>";
-      append_page_footer();
-      SendHTML_Content();
-      SendHTML_Stop();
-      if (server.arg("reboot") == "yes") {
-        Ublox_off();
-        delay(1000);
-        ESP.restart();  //restart as wanted
-      }
+    //Write the new config first to a temporary file. Only if that worked, the old config.txt
+    //becomes config_backup.txt and the temporary file becomes config.txt.
+    //Before, config.txt was renamed first : if writing failed, there was no config.txt anymore.
+    fs::FS& fs = sdOK ? (fs::FS&)SD_MMC : (fs::FS&)LITTLEFS;
+    File file = fs.open("/config.tmp", FILE_WRITE);
+    if (!file) {
+      Serial.println(F("Failed to create /config.tmp"));
+      sendConfigResult(F("Could not create the file (SD full / write-protected?), config.txt was NOT changed"));
+      return;
     }
+    size_t written = serializeJsonPretty(doc, file);
+    file.close();
+    if (written == 0) {
+      Serial.println(F("Failed to write to /config.tmp"));
+      fs.remove("/config.tmp");
+      sendConfigResult(F("Failed to write the file, config.txt was NOT changed"));
+      return;
+    }
+    fs.remove("/config_backup.txt");                    //rename fails on FAT if the target exists
+    if (fs.exists("/config.txt")) fs.rename("/config.txt", "/config_backup.txt");
+    if (!fs.rename("/config.tmp", "/config.txt")) {
+      Serial.println(F("Failed to rename /config.tmp -> /config.txt"));
+      sendConfigResult(F("Failed to save config.txt, the previous config is in config_backup.txt"));
+      return;
+    }
+  }
+  sendConfigResult(F("Upload was successful!"));
+  if (server.arg("reboot") == "yes") {
+    Ublox_off();
+    delay(1000);
+    ESP.restart();  //restart as wanted
   }
 }
 
@@ -657,10 +685,12 @@ void makeLoginString(void) {
 
 /* Server Index Page */
 //https://github.com/italocjs/ESP32_OTA_APMODE/blob/main/Main.cpp
+//Plain JavaScript, no external libraries (jQuery from googleapis was removed):
+//in AP mode the browser has no internet access, so the page has to work stand-alone (issue #16).
+//action='/update' is also the fallback if JavaScript is disabled.
 String serverIndex =
-  "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
-  "<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"
-  "<input type='file' name='update' id='file' onchange='sub(this)' style='display:none'>"
+  "<form method='POST' action='/update' enctype='multipart/form-data' id='upload_form'>"
+  "<input type='file' name='update' id='file' accept='.bin' onchange='sub(this)' style='display:none'>"
   "<label id='file-input' for='file'>   Choose file...</label>"
   "<input type='submit' class='btn' value='Update'>"
   "<br><br>"
@@ -671,34 +701,26 @@ String serverIndex =
   "function sub(obj){"
   "var fileName = obj.value.split('\\\\');"
   "document.getElementById('file-input').innerHTML = '   '+ fileName[fileName.length-1];"
-  "};"
-  "$('form').submit(function(e){"
+  "}"
+  "document.getElementById('upload_form').addEventListener('submit', function(e){"
   "e.preventDefault();"
-  "var form = $('#upload_form')[0];"
-  "var data = new FormData(form);"
-  "$.ajax({"
-  "url: '/update',"
-  "type: 'POST',"
-  "data: data,"
-  "contentType: false,"
-  "processData:false,"
-  "xhr: function() {"
-  "var xhr = new window.XMLHttpRequest();"
+  "if (!document.getElementById('file').files.length) { alert('Choose a .bin file first'); return; }"
+  "var prg = document.getElementById('prg');"
+  "var bar = document.getElementById('bar');"
+  "var xhr = new XMLHttpRequest();"
   "xhr.upload.addEventListener('progress', function(evt) {"
   "if (evt.lengthComputable) {"
-  "var per = evt.loaded / evt.total;"
-  "$('#prg').html('progress: ' + Math.round(per*100) + '%');"
-  "$('#bar').css('width',Math.round(per*100) + '%');"
-  "}"
-  "}, false);"
-  "return xhr;"
-  "},"
-  "success:function(d, s) {"
-  "console.log('success!') "
-  "},"
-  "error: function (a, b, c) {"
+  "var per = Math.round(evt.loaded / evt.total * 100);"
+  "prg.innerHTML = 'progress: ' + per + '%';"
+  "bar.style.width = per + '%';"
   "}"
   "});"
+  "xhr.onload = function() {"
+  "prg.innerHTML = (xhr.responseText == 'OK') ? 'Update OK, the logger reboots now...' : 'Update FAILED';"
+  "};"
+  "xhr.onerror = function() { prg.innerHTML = 'Upload error, connection lost?'; };"
+  "xhr.open('POST', '/update');"
+  "xhr.send(new FormData(this));"
   "});"
   "</script>"
   + style;
@@ -740,7 +762,7 @@ void OTA_setup(void) {
     },
     handleFileUpload);
   server.on("/config", Config_TXT);
-  server.on("/configupload", handleConfigUpload);
+  server.on("/configupload", HTTP_POST, handleConfigUpload);  //POST only, a GET must never overwrite config.txt
   /*handling uploading firmware file */
   server.on("/update", HTTP_POST, []() {
       server.sendHeader("Connection", "close");
