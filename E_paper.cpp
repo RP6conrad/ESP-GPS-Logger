@@ -1234,7 +1234,9 @@ void Update_screen(int screen) {
     if (config.speed_large_font == 0) {
       display.setFont(&FreeSansBold12pt7b);  //print time
       display.setCursor(offset + 180, 43);
-      display.print(time_now);
+      if (field != SPEEDC) {
+        display.print(time_now);
+      }
     }
     if ((run_rectangle_length < 160) & (config.speed_large_font == 2)) {
       display.setTextWrap(false);
@@ -1242,7 +1244,9 @@ void Update_screen(int screen) {
       display.setCursor(offset + 186, 10);
       display.print(bar_info);
     }
-    display.fillRect(offset, bar_position, run_rectangle_length, 8, GxEPD_BLACK);  //balk voor run_distance weer te geven...
+    if ((field != SPEEDB) & (field != SPEEDC)) {
+      display.fillRect(offset, bar_position, run_rectangle_length, 8, GxEPD_BLACK);  //balk voor run_distance weer te geven...
+    }
   }
 
   if (screen == TROUBLE) {
@@ -1503,7 +1507,7 @@ void Update_screen(int screen) {
     }
     
     if (screen == STATSH) {  //last 100m, 250m, 500m, Alfa
-      Stats_4lines("100 lst", "250 lst", "500 lst", "Alfa lst", M100.display_last_run * calibration_speed, M250.display_last_run * calibration_speed, M500.display_last_run * calibration_speed,A500.alfa_speed_max * calibration_speed);
+      Stats_4lines("100 last", "250 last", "500 last", "Alfa last", M100.display_last_run * calibration_speed, M250.display_last_run * calibration_speed, M500.display_last_run * calibration_speed,A500.alfa_speed_max * calibration_speed);
     }
     if (screen == STATSI) {  //100m,250m, 500m,Alfa
       Stats_4lines("1s", "2s:", "10s:", "Mile:", S1.display_speed[9] * calibration_speed, S2.display_speed[9] * calibration_speed, S10.display_speed[9] * calibration_speed, M1852.avg_speed[9] * calibration_speed);

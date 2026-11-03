@@ -1,3 +1,31 @@
+###Changes SW 7.2beta
+* Clock drift correction in gpy and sbp (gps discussions)
+* Removed 15 Hz option due to clockdrift (gps discussions)
+* sbp file : set vsdop to 0, set vslist to 0 (gps discussions)
+* sbp file : added SW version in header, but still old format 
+* gpx file : speed is now average speed over last second
+* Paco Raap, issue "Progressbar adaption SpeedB & SpeedC"
+* GPS-discussion : Ad 4 digit year to filenames. 
+* Bugfix "last runs / 500 m " correction
+
+* Pull request from TritonDM : 
+* Firmware update in AP mode now possible(#16)
+* remove jQuery from googleapis, upload with plain XMLHttpRequest/FormData, so the update page works without internet access (AP mode)
+* show "Update OK" / "Update FAILED", form action /update as no-JS fallback
+*Config page (follow-up of #12)
+*quote and HTML-escape all text values (password with spaces was cut)
+*ssid2, password, password2 and apiKey are no longer required fields
+*/configupload accepts POST only and only with a complete form
+*validate numeric fields before they go raw into the json (an empty field gave invalid json -> config_fail -> wlan settings lost)
+*write /config.tmp first, then rename; always send a result page
+*fix arg name GPS_type -> GPS_Type
+*File list (#13)
+*click Name/Size/Timestamp to sort, click again to reverse, newest first on load
+*archive pages are sorted too (check used /archive instead of /archive_list)
+*Array.sort instead of a DOM bubble sort
+*hide ._*, .Trashes, .Spotlight-V100 and System Volume Information
+*Archive
+*fix stack overflow with long file names (buffer[40] + strcat)
 ### Changes SW 7.1beta
 * Date and time format in file names now with - (ESP-Discussions)
 * Function Stats_4lines() and Stats_2s_3lines() now layout Message and float fix decimal point (ESP-Discussions)

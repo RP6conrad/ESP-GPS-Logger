@@ -132,7 +132,8 @@ void log_GPY(File file){
  frame_time.tm_year = ubxMessage.navPvt.year - 1900; // years since 1900, so deduct 1900
  frame_time.tm_isdst = 0; // No daylight saving
  utc_Sec =  mktime(&frame_time)-_timezone;//mktime returns local time, but global long _timezone has the difference in sec between UTC - Local time !!
- int64_t utc_ms= utc_Sec*1000LL+(ubxMessage.navPvt.nano+500000)/1000000LL;
+ //int64_t utc_ms= utc_Sec*1000LL+(ubxMessage.navPvt.nano+500000)/1000000LL;
+ int64_t utc_ms= utc_Sec*1000LL+(ubxMessage.navPvt.nano+2500000LL)/5000000LL*5;//clock drift issue to avoid interval time jumps, Mike K888
 
 //calcultation of delta values
 int  delta_time= utc_ms-gpy_frame.Unix_time;//ms 

@@ -545,7 +545,7 @@ void html_config(String& webpage){
   if((config.ublox_type == M10_9600BD)|(config.ublox_type == M10_38400BD)|(config.ublox_type == M10_115200BD))ublox_type=3;
   if((config.ublox_type == M9_9600BD)|(config.ublox_type == M9_38400BD)|(config.ublox_type == M9_115200BD)|(config.M10_high_nav==M10_HIGH_NAV_RATE)) ublox_type=2;
   if((ublox_type==2)|((config.gnss==1)&(ublox_type==3))){
-    Drop_down_menu(config.sample_rate,15,"15 Hz",webpage);
+    //Drop_down_menu(config.sample_rate,15,"15 Hz",webpage);
     Drop_down_menu(config.sample_rate,20,"20 Hz",webpage);
     }
   webpage += "</select>\n</td><td>sample_rate: can be 1,2,4,5,8,10 (M8,M9,M10) 15Hz,20Hz (only M9/M10 High nav rate !). The higher, the more accurate, but also the larger the files become!<br> One UBX NavPVT message is 100byte, so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!<br>For the M10, max. sample-rate depends on GNSS settings ! 4 GNSS : max  4 Hz, 3 GNSS : max 5 Hz, 2 GNSS : max 10 Hz !</td>\n</tr>\n";

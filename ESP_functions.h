@@ -9,9 +9,9 @@
 #include "definitions.h"
 String IP_adress="0.0.0.0";
 #ifdef AUTO_UPLOAD_SPEEDSURF
-const char SW_version[16]="V 7.1betaB74";//Hier staat de software versie voor partitie 2MB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 7.2betaB74";//Hier staat de software versie voor partitie 2MB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #else
-const char SW_version[16]="V 6.1betaB74";//Hier staat de software versie voor partitie 1.2MB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 6.2betaB74";//Hier staat de software versie voor partitie 1.2MB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #endif
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -141,11 +141,6 @@ RTC_DATA_ATTR float RTC_minimum_voltage_bat=MINIMUM_VOLTAGE;
 RTC_DATA_ATTR int RTC_bat_choice = 0;
 RTC_DATA_ATTR int RTC_highest_read = STARTVALUE_HIGHEST_READ;
 
-//void GPSTC_info(char* GPSTC_post );
-/*Eenmaal flankdetectie indien GPIO langer dan push_time gedrukt
-* Ook variabele die dan long_pulse_time hoog blijft
-* Ook variabele die optelt tot maw elke keer push
-*/
 class Button_push{
             public:
             Button_push(int GPIO_pin,int push_time,int long_pulse_time,int max_count, bool default_state);//constructor

@@ -14,7 +14,7 @@ struct SBP_Header{//length = 64 bytes
    uint8_t Id2 = 0xa2;//seems to be necessary so that GP3S accept .sbp
    uint16_t Again_length = 30;
    uint8_t Start = 0xfd;
-   char Identity[57] ="ESP-GPS,0,unknown,unknown";//byte 7~63:  MID_FILE_ID(0xfd) will stuff    0xff for remaining bytes
+   char Identity[57] ="ESP-GPS,SW abcdefghijklmn,unknown,unknown";//byte 7~63:  MID_FILE_ID(0xfd) will stuff    0xff for remaining bytes
    }__attribute__((__packed__));
 struct SBP_frame{//length = 32 bytes
    uint8_t HDOP;        /* HDOP [0..51] with resolution 0.2 */
@@ -36,7 +36,10 @@ struct SBP_Header sbp_header;
 struct SBP_frame sbp_frame;
 
 void log_header_SBP(File file){
-  for (int i=32;i<64;i++){((unsigned char*)(&sbp_header))[i]=0xFF;}//fill with 0xFF
+  for (int i=35;i<64;i++){((unsigned char*)(&sbp_header))[i]=0xFF;}//fill with 0xFF
+  for(int i=0;i<16;i++){
+   sbp_header.Identity[i+11]=SW_version[i];
+   }
   file.write((const uint8_t *)&sbp_header,64);
 }
 void log_SBP(File file){
@@ -46,14 +49,15 @@ uint8_t day=ubxMessage.navPvt.day;
 uint8_t hour=ubxMessage.navPvt.hour;
 uint16_t min=ubxMessage.navPvt.minute;
 uint16_t sec=ubxMessage.navPvt.second;
-uint32_t numSV=0xFFFFFFFF;
+//uint32_t numSV=0xFFFFFFFF;
 uint32_t HDOP=(ubxMessage.navDOP.hDOP+1)/20;//from 0.01 resolution to 0.2 ,reformat pDOP to HDOP 8-bit !!
 if(HDOP>255)HDOP=255;//has to fit in 8 bit
 uint32_t sdop=ubxMessage.navPvt.sAcc/10;//was sAcc
 if(sdop>255)sdop=255;
-uint32_t vsdop=ubxMessage.navPvt.vAcc/10;//was headingAcc ???
-if (vsdop>255)vsdop=255;
-sbp_frame.UtcSec=ubxMessage.navPvt.second*1000+(ubxMessage.navPvt.nano+500000)/1000000;//om af te ronden
+//uint32_t vsdop=ubxMessage.navPvt.vAcc/10;//was headingAcc ???
+//if (vsdop>255)vsdop=255;
+//sbp_frame.UtcSec=ubxMessage.navPvt.second*1000+(ubxMessage.navPvt.nano+500000)/1000000;//om af te ronden
+sbp_frame.UtcSec=ubxMessage.navPvt.second*1000+(ubxMessage.navPvt.nano+2500000LL)/5000000LL*5;//clock drift issue to avoid interval time jumps, Mike K888
 sbp_frame.date_time_UTC_packed=(((year-2000)*12+month)<<22) +(day<<17)+(hour<<12)+(min<<6)+sec; 
 sbp_frame.Lat=ubxMessage.navPvt.lat;
 sbp_frame.Lon=ubxMessage.navPvt.lon;
@@ -61,11 +65,11 @@ sbp_frame.AltCM=ubxMessage.navPvt.hMSL/10;//omrekenen naar cm/s
 sbp_frame.Sog=ubxMessage.navPvt.gSpeed/10;//omrekenen naar cm/s
 sbp_frame.Cog=ubxMessage.navPvt.heading/1000;//omrekenen naar 0.01 degrees
 sbp_frame.SVIDCnt=ubxMessage.navPvt.numSV;
-sbp_frame.SVIDList=numSV>>(32-ubxMessage.navPvt.numSV);
+sbp_frame.SVIDList=0;// numSV>>(32-ubxMessage.navPvt.numSV); no meaningfull data !
 sbp_frame.HDOP=HDOP;
 sbp_frame.ClmbRte=-ubxMessage.navPvt.velD/10;//omrekenen naar cm/s
 sbp_frame.sdop=sdop;
-sbp_frame.vsdop=vsdop;
+sbp_frame.vsdop= 0; //vsdop; vertical speed accuracy, not meaningfull data !
 file.write((const uint8_t *)&sbp_frame,32);
 }
 

@@ -33,22 +33,22 @@ void Open_files(void) {
   if (config.file_date_time) {
     getLocalTime(&tmstruct);
     char extension[16] = ".txt";  //
-    char timestamp[16];
+    char timestamp[20];
 
     if (config.file_date_time == 1) {
-      sprintf(timestamp, "_%u-%02u-%02u_%02u-%02u", tmstruct.tm_year - 100, tmstruct.tm_mon + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
+      sprintf(timestamp, "_%04u-%02u-%02u_%02u-%02u", tmstruct.tm_year + 1900, tmstruct.tm_mon + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
       strcat(filenameERR, config.UBXfile);  //copy filename from config
       strcat(filenameERR, timestamp);       //add timestamp
       strcat(filenameERR, extension);       //add extension.txt
     }
     if (config.file_date_time == 2) {
-      sprintf(timestamp, "%u-%02u-%02u_%02u-%02u_", tmstruct.tm_year - 100, tmstruct.tm_mon + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
+      sprintf(timestamp, "%04u-%02u-%02u_%02u-%02u_", tmstruct.tm_year + 1900, tmstruct.tm_mon + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
       strcat(filenameERR, timestamp);       //add timestamp
       strcat(filenameERR, config.UBXfile);  //copy filename from config
       strcat(filenameERR, extension);       //add extension.txt
     }
     if (config.file_date_time == 3) {
-      sprintf(timestamp, "_%u-%02u-%02u_%02u-%02u", tmstruct.tm_year - 100, tmstruct.tm_mon + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
+      sprintf(timestamp, "_%04u-%02u-%02u_%02u-%02u", tmstruct.tm_year + 1900, tmstruct.tm_mon + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
       sprintf(macAddr, "_%2X%2X%2X", mac[3], mac[4], mac[5]);  //3 last bytes from MAC
       strcat(filenameERR, config.UBXfile);                    //copy filename from config
       strcat(filenameERR, timestamp);                         //add timestamp
@@ -405,11 +405,6 @@ void Session_info(GPS_data G) {
   strcat(message, ubxMessage.monVER.hwVersion);
   strcat(message, " \n");
   sprintf(tekst,"Ublox minimal elevation Sats: %d \n",config.M10_min_elevation);
-  strcat(message, tekst);
-  if(config.M10_full_power) 
-    sprintf(tekst,"M10 full power ON !\n");
-  else
-    sprintf(tekst,"M10 full power OFF !\n");
   strcat(message, tekst);
   if(config.M10_high_nav==3) 
     sprintf(tekst,"M10 high clockspeed !\n");

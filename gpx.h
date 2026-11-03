@@ -56,10 +56,11 @@ if(part==GPX_FRAME){
       lon=ubxMessage.navPvt.lon/10000000.0f;
       hdop=ubxMessage.navDOP.hDOP/100.0f;//resolution in ubx nav dop is 0.01
       course=ubxMessage.navPvt.heading/100000.0f;
-      speed=ubxMessage.navPvt.gSpeed/1000.0f;
+      //speed=ubxMessage.navPvt.gSpeed/1000.0f;
       msl=ubxMessage.navPvt.hMSL/1000.0f;
       sat=ubxMessage.navPvt.numSV;
-      speed=ubxMessage.navPvt.gSpeed/1000.0f;
+      //speed=ubxMessage.navPvt.gSpeed/1000.0f;
+      speed= S1.avg_s/1000.0f;//average speed last second
       year=ubxMessage.navPvt.year;
       month=ubxMessage.navPvt.month;
       day=ubxMessage.navPvt.day;

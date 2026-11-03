@@ -310,11 +310,11 @@ double GPS_speed::Update_distance(int actual_run){
           }
       avg_5runs=avg_5runs/5;        
       }
-  if((actual_run!=reset_display_last_run)&(m_speed>DISPLAY_RESET_SPEED)){//speed  > 18 km/h om display last run reset
+  if((actual_run!=reset_display_last_run)&(_gSpeed[index_GPS%BUFFER_SIZE]>DISPLAY_RESET_SPEED)){//was m_speed, maar dit is average over totale afstand  > 18 km/h om display last run reset
       reset_display_last_run=actual_run;
       display_last_run=0;
       }
-      else if(display_last_run<m_max_speed){
+  else if(display_last_run<m_max_speed){
         display_last_run=m_max_speed;
         }     
   old_run=actual_run;
@@ -377,7 +377,7 @@ float GPS_time::Update_speed(int actual_run){
                     }
                 avg_5runs=avg_5runs/5;
               }
-            if((actual_run!=reset_display_last_run)&(avg_s> DISPLAY_RESET_SPEED )){
+            if((actual_run!=reset_display_last_run)&(_gSpeed[index_GPS%BUFFER_SIZE]> DISPLAY_RESET_SPEED )){ //was avg_s, maar dit is average over totale tijd
               reset_display_last_run=actual_run;
               display_last_run=0;
               }

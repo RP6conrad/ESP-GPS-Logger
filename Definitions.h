@@ -63,8 +63,8 @@
 #define MINIMUM_VOLTAGE 0   // if lower then minimum_voltage, back to sleep.....was 3.2
 #define MINIMUM_VOLTAGE_CHANGE  0.1  //refresh screen if change > 0.01
 #define STARTVALUE_HIGHEST_READ 2300  //12 bit ADC, 4.2 V over voltagedivider
-#define MAXVALUE_HIGHEST_READ 2700
-#define TOLERANCE 100   //mean adc highest read + TOLERANCE before auto calibrate !!!
+//#define MAXVALUE_HIGHEST_READ 2700
+//#define TOLERANCE 100   //mean adc highest read + TOLERANCE before auto calibrate !!!
 #define FULLY_CHARGED_LIPO_VOLTAGE 4200.0 // to calculate calibration factor :  4200.0/ADC value bij highest reading while charging
 #define uS_TO_S_FACTOR 1000000UL /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP  3600UL   //1800UL        /* Time ESP32 will go to sleep (no for 60min, only refresh screen if delta bat > 0.1 V) */
