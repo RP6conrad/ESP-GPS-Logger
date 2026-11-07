@@ -314,7 +314,7 @@ void SD_dir(int archive) {
     String voltage_lipo = "&emsp;Bat voltage = " + String(RTC_voltage_bat, 2) + " Volt";
     String firmware = "Firmware "+ String(SW_version);
     String gps_warning = "<h3>"+ font_color_start+"Sample-rate too high for the actual gnss setting, possible lost points in the log file !!"+font_color_end + "</h3>";
-    String CPU_freq =  "<h3>"+ font_color_start+"For 5 Hz sample_rate, CPU freq of 160 MHz is sufficient. For 10 Hz, CPU freq of 240 MHz gives the maximal performance."+font_color_end + "</h3>";
+    String CPU_freq =  "<h3>"+ font_color_start+"For 5 or 10 Hz sample_rate, CPU freq of 80 MHz is sufficient. For 20 Hz, CPU freq of 240 MHz gives the maximal performance."+font_color_end + "</h3>";
     String Data_rate_high = "<h3>"+ font_color_start+"Max 2 file types set to ON, otherwise data rate too high and lost points possible !!"+font_color_end + "</h3>";
     String Shutdown_low = "<h3>"+ font_color_start+"Shutdown voltage in config lower then 3.1V, power down when lipo goes low !!"+font_color_end + "</h3>";
     /*
@@ -334,10 +334,10 @@ void SD_dir(int archive) {
     if(bat_perc<VOLTAGE_LOW) voltage_percent = "&emsp;"+font_color_start+"Bat = " + String(bat_perc,0)+" % &emsp;"+font_color_end;
     else voltage_percent = "&emsp;Bat % = " + String(bat_perc,0)+" % &emsp;";
     if ((config.ublox_type == M10_9600BD) | (config.ublox_type == M10_38400BD) | (config.ublox_type == M10_115200BD)|(config.ublox_type == AUTO_DETECT)) {  //limit sample rate for 3/4 GNSS M10, prevent lost points
-      if (((config.gnss == 3) & (config.sample_rate> 5)) | ((config.gnss== 4) & (config.sample_rate > 8)) | ((config.gnss== 5) & (config.sample_rate > 4))) {GPS_warning=true;}
+      if (((config.gnss == 3) & (config.sample_rate> 10)) | ((config.gnss== 4) & (config.sample_rate > 8)) | ((config.gnss== 5) & (config.sample_rate > 4))) {GPS_warning=true;}
        }
     if(config.M10_high_nav) {GPS_warning=false;} 
-    if(((config.sample_rate==5)&(config.cpu_freq<80))|((config.sample_rate==10)&!(config.cpu_freq<160)))CPU_freq_warning=true;
+    if((config.sample_rate==20)&!(config.cpu_freq<160))CPU_freq_warning=true;
     if(config.shutdown_voltage<3.1) Shutdown_warning=true;
     if (root) {
       root.rewindDirectory();

@@ -108,7 +108,7 @@ struct Config {
   uint8_t ublox_type=0;
   uint8_t M10_high_nav=0;
   uint8_t max_Svs=32; //max sats in nav solution
-  bool M10_full_power=0;
+  //bool M10_full_power=0;
   uint8_t M10_min_elevation = 5;
   double p1_lon,p1_lat,p2_lon,p2_lat;
   int cpu_freq = 80;

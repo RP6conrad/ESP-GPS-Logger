@@ -9,9 +9,9 @@
 #include "definitions.h"
 String IP_adress="0.0.0.0";
 #ifdef AUTO_UPLOAD_SPEEDSURF
-const char SW_version[16]="V 7.2betaB74";//Hier staat de software versie voor partitie 2MB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 7.2dB74";//Hier staat de software versie voor partitie 2MB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #else
-const char SW_version[16]="V 6.2betaB74";//Hier staat de software versie voor partitie 1.2MB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 6.2dB74";//Hier staat de software versie voor partitie 1.2MB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #endif
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";

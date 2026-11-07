@@ -414,7 +414,7 @@ void html_config(String& webpage){
   Drop_down_menu(config.speed_large_font,2,"Simon_Font ON, only speed",webpage);
   Drop_down_menu(config.speed_large_font,1,"Large_Font ON, only run",webpage);
   Drop_down_menu(config.speed_large_font,0,"Large_Font OFF,best of session + run",webpage);
-  webpage += "</select>\n</td><td>To choose the font sizes in the speed screen :<br> Large_Font OFF : first line small.<br>Large_FONT ON : first line medium.<b>Simon_Font ON : only speed & progress bar.</td>\n</tr>\n";  
+  webpage += "</select>\n</td><td>To choose the font sizes in the speed screen :<br> Large_Font OFF : first line small.<br>Large_FONT ON : first line medium.<br>Simon_Font ON : only speed & progress bar.</td>\n</tr>\n";  
   //bar_length
   webpage += "<tr>\n<td>bar_length</td><td>\n";
   webpage += "<input size='8' type='number' required name='bar_length' min='100' max='10000' value="+String(config.bar_length)+" step='1'>\n";
@@ -555,7 +555,7 @@ void html_config(String& webpage){
   Drop_down_menu(config.cpu_freq,80,"80 MHz",webpage);
   Drop_down_menu(config.cpu_freq,160,"160 MHz",webpage);
   Drop_down_menu(config.cpu_freq,240,"240 MHz",webpage);
-  webpage += "</select>\n</td><td>CPU freq: can be 80 MHz (5 Hz),160 MHz(10hz) or 240 MHz(20Hz). Longest battery live @ 80 Mhz ! 20 Hz (M9) needs possible 240 MHz. </td>\n</tr>\n";
+  webpage += "</select>\n</td><td>CPU freq: can be 80 MHz (5 Hz, 10 Hz),160 MHz(20hz) or 240 MHz. Longest battery live @ 80 Mhz ! 20 Hz (M9) needs possible 240 MHz. </td>\n</tr>\n";
   //gnss
   webpage += "<tr><td>gnss</td><td>\n<select id='gnss' name='gnss'>\n";
   if((config.ublox_type == M8_9600BD)|(config.ublox_type == M8_38400BD)|(config.ublox_type == M8_115200BD)){

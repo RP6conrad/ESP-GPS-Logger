@@ -1,3 +1,6 @@
+###Changes SW 7.2d
+* sbp file : Added user name (ESP-GPS), mac adress, sample rate and SW version + checksum to the header 
+* sbp file : svlist again in the old format, as it seems to be used in some programs
 ###Changes SW 7.2beta
 * Clock drift correction in gpy and sbp (gps discussions)
 * Removed 15 Hz option due to clockdrift (gps discussions)

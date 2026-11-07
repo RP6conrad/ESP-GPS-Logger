@@ -1,12 +1,6 @@
 #ifndef SBP_H
 #define SBP_H
 
-/*Function declarations*/
-//void log_header_SBP(File file);
-//void log_SBP(File file);
-
-//extern File sbpfile;
-//extern UBXMessage ubxMessage; 
 /* Locosys SBP structures */
 struct SBP_Header{//length = 64 bytes
    uint16_t Text_length = 30;//byte 0-1 : nr of meaningfull bytes in header (MID_FILE_ID)
@@ -35,12 +29,54 @@ struct SBP_frame{//length = 32 bytes
 struct SBP_Header sbp_header;
 struct SBP_frame sbp_frame;
 
+static_assert(sizeof(SBP_Header) == 64, "SBP_Header must be 64 bytes");
+
+bool build_sbp_header_struct(SBP_Header &header,
+                             const char *user_name,
+                             const char *serial_nr,
+                             const char *log_rate,
+                             const char *sw_version)
+{
+    if (!user_name || !serial_nr || !log_rate || !sw_version) return false;
+    // Een komma in een veld breekt de veldindeling
+    if (strchr(user_name, ',') || strchr(serial_nr, ',') ||
+        strchr(log_rate, ',') || strchr(sw_version, ',')) return false;
+    constexpr size_t IDENT_SIZE = sizeof(SBP_Header::Identity);  // 57
+    constexpr size_t TEXT_MAX   = IDENT_SIZE - 4;                // 53: ruimte voor checksum + end token
+    header.Id1   = 0xA0;
+    header.Id2   = 0xA2;
+    header.Start = 0xFD;
+
+    memset(header.Identity, 0xFF, IDENT_SIZE);
+    int n = snprintf(header.Identity, TEXT_MAX + 1, "%s,%s,%s,%s",
+                     user_name, serial_nr, log_rate, sw_version);
+    if (n < 0 || (size_t)n > TEXT_MAX) return false;   // te lang: niet stilzwijgend afkappen
+
+    const uint16_t payload_len = 1 + n;                // msg id + tekst
+
+    header.Text_length  = payload_len + 8;             // little endian (native op ESP32)
+    header.Again_length = __builtin_bswap16(payload_len); // big endian
+
+    uint16_t checksum = header.Start;
+    for (int i = 0; i < n; i++) checksum += (uint8_t)header.Identity[i];
+    checksum &= 0x7FFF;                                // alleen als je het SiRF-gedrag wilt
+
+    header.Identity[n]     = (checksum >> 8) & 0xFF;   // big endian
+    header.Identity[n + 1] = checksum & 0xFF;
+    header.Identity[n + 2] = 0xB0;
+    header.Identity[n + 3] = 0xB3;
+    return true;
+}
 void log_header_SBP(File file){
-  for (int i=35;i<64;i++){((unsigned char*)(&sbp_header))[i]=0xFF;}//fill with 0xFF
-  for(int i=0;i<16;i++){
-   sbp_header.Identity[i+11]=SW_version[i];
-   }
-  file.write((const uint8_t *)&sbp_header,64);
+    SBP_Header myHeader;
+    //const char* SW_version = "V 7.2betaB74";//global !!
+    const char* name = "ESP-GPS";
+    char serial_nr[13];                  // 12 hex-tekens + NUL
+    snprintf(serial_nr, sizeof(serial_nr), "%02X%02X%02X%02X%02X%02X", mac[0],mac[1],mac[2],mac[3], mac[4], mac[5]);
+    char sample_rate[10];
+    snprintf(sample_rate, sizeof(sample_rate),"%d",config.sample_rate);
+    build_sbp_header_struct(myHeader, name,serial_nr,sample_rate,SW_version);
+    file.write((const uint8_t *)&myHeader, 64);
 }
 void log_SBP(File file){
 uint32_t year=ubxMessage.navPvt.year;
@@ -49,8 +85,9 @@ uint8_t day=ubxMessage.navPvt.day;
 uint8_t hour=ubxMessage.navPvt.hour;
 uint16_t min=ubxMessage.navPvt.minute;
 uint16_t sec=ubxMessage.navPvt.second;
-//uint32_t numSV=0xFFFFFFFF;
-uint32_t HDOP=(ubxMessage.navDOP.hDOP+1)/20;//from 0.01 resolution to 0.2 ,reformat pDOP to HDOP 8-bit !!
+uint32_t numSV=0xFFFFFFFF;
+//uint32_t HDOP=(ubxMessage.navDOP.hDOP+1)/20;//from 0.01 resolution to 0.2 ,reformat pDOP to HDOP 8-bit !!
+uint32_t HDOP=(ubxMessage.navDOP.hDOP+10)/20;//gps discussions
 if(HDOP>255)HDOP=255;//has to fit in 8 bit
 uint32_t sdop=ubxMessage.navPvt.sAcc/10;//was sAcc
 if(sdop>255)sdop=255;
@@ -65,7 +102,7 @@ sbp_frame.AltCM=ubxMessage.navPvt.hMSL/10;//omrekenen naar cm/s
 sbp_frame.Sog=ubxMessage.navPvt.gSpeed/10;//omrekenen naar cm/s
 sbp_frame.Cog=ubxMessage.navPvt.heading/1000;//omrekenen naar 0.01 degrees
 sbp_frame.SVIDCnt=ubxMessage.navPvt.numSV;
-sbp_frame.SVIDList=0;// numSV>>(32-ubxMessage.navPvt.numSV); no meaningfull data !
+sbp_frame.SVIDList= numSV>>(32-ubxMessage.navPvt.numSV); //no meaningfull data !
 sbp_frame.HDOP=HDOP;
 sbp_frame.ClmbRte=-ubxMessage.navPvt.velD/10;//omrekenen naar cm/s
 sbp_frame.sdop=sdop;

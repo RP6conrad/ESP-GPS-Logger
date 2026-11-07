@@ -225,7 +225,7 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.gnss = doc["gnss"] | 3;
   config.max_Svs = doc["max_Svs"] | 32;
   config.M10_min_elevation = doc["M10_min_elevation"] | 5;
-  config.M10_full_power = doc["M10_full_power"] | 0;
+ // config.M10_full_power = doc["M10_full_power"] | 0;
   config.field = doc["speed_field"] | 1;
   config.speed_large_font = doc["speed_large_font"] | 0;
   config.bar_length = doc["bar_length"] | 1852;
