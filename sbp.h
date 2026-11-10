@@ -69,7 +69,6 @@ bool build_sbp_header_struct(SBP_Header &header,
 }
 void log_header_SBP(File file){
     SBP_Header myHeader;
-    //const char* SW_version = "V 7.2betaB74";//global !!
     const char* name = "ESP-GPS";
     char serial_nr[13];                  // 12 hex-tekens + NUL
     snprintf(serial_nr, sizeof(serial_nr), "%02X%02X%02X%02X%02X%02X", mac[0],mac[1],mac[2],mac[3], mac[4], mac[5]);
@@ -86,27 +85,24 @@ uint8_t hour=ubxMessage.navPvt.hour;
 uint16_t min=ubxMessage.navPvt.minute;
 uint16_t sec=ubxMessage.navPvt.second;
 uint32_t numSV=0xFFFFFFFF;
-//uint32_t HDOP=(ubxMessage.navDOP.hDOP+1)/20;//from 0.01 resolution to 0.2 ,reformat pDOP to HDOP 8-bit !!
-uint32_t HDOP=(ubxMessage.navDOP.hDOP+10)/20;//gps discussions
+uint32_t HDOP=(ubxMessage.navDOP.hDOP+10)/20;//from 0.01 resolution to 0.2
 if(HDOP>255)HDOP=255;//has to fit in 8 bit
-uint32_t sdop=ubxMessage.navPvt.sAcc/10;//was sAcc
+uint32_t sdop=(ubxMessage.navPvt.sAcc+5)/10;//was sAcc
 if(sdop>255)sdop=255;
-//uint32_t vsdop=ubxMessage.navPvt.vAcc/10;//was headingAcc ???
-//if (vsdop>255)vsdop=255;
 //sbp_frame.UtcSec=ubxMessage.navPvt.second*1000+(ubxMessage.navPvt.nano+500000)/1000000;//om af te ronden
-sbp_frame.UtcSec=ubxMessage.navPvt.second*1000+(ubxMessage.navPvt.nano+2500000LL)/5000000LL*5;//clock drift issue to avoid interval time jumps, Mike K888
+sbp_frame.UtcSec=ubxMessage.navPvt.second*1000+(ubxMessage.navPvt.nano+2500000LL)/5000000LL*5;//address clock drift issue / interval time jumps, Mike K888
 sbp_frame.date_time_UTC_packed=(((year-2000)*12+month)<<22) +(day<<17)+(hour<<12)+(min<<6)+sec; 
 sbp_frame.Lat=ubxMessage.navPvt.lat;
 sbp_frame.Lon=ubxMessage.navPvt.lon;
-sbp_frame.AltCM=ubxMessage.navPvt.hMSL/10;//omrekenen naar cm/s
-sbp_frame.Sog=ubxMessage.navPvt.gSpeed/10;//omrekenen naar cm/s
-sbp_frame.Cog=ubxMessage.navPvt.heading/1000;//omrekenen naar 0.01 degrees
+sbp_frame.AltCM=(ubxMessage.navPvt.hMSL+5)/10;//from mm/s to cm/s
+sbp_frame.Sog=(ubxMessage.navPvt.gSpeed+5)/10;//from mm/s to cm/s
+sbp_frame.Cog=(ubxMessage.navPvt.heading+500)/1000;//omrekenen naar 0.01 degrees
 sbp_frame.SVIDCnt=ubxMessage.navPvt.numSV;
-sbp_frame.SVIDList= numSV>>(32-ubxMessage.navPvt.numSV); //no meaningfull data !
+sbp_frame.SVIDList= numSV>>(32-ubxMessage.navPvt.numSV); //no meaningful data !
 sbp_frame.HDOP=HDOP;
-sbp_frame.ClmbRte=-ubxMessage.navPvt.velD/10;//omrekenen naar cm/s
+sbp_frame.ClmbRte=-(ubxMessage.navPvt.velD+5)/10;//from mm/s to cm/s
 sbp_frame.sdop=sdop;
-sbp_frame.vsdop= 0; //vsdop; vertical speed accuracy, not meaningfull data !
+sbp_frame.vsdop=0; //vsdop; vertical speed accuracy, no meaningful data !
 file.write((const uint8_t *)&sbp_frame,32);
 }
 
