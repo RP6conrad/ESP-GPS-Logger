@@ -115,19 +115,11 @@ void setup() {
   // --- LEES DE API KEY UIT ---
   // We halen de string op. Als deze nog niet bestaat, laden we "sk_live_leeg"
   String geladenKey = preferences.getString("api_key", "sk_live_leeg");
-  geladenKey.toCharArray(apiKey, MAX_API_KEY_LENGTH); 
+  geladenKey.toCharArray(apiKey, MAX_API_KEY_LENGTH);
+  // Voor de configpagina alleen de eerste 20 karakters, met puntjes
+  apiKeyShort = kortApiKey(String(apiKey));
   Serial.print(F("Preferences API Key Short = "));
   Serial.println(apiKeyShort);
-  // Zet de globale char-array of string om naar een tijdelijke String om te bewerken
-  String apiKeyStr = String(apiKey);
-  //apiKeyShort = String("");
-  if (apiKeyStr.length() > 20) {
-    // Knip de eerste 20 karakters af (index 0 tot 20) en voeg puntjes toe
-    apiKeyShort = apiKeyStr.substring(0, 20) + "...";
-  } else {
-    // Als de key korter is dan 20 karakters, toon hem dan volledig
-    apiKeyShort = apiKeyStr;
-  }
   // Sluit de preferences-namespace netjes af
   preferences.end();
 
@@ -314,7 +306,7 @@ void setup() {
                     &t2,//&t2,
                     0);            /* Task handle. */
 
-  // 1. Maak de Mutex aan voor de beveiliging van de SD-kaart
+  // 1. Maak de Mutex aan voor de upload-taak (scan en upload van de SD-kaart)
   fileSystemMutex = xSemaphoreCreateMutex();
 #ifdef AUTO_UPLOAD_SPEEDSURF
   // 2. Start de upload-taak op KERN 0 if set in config

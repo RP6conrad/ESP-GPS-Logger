@@ -85,7 +85,7 @@ bool auto_upload_time_out = false;
 bool upload_OK = false;                     //wordt true indien upload geslaagd is
 bool upload_file_rejected = false;          // Wordt true bij een 400, 413 of 422: de server keurt het bestand af
 TaskHandle_t UploadTaskHandle = NULL;      // De handle waarmee we de taak kunnen beheren of deleten
-SemaphoreHandle_t fileSystemMutex = NULL;  // Voorkomt dat de GPS-logger en de upload-taak tegelijk de SD-kaart gebruiken
+SemaphoreHandle_t fileSystemMutex = NULL;  // Alleen de upload-taak neemt deze (scan + upload); de logger schrijft zonder, de FAT-laag van ESP-IDF vergrendelt zelf per bestandsoperatie
 
 String actual_ssid="_ssid_";
  /* variables to hold instances of tasks*/
@@ -645,6 +645,7 @@ void uploadTask(void * pvParameters) {
    // Een vlag om bij te houden of we in de vorige loop al stabiel verbonden waren
   bool wasConnected = false; 
   for(;;) {
+    // Alleen scannen als er Wi-Fi verbinding is, de API-sleutel geldig is en er een IP-adres is
     esp_task_wdt_reset();               // voeden, binnen 120 s
     vTaskDelay(1);
     // Alleen scannen als er Wi-Fi verbinding is, de API-sleutel geldig is én de GPS NIET logt
@@ -726,6 +727,7 @@ void probeerUpload(const char* filepath) {
     Serial.println("Mislukt!");
     file.close();
     isUploading = false;
+    auto_upload_time_out = true;  // ook op het scherm: geen verbinding met de server, volgende scan opnieuw
     Serial.println("[RAM Check] Vrije Heap op dit moment: ");
     Serial.println(ESP.getFreeHeap());
     return;

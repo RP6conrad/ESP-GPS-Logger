@@ -605,7 +605,12 @@ void handleConfigUpload() {
       preferences.end(); // Sluit en sla fysiek op 
       // Update direct de actieve globale char-array voor de uploadTask
       apiKeyShort.toCharArray(apiKey, MAX_API_KEY_LENGTH);
-    } 
+      // Een nieuwe sleutel krijgt een nieuwe kans: na een 401/403 stond de upload
+      // anders stil tot een reboot, ook met de goede sleutel erin.
+      apiKeyValid = true;
+      // En de pagina toont daarna weer alleen het begin, zoals na een boot.
+      apiKeyShort = kortApiKey(apiKeyShort);
+    }
     //Write the new config first to a temporary file. Only if that worked, the old config.txt
     //becomes config_backup.txt and the temporary file becomes config.txt.
     //Before, config.txt was renamed first : if writing failed, there was no config.txt anymore.
