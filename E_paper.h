@@ -140,7 +140,8 @@ extern UBXMessage ubxMessage;
 extern int freeSpace;
 extern int RTC_screen_orientation;
 extern bool downloading_file;
-
+extern int Wifi_rssi;
+extern int T5_version;
 /*
 extern float Afstand_lijn;
 extern float Afstand_lijn2;
@@ -174,7 +175,7 @@ extern RTC_DATA_ATTR float RTC_R5_10s;
 extern RTC_DATA_ATTR float RTC_100m;
 extern RTC_DATA_ATTR float RTC_250m;
 extern RTC_DATA_ATTR int RTC_counter;
-
+extern RTC_DATA_ATTR int Awake_count;
 //Simon
 extern GPS_speed M100;
 extern GPS_speed M250;

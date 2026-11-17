@@ -98,13 +98,13 @@ sbp_frame.UtcSec=ubxMessage.navPvt.second*1000+(ubxMessage.navPvt.nano+2500000LL
 sbp_frame.date_time_UTC_packed=(((year-2000)*12+month)<<22) +(day<<17)+(hour<<12)+(min<<6)+sec; 
 sbp_frame.Lat=ubxMessage.navPvt.lat;
 sbp_frame.Lon=ubxMessage.navPvt.lon;
-sbp_frame.AltCM=ubxMessage.navPvt.hMSL/10;//omrekenen naar cm/s
-sbp_frame.Sog=ubxMessage.navPvt.gSpeed/10;//omrekenen naar cm/s
-sbp_frame.Cog=ubxMessage.navPvt.heading/1000;//omrekenen naar 0.01 degrees
+sbp_frame.AltCM=(ubxMessage.navPvt.hMSL+5)/10;//omrekenen naar cm/s
+sbp_frame.Sog=(ubxMessage.navPvt.gSpeed+5)/10;//omrekenen naar cm/s
+sbp_frame.Cog=(ubxMessage.navPvt.heading+500)/1000;//omrekenen naar 0.01 degrees
 sbp_frame.SVIDCnt=ubxMessage.navPvt.numSV;
 sbp_frame.SVIDList= numSV>>(32-ubxMessage.navPvt.numSV); //no meaningfull data !
 sbp_frame.HDOP=HDOP;
-sbp_frame.ClmbRte=-ubxMessage.navPvt.velD/10;//omrekenen naar cm/s
+sbp_frame.ClmbRte=(-ubxMessage.navPvt.velD-5)/10;//omrekenen naar cm/s
 sbp_frame.sdop=sdop;
 sbp_frame.vsdop= 0; //vsdop; vertical speed accuracy, not meaningfull data !
 file.write((const uint8_t *)&sbp_frame,32);

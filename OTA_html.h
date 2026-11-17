@@ -551,7 +551,7 @@ void html_config(String& webpage){
   webpage += "</select>\n</td><td>sample_rate: can be 1,2,4,5,8,10 (M8,M9,M10) 15Hz,20Hz (only M9/M10 High nav rate !). The higher, the more accurate, but also the larger the files become!<br> One UBX NavPVT message is 100byte, so at 1Hz this gives a file of 360kb/hour, at 10Hz 3.6Mb/hour!<br>For the M10, max. sample-rate depends on GNSS settings ! 4 GNSS : max  4 Hz, 3 GNSS : max 5 Hz, 2 GNSS : max 10 Hz !</td>\n</tr>\n";
   //cpu_freq
   webpage += "<tr>\n<td>CPU freq(MHz)</td><td>\n<select id='CPU_freq' name='CPU_freq'>";
-  //Drop_down_menu(config.cpu_freq,40,"40 MHz",webpage);
+  //Drop_down_menu(config.cpu_freq,40,"40 MHz",webpage);//SD_MMC.h heeft minstens 80 MHz nodig !!!
   Drop_down_menu(config.cpu_freq,80,"80 MHz",webpage);
   Drop_down_menu(config.cpu_freq,160,"160 MHz",webpage);
   Drop_down_menu(config.cpu_freq,240,"240 MHz",webpage);

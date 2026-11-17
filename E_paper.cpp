@@ -444,6 +444,7 @@ void Sleep_screen(int choice) {
       display.setCursor(col1, 105);  // was 121
       display.setFont(&SF_Distant_Galaxy9pt7b);
       display.print(RTC_Sleep_txt);
+      //display.printf(" Count %d ",Awake_count);
     }
     display.setFont(&FreeMonoBold9pt7b);
     // left column
@@ -732,6 +733,7 @@ int Time(int offset) {
     display.setFont(&FreeSansBold9pt7b);
     display.setCursor(offset, INFO_BAR_ROW);
     display.print(time_now);
+    if(Wifi_on) display.printf("  RSSI:%d",Wifi_rssi);
   }
   return 0;
 }
@@ -904,7 +906,7 @@ void Update_screen(int screen) {
         display.setCursor(offset, (cursor += ROW_9PT_W_SPACING));
       }
       display.printf("http://%s", IP_adress.c_str());
-
+      //display.printf("http://%s    %d dB", IP_adress.c_str(),rssi);
     } else {
       display.fillRect(0, 0, 250, 122, GxEPD_WHITE);
       ESP_GPS_LOGO_40
@@ -939,6 +941,8 @@ void Update_screen(int screen) {
     update_delay = 100;
     ESP_GPS_LOGO_40
     topLeft_Title("ESP-GPS try to connect");
+    if(T5_version==T5_VERSION_V2_3)display.print("T5 V2.3");
+    if(T5_version==T5_VERSION_V2_4)display.print("T5 V2.4");
     //DEVICE_BOOT_LOG(2);
     display.setCursor(offset, 102);
     display.printf("Logspace left : %d hour", Logtime_left(Free_space()) / 60);

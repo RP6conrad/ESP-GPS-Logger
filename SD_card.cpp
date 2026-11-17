@@ -376,6 +376,10 @@ void Session_info(GPS_data G) {
   strcat(message, tekst);
   sprintf(tekst, "Lipo calibration: %.3f \n", RTC_calibration_bat);
   strcat(message, tekst);
+  if (T5_version == 0) strcat(message, "T5 Version unknown \n");
+  if (T5_version == 1) strcat(message, "T5 Version V2.3 \n");
+  if (T5_version == 2) strcat(message, "T5 Version V2.4 \n");
+  strcat(message, tekst);
   sprintf(tekst, "Timezone : %f h\n", config.timezone);
   strcat(message, tekst);
   sprintf(tekst, "tz offset (sec) : %ld \n", _timezone);

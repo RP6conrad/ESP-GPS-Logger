@@ -5,7 +5,9 @@
 //#define DLS                  //set date on march 26 1:55, to test daylightsaving
 #define T5_E_PAPER           //for compiling without display funtions....
 //#define GPIO12_ACTIF        //if GPIO12 is used as wake up, standard GPIO12 function is not activated !!
-#define T5_V2_4_GPIO12      //GPIO12 set high @ boot for activating the screen from the Version 2.4 is necessary. Low deepsleep current 30 µA
+#define T5_VERSION_UNKNOWN 0
+#define T5_VERSION_V2_3 1
+#define T5_VERSION_V2_4 2
 //#define EPD_PWR_EN              (12)    // Only V2.4 Version , v2.3.1 version not have this pin
   // Power on the EPD
   //  pinMode(EPD_PWR_EN, OUTPUT);
@@ -78,7 +80,7 @@
 #define TIME_OUT_NAV_PVT 10000    //10s time out ubx nav-pvt msg before screen "TROUBLE" 
 #define FORMAT_LITTLEFS_IF_FAILED true
 #define MAX_API_KEY_LENGTH 50
-//#define AUTO_UPLOAD_SPEEDSURF
+#define AUTO_UPLOAD_SPEEDSURF
 #define WIFI_HERSTEL_MS 60000   //zo lang mag de Wi-Fi terugkomen als er nog een upload klaarstaat
 #define BEACON_GEDULD_S 15      //zo lang zonder beacons van het accesspoint voor de ESP de verbinding opgeeft (driver: 6 s)
 //#define WIFI_ALLEEN_BG        //testschakelaar: station alleen 802.11b/g, geen n
