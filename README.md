@@ -32,6 +32,15 @@ GPS Logger for Speedsurfing, based on ESP32 & u-blox hardware. This is an open s
 #### Interface
 SW is written in Arduino IDE (C++). For easy access to the files on the sd, a ftp-server over wifi is integrated. Also OTA (over the air update) of the software is possible. SW 5.58 : Thanks to the contribution of tritondm, the webserver is now extended and all files on the sd can be downloaded over this webserver. Also the complete configuration can be changed over the webserver !! No need for ftp anymore, but this is still possible. SW 5.75 : Autodetection Ublox M8,M9,M10 is supported. First time @boot, the type of ublox and baudrate is detected and stored in eeprom memory.
 
+#### Auto upload to SpeedSurf.app
+From SW 7.0 the logger can upload its .gpy files to [SpeedSurf.app](https://speedsurf.app) by itself, as soon as it is on Wi-Fi.
+- **Only in the 7.x files**, from `Bin_files_B74_partition2MB` or `Bin_files_BN_partition2MB`. The 6.x files in the other folders are the same software without the upload: with it, the software does not fit in the old partition.
+- **7.x needs the bigger app partition.** The firmware update page shows it: ".bin has to fit in this Partition : 1.88 MB". If it says 1.25 MB, an update over Wi-Fi cannot change that. Flash once over USB, the same way as the first flashing (see the building manual below), with `Flash_Bin_files/partitions_2MB.bin` instead of `Rtos5.ino.partitions.bin`: bootloader `0x1000`, partition table `0x8000`, `boot_app0.bin` `0xe000`, the 7.x .bin `0x10000`. After that, updates over Wi-Fi work as before. The API key and GPS settings (EEPROM) and config.txt on the SD card stay; the small internal LittleFS (only used without an SD card) is erased.
+- **Config page:** paste the full API key (SpeedSurf.app, Settings > Devices) in `apiKey`, set `auto_upload` to AUTO UPLOAD ON, save, and restart the logger.
+- **Wi-Fi must be there when the logger starts.** It looks for `ssid` and `ssid2` only at boot, a few seconds each; without Wi-Fi it starts logging and the radio stays off. With a phone hotspot: hotspot on first, then the logger.
+- New files are written as `name$.gpy`. After a successful upload they become `name.gpy`; a file the server refuses becomes `name!.gpy` and is not sent again. Only files in the root of the SD card are uploaded, not those in /Archive.
+- Back from 6.x to 7.x: check that AUTO UPLOAD is still ON.
+
 #### Arduino / library versions : 
 - Arduino IDE 2.02
 - ESP32 version 1.06, but next file need a change : 
