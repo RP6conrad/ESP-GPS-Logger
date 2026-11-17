@@ -11,11 +11,8 @@
 #include "FS.h"
 #include "SPI.h"
 #include "sys/time.h"
-#include "soc/timer_group_struct.h"
-#include "soc/timer_group_reg.h"
 #include "Arduino.h"
 #include "Ublox.h"
-//#include "E_paper_266.h"//changing the E_paper : delete the build directory (can be found in the compile output)
 #include "E_paper.h"
 #include "SD_card.h"
 #include "GPS_data.h"
@@ -30,7 +27,6 @@
 #include <time.h>
 #include "Definitions.h"
 #include <LittleFS.h>
-#include "rom/rtc.h"
 #include "track_speed.h"
 #include "ESP_functions.h"
 #include <Preferences.h>
@@ -43,14 +39,14 @@ const char* password2 = config.password2; //WiFi Password
 const char* soft_ap_ssid = "ESP32AP"; //accespoint ssid
 const char* soft_ap_password = "password"; //accespoint password
 const char* netwerkNaam = "esp32"; 
-
+int Wifi_rssi = 0;
 //#define MAX_API_KEY_LENGTH 60
 //char apiKey[MAX_API_KEY_LENGTH] = ""; // Globale char-array voor je HTTPS-key
 Preferences preferences;
 bool ap_mode=false;
 bool sleep_mode=false;
 //bool isUploading=false;
-extern bool reset_boot; 
+//extern bool reset_boot; 
 // Globale variabelen voor het traject en de metingen
 Line_2D startLijn;
 Line_2D finishLijn;
@@ -76,16 +72,30 @@ uint8_t track_minute[10];
 double track_time;
 LijnPassageResultaat startRes;
 LijnPassageResultaat finishRes;
+extern RTC_DATA_ATTR int T5_version;
 
 
 void setup() {
   Serial.begin(115200);
   Serial.print("Actual CPU freq @ boot"); Serial.println (getCpuFrequencyMhz());
-  #ifdef T5_V2_4_GPIO12   //T5 board version 2.4 needs gpio12 high voor the e-paper
-   pinMode(12, OUTPUT);
-   digitalWrite(12, HIGH);
-  #endif
+  initAdcCal() ;  //read adc calibration efuse reg
+  print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
+ 
+  const gpio_num_t sd_pins[] = {GPIO_NUM_2, GPIO_NUM_13, GPIO_NUM_14, GPIO_NUM_15};
+  for (auto p : sd_pins) {
+    rtc_gpio_hold_dis(p);   // hold loslaten
+    rtc_gpio_deinit(p);     // terug naar normale digitale GPIO-functie
+  }
   pinMode(2, INPUT_PULLUP);//for SD_MMC mode....
+  delay(25);
+  Serial.print("Search SD with GPIO12 low");
+  T5_version = T5_VERSION_UNKNOWN; //RTC memory
+  if (SD_MMC.begin("/sdcard", true)) {T5_version = T5_VERSION_V2_3;Serial.println("Found SD with GPIO12 low, T5 Version 2.3 !!");}
+  pinMode(12, OUTPUT);
+  digitalWrite(12, HIGH);
+  delay(50);
+  if ((SD_MMC.begin("/sdcard", true))&(T5_version==T5_VERSION_UNKNOWN)) {T5_version = T5_VERSION_V2_4;Serial.println("Found SD with GPIO12 high, T5 Version 2.4 !!");}
+  //pinMode(2, INPUT_PULLUP);//for SD_MMC mode....
   // Start Preferences in read-only modus (false)
   preferences.begin("gps_config", false);
   // Lees de waarden uit. Als een waarde nog niet bestaat in de NVS (bijv. eerste start),
@@ -118,8 +128,8 @@ void setup() {
   // geeft BROWNOUT (9), een gewone start POWERON (1), slaap DEEPSLEEP (8).
   { esp_reset_reason_t rr = esp_reset_reason();
     Serial.printf("Reset reason: %d%s\n", rr, rr == ESP_RST_BROWNOUT ? " (BROWNOUT)" : rr == ESP_RST_PANIC ? " (PANIC)" : rr == ESP_RST_TASK_WDT || rr == ESP_RST_INT_WDT || rr == ESP_RST_WDT ? " (WATCHDOG)" : ""); }
-  if(reset_boot==true) {setCpuFrequencyMhz(80);}
-  print_wakeup_reason(); //Print the wakeup reason for ESP32, go back to sleep is timer is wake-up source !
+ // if(reset_boot==true) {setCpuFrequencyMhz(80);}
+  
   Serial.println("setup Serial");
   Serial.println("Serial Txd is on pin: "+String(TX));
   Serial.println("Serial Rxd is on pin: "+String(RX));
@@ -204,6 +214,7 @@ void setup() {
       strcpy(RTC_Sleep_txt,"Shut down Low Bat !");
       Shut_down();
    }
+  /*
   if(reset_boot==true){
       RTC_OFF_screen=1;//Simon screen with info text !!!
       char tekst[32] = "";
@@ -212,6 +223,7 @@ void setup() {
       strcpy(RTC_Sleep_txt,"Shutdown after reset!");
       Shut_down();
   }
+  */
   setCpuFrequencyMhz(240);
   Update_screen(BOOT_SCREEN);
   Serial.print("Actual CPU freq before Wifi.begin(): "); Serial.println (getCpuFrequencyMhz());
@@ -322,10 +334,12 @@ void loop() {
 
 void taskOne( void * parameter )
 {
+ esp_task_wdt_add(NULL);              // deze taak aanmelden
+
  while(true){ 
    vTaskDelay(1);         //dit moet normaal volstaan voor watchdog
    esp_task_wdt_reset();  //en dit... Al de rest opkuisen
-
+   //while(true){delay(100);}//test watchdog
    // Tijdens een upload elke halve seconde: bytes bij TCP, RSSI en vrije heap.
    // De laatste regel vóór "disconnected" is de echte RSSI op dat moment (na
    // de drop geeft WiFi.RSSI() 0), en bytes die stilstaan terwijl de Wi-Fi
@@ -387,10 +401,12 @@ void taskOne( void * parameter )
        }
    if((WiFi.status() == WL_CONNECTED)|SoftAP_connection){
         ftpSrv.handleFTP();        //make sure in loop you call handleFTP()!! 
+        dnsServer.processNextRequest();
         server.handleClient();
         ftpStatus=ftpSrv.cmdStatus;//for e-paper
         // Init and get the time if WLAN, create "Archive" dir if not present
         if(WiFi.status() == WL_CONNECTED){
+          Wifi_rssi = WiFi.RSSI();
           if(NTP_time_set==0){
             configTime(0,0,"pool.ntp.org");
             setenv("TZ",TimeZone,1);
@@ -441,6 +457,7 @@ void taskOne( void * parameter )
                 Shut_down_Save_session=true;
                 start_logging_millis=millis();
                 Open_files();//only start logging if GPS signal is OK
+                stat_count=0; //always start with first stat_screen !!
                 }
           }      //    Alleen speed>0 indien snelheid groter is dan 1m/s + sACC<1 + sat<5 + speed>35 m/s !!!
         }
@@ -575,9 +592,12 @@ void taskOne( void * parameter )
  
 void taskTwo( void * parameter)
 {
+  esp_task_wdt_add(NULL);              // deze taak aanmelden
+
   while(true){ 
     vTaskDelay(1);
     esp_task_wdt_reset();
+    //while(true){delay(100);}//test watchdog
     //wdt_task1=millis();
     if(config.Stat_screens_time!=0)stat_count++;//alleen auto switch stat screen als time>0 !!
     if (stat_count>config.screen_count)stat_count=0;//screen_count = 2

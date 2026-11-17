@@ -95,7 +95,7 @@ struct Config {
   bool logUBX_nav_sat=0;// log nav sat msg to .ubx
   bool logSBP=1;//log to .sbp
   bool logGPY=1;//log to .gps
-  bool auto_upload_speedsurf=0;
+  bool auto_upload_speedsurf=1;
   bool logGPX=0;//log to .gpx
   int file_date_time=2;//type of filenaming, with MAC adress or datetime
   char UBXfile[32]="My_ESP_GPS";//your preferred filename
@@ -114,6 +114,7 @@ struct Config {
   int cpu_freq = 80;
   } ;
 extern Config config;
+extern int T5_version;
 void AddString();
 void logERR( const char * message);
 void Open_files(void);

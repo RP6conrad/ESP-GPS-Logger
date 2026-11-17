@@ -6,12 +6,15 @@
 
 #include <esp_wifi.h>    //esp_wifi_set_inactive_time: beacon-geduld
 #include <esp_system.h>  //esp_reset_reason
+#include "driver/adc.h"
+#include "esp_adc_cal.h" //read efuse calibration
 #include "definitions.h"
+#include <DNSServer.h>
 String IP_adress="0.0.0.0";
 #ifdef AUTO_UPLOAD_SPEEDSURF
-const char SW_version[16]="V 7.2dB74";//Hier staat de software versie voor partitie 2MB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 7.2eB74";//Hier staat de software versie voor partitie 2MB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #else
-const char SW_version[16]="V 6.2dB74";//Hier staat de software versie voor partitie 1.2MB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 6.2eB74";//Hier staat de software versie voor partitie 1.2MB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #endif
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -39,7 +42,7 @@ bool SoftAP_connection = false;
 bool GPS_Signal_OK = false;
 //bool long_push = false;
 bool Field_choice = false;
-bool reset_boot = false;
+//bool reset_boot = false;
 int NTP_time_set = 0;
 int Gps_time_set = 0;
 bool Shut_down_Save_session = false;
@@ -69,7 +72,6 @@ float Mean_heading,heading_SD;
 //int wdt_task0,wdt_task1;
 //int max_count_wdt_task0;
 int freeSpace;
-
 char apiKey[MAX_API_KEY_LENGTH] = ""; // Wordt nu dynamisch gevuld vanuit Preferences
 String apiKeyShort = "" ;
 const char* uploadUrl = "https://speedsurf.app/api/device/upload";
@@ -140,6 +142,8 @@ RTC_DATA_ATTR float RTC_old_voltage_bat=3.6;
 RTC_DATA_ATTR float RTC_minimum_voltage_bat=MINIMUM_VOLTAGE;
 RTC_DATA_ATTR int RTC_bat_choice = 0;
 RTC_DATA_ATTR int RTC_highest_read = STARTVALUE_HIGHEST_READ;
+RTC_DATA_ATTR int T5_version = 0;
+RTC_DATA_ATTR int Awake_count = 0;
 
 class Button_push{
             public:
@@ -218,9 +222,13 @@ void print_wakeup_reason(){
   switch(wakeup_reason)
   {  
     case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO");
+                                 Awake_count=0;
+                                 if(T5_version==T5_VERSION_V2_4){  pinMode(12, OUTPUT);//necessary for screen refresh if V2.4 !!!
+                                                    digitalWrite(12, HIGH);
+                                                    delay(50);}
                                  pinMode(HOLD_PIN, OUTPUT);
                                  digitalWrite(HOLD_PIN,HIGH);
-                                 reset_boot=false; 
+                                 //reset_boot=false; 
                                  pinMode(GO_TO_SLEEP_GPIO,INPUT_PULLUP);
                                  while(millis()<200){ //minimal puls length = 200 ms !!!
                                     if (digitalRead(GO_TO_SLEEP_GPIO)==1){
@@ -238,15 +246,22 @@ void print_wakeup_reason(){
                                     }
                                  Boot_screen();
                                  break;
-    case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); 
+    case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal EXT1"); 
                                  break;
-    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer");     
+    case ESP_SLEEP_WAKEUP_TIMER : Serial.printf("Wakeup caused by timer, count %d\n",Awake_count); 
+                                  Awake_count++;    
                                   if(abs(RTC_voltage_bat-RTC_old_voltage_bat)>MINIMUM_VOLTAGE_CHANGE){
+                                    if(T5_version==T5_VERSION_V2_4){  pinMode(12, OUTPUT);//necessary for screen refresh if V2.4 !!!
+                                                        digitalWrite(12, HIGH);
+                                                        delay(50);}
                                     Sleep_screen(RTC_SLEEP_screen);
                                     display.powerDown();
                                     RTC_old_voltage_bat=RTC_voltage_bat;
                                     }
                                   if(RTC_voltage_bat<RTC_minimum_voltage_bat){
+                                    if(T5_version==T5_VERSION_V2_4){  pinMode(12, OUTPUT);//necessary for screen refresh if V2.4 !!!
+                                                        digitalWrite(12, HIGH);
+                                                        delay(50);}
                                       Boot_screen();
                                       display.powerDown();
                                       delay(100);
@@ -255,11 +270,12 @@ void print_wakeup_reason(){
                                       esp_deep_sleep_start();//sleep forever.....
                                     }
                                   go_to_sleep(sleeping_time,0); //was 4000
-                                  break;                               
+                                  break;
+     case ESP_SLEEP_WAKEUP_ULP: Serial.println("Wakeup caused by ulp");
+                                  break;
+    // gewekt door de ULP (I_WAKE)                                                             
     case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); 
                                      break;
-    case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); 
-                                break;
     default : Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason);
               pinMode(HOLD_PIN, OUTPUT);
               digitalWrite(HOLD_PIN,HIGH);
@@ -289,7 +305,7 @@ void print_reset_reason(int reason)
     */
      case 5 : Serial.println ("DEEPSLEEP_RESET");break;        //<5,  Deep Sleep reset digital core
     case 12 : Serial.println ("SW_CPU_RESET");break;          /**<12, Software reset CPU*/        
-    default : Serial.println ("NO_MEAN, always back to sleep after bootscreen()!!!");reset_boot=true; 
+    default : Serial.println ("NO_MEAN, always back to sleep after bootscreen()!!!");//reset_boot=true; 
   }
 }
 void go_to_sleep(uint64_t sleep_time,bool refresh_screen){
@@ -300,38 +316,42 @@ void go_to_sleep(uint64_t sleep_time,bool refresh_screen){
   Serial.println("Setup ESP32 to sleep for every " + String((int)sleep_time) + " Seconds");
   Serial.println("Going to sleep now");
   Serial.flush();
-  if(reset_boot==false) delay(3000);//time needed for showing go to sleep screen
+  //if(reset_boot==false) delay(3000);//time needed for showing go to sleep screen
   pinMode(11, OUTPUT);
   digitalWrite(11, HIGH);//flash in deepsleep, CS stays HIGH!!
-  //test Andres
- // SD_MMC.end();
+ 
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
   pinMode(2, OUTPUT);
   digitalWrite(2, HIGH);
-/*
-  pinMode(12, OUTPUT);
-  digitalWrite(12, HIGH);
-  pinMode(14, OUTPUT);
-  digitalWrite(14, HIGH);//sd-card  in deepsleep, CS stays HIGH!!
-  pinMode(15, OUTPUT);
-  digitalWrite(15, HIGH);
-  rtc_gpio_pullup_en(GPIO_NUM_12);
-  
-  rtc_gpio_pullup_en(GPIO_NUM_14);
-  rtc_gpio_pullup_en(GPIO_NUM_15);
-*/
- // rtc_gpio_pullup_en(GPIO_NUM_13);//0.16 mA rtc 2 en 13
- // rtc_gpio_pullup_en(GPIO_NUM_2);//was still floating....for SD_MMC -> pull up is needed !!!
+
   if(refresh_screen==1){
     Sleep_screen(RTC_SLEEP_screen);
     delay(1000);
     display.powerDown();
     }
+  if(T5_version==T5_VERSION_V2_4) {   //only for T5 V2.4 board !!
+  // De kaart ontkoppelen en bronnen vrijgeven
+  SD_MMC.end(); 
+  // 1. SD-lijnen laag en vasthouden, nodig voor sleep current 0.03 mA
+  const gpio_num_t sd_pins[] = {GPIO_NUM_2, GPIO_NUM_13, GPIO_NUM_14, GPIO_NUM_15};
+  for (auto p : sd_pins) {
+    rtc_gpio_init(p);
+    rtc_gpio_set_direction(p, RTC_GPIO_MODE_OUTPUT_ONLY);
+    rtc_gpio_pullup_dis(p);
+    rtc_gpio_pulldown_dis(p);
+    rtc_gpio_set_level(p, 0);
+    rtc_gpio_hold_en(p);
+    }
+  }  
+  // 2. daarna VCC_IO uit
+  digitalWrite(12, LOW);       
+
   digitalWrite(HOLD_PIN,LOW);  
   pinMode(GO_TO_SLEEP_GPIO,INPUT_PULLUP);
-  esp_sleep_enable_ext0_wakeup(WAKE_UP_GPIO_NUM,0);
   esp_sleep_enable_timer_wakeup( uS_TO_S_FACTOR*sleep_time);
+  esp_sleep_enable_ext0_wakeup(WAKE_UP_GPIO_NUM,0);//can't be combined with ulp_wakeup() !!!
+  Serial.printf("ESP was awake for %d ms\n",millis());
   esp_deep_sleep(uS_TO_S_FACTOR*sleep_time);
 }
 
@@ -390,7 +410,7 @@ void Shut_down(void){
               }
             //delay(3000);// go to sleep screen need some time...
             Close_files();  
-            delay(500);//jh test lost files
+            delay(100);
             }
        // RTC_old_voltage_bat=0; //to force refresh the sleep screen when shutting down !!!   Off_screen(RTC_OFF_screen);eerst 2s dit scherm
        // Sleep_screen(RTC_SLEEP_screen);
@@ -463,19 +483,7 @@ void printLocalTime(){
   Serial.print("NTP Time = ");
   Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
 }  
-/*For RTOS, the watchdog has to be triggered
-void feedTheDog_Task0(){
-  //esp_task_wdt_reset();
-  TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-  TIMERG0.wdt_feed=1;                       // feed dog
-  TIMERG0.wdt_wprotect=0;                   // write protect
-}
-void feedTheDog_Task1(){ 
-  TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable
-  TIMERG1.wdt_feed=1;                       // feed dog
-  TIMERG1.wdt_wprotect=0;                   // write protect
-} 
-*/
+
 // === ALLEEN 802.11b/g (testschakelaar WIFI_ALLEEN_BG in Definitions.h) ===
 // Zet het station op b/g zodat het niet met 802.11n bundelt (AMPDU met
 // block ack). Bedoeld om op de werkbank te vergelijken met n; standaard uit.
@@ -633,10 +641,14 @@ void gemarkeerdAlsAfgekeurd(const char* filepath);
 bool isUploadBestand(const String& naam);
 #include <WiFiClientSecure.h>
 void uploadTask(void * pvParameters) {
+  //esp_task_wdt_add(NULL);              // deze taak aanmelden bij de wtd, maar bij wissen moet ook de wtd gewisd worden.....
    // Een vlag om bij te houden of we in de vorige loop al stabiel verbonden waren
   bool wasConnected = false; 
   for(;;) {
     // Alleen scannen als er Wi-Fi verbinding is, de API-sleutel geldig is en er een IP-adres is
+    esp_task_wdt_reset();               // voeden, binnen 120 s
+    vTaskDelay(1);
+    // Alleen scannen als er Wi-Fi verbinding is, de API-sleutel geldig is én de GPS NIET logt
     if (WiFi.status() == WL_CONNECTED && apiKeyValid&& ipGekregen) {
        // FIX: Als we net pas verbonden zijn, wacht dan 5 seconden tot de IP-stack 100% stabiel is
       if (!wasConnected) {
@@ -910,5 +922,35 @@ void Delete_uploadTask(void) {
   }
 }
 
+DNSServer dnsServer;
+const byte DNS_PORT = 53;
 
+void handle204() {
+  server.sendHeader("Cache-Control", "no-cache, no-store");
+  server.send(204, "text/plain", "");   // 204 No Content, geen body
+}
+
+void setupCaptureHandlers() {
+  // Android
+  server.on("/generate_204", HTTP_GET, handle204);
+  server.on("/gen_204",      HTTP_GET, handle204);
+  // dnsServer: alle namen naar het AP-adres
+  dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+}
+
+static esp_adc_cal_characteristics_t adc_chars;
+
+void initAdcCal() {
+  adc1_config_width(ADC_WIDTH_BIT_12);
+  adc1_config_channel_atten(ADC1_CHANNEL_7, ADC_ATTEN_DB_11); //GPIO35
+  esp_adc_cal_value_t type = esp_adc_cal_characterize(
+      ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12,
+      1100,            // default Vref in mV, alleen gebruikt als er geen eFuse-data is
+      &adc_chars);
+
+  // Optioneel: kijken welke kalibratiebron gebruikt wordt
+  if (type == ESP_ADC_CAL_VAL_EFUSE_TP)        Serial.println("Kalibratie: two-point (eFuse)");
+  else if (type == ESP_ADC_CAL_VAL_EFUSE_VREF) Serial.println("Kalibratie: Vref (eFuse)");
+  else                                         Serial.println("Kalibratie: default Vref (minder nauwkeurig)");
+}
 #endif

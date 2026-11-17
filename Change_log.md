@@ -1,3 +1,16 @@
+###Changes SW 7.2e
+* SpeedSurf-upload is only in the 7.x-bestanden in the directory partition2MB, and AUTO UPLOAD ON  + your API-key has to be in the configuration !
+* added RSSI to Wifi screen
+* added response 204 when connecting AP : Android should connect better (test Claude)
+* Test for T5 Version2.3 / 2.4 by checking for SD with GPIO12 low / high
+* If V2.4 detected : SD pins hold low in sleep, sleep current only 30 µA then !!!
+* If V2.3 detected : sleep current 500 µA - 1000 µA, depending on SD card (as before) !!!
+* Wakeup_reason() now direct after Serial.begin(), for minimal sleep current (wake up every hour to measure Vbat) 
+* added watchdog to task1 and task2, was not yet activated
+* no saving of auto_upload_speedsurf in the config for small partitions
+* default upload to speedsurf is now ON
+* sbp fields which were divided are corrected for correct rounding (gps-discussions)
+* display, stats start with 1 statscreen (gps-discussions)
 ###Changes SW 7.2d
 * sbp file : Added user name (ESP-GPS), mac adress, sample rate and SW version + checksum to the header 
 * sbp file : svlist again in the old format, as it seems to be used in some programs

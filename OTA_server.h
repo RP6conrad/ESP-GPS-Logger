@@ -102,8 +102,7 @@ String Print_time(time_t timestamp) {
   return buff;
 }
 
-
-//Download a file from the SD, it is called in void SD_dir()
+/*Download a file from the SD, it is called in void SD_dir()
 void SD_file_download(String filename) {
   if (sdOK | LITTLEFS_OK) {
     File download;
@@ -124,7 +123,35 @@ void SD_file_download(String filename) {
     ReportSDNotPresent();
   }
 }
+*/
+//Aangepaste versie van Claude met sommige optimeringen
+void SD_file_download(String filename) {
+  if (sdOK || LITTLEFS_OK) {
+    File download;
+    if (sdOK) download = SD_MMC.open("/" + filename);
+    if (LITTLEFS_OK) download = LITTLEFS.open("/" + filename);
+    if (download) {
+      downloading_file = true;
+      filename.remove(0, 1);   // je bestaande logica
+      server.sendHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+      server.sendHeader("Connection", "close");
 
+      uint32_t t0 = millis();
+      size_t total = download.size();
+      size_t sent = server.streamFile(download, "application/octet-stream");
+      Serial.printf("Download %s: %u van %u bytes, %lu ms, clients=%d\n",
+                    filename.c_str(), (unsigned)sent, (unsigned)total,
+                    (unsigned long)(millis() - t0), WiFi.softAPgetStationNum());
+      download.close();
+      downloading_file = false;       // altijd terugzetten
+    } else {
+      ReportFileNotPresent("download");
+      downloading_file = false;
+    }
+  } else {
+    ReportSDNotPresent();
+  }
+}
 //Prints the directory, it is called in void SD_dir()
 void printDirectory(const char* dirname, uint8_t levels) {
   File root;
@@ -528,12 +555,9 @@ void handleConfigUpload() {
     doc["logUBX"] = server.arg("logUBX").toInt();
     doc["logUBX_nav_sat"] = server.arg("logUBX_nav_sat").toInt();
     doc["logGPY"] = server.arg("logGPY").toInt();
-    // Het veld auto_upload staat alleen op de pagina van de 2MB-bouw (7.x). Op 6.x
-    // ontbreekt het: bewaar dan de huidige waarde, anders zet elke save op 6.x de
-    // upload uit en staat hij na de terugweg naar 7.x nog steeds uit.
-    // Als 0/1 schrijven: een bool (true) leest SD_card.cpp met "| 0" terug als 0.
-    if (server.hasArg("auto_upload")) doc["auto_upload_speedsurf"] = server.arg("auto_upload").toInt();
-    else doc["auto_upload_speedsurf"] = config.auto_upload_speedsurf ? 1 : 0;
+    #ifdef AUTO_UPLOAD_SPEEDSURF
+    doc["auto_upload_speedsurf"] = server.arg("auto_upload").toInt();
+    #endif
     doc["logGPX"] = server.arg("logGPX").toInt();
     doc["file_date_time"] = server.arg("file_date_time").toInt();
     doc["dynamic_model"] = server.arg("dynamic_model").toInt();
