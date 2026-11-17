@@ -2,6 +2,12 @@
 extern RTC_DATA_ATTR float RTC_calibration_bat;
 extern char apiKey[MAX_API_KEY_LENGTH] ;
 extern String apiKeyShort ; //only show first 20 chars of the api
+// De configpagina toont alleen het begin van de API key, zodat de volledige
+// sleutel niet op het scherm staat. Gebruikt bij boot en na het opslaan.
+inline String kortApiKey(const String& key) {
+  if (key.length() > 20) return key.substring(0, 20) + "...";
+  return key;
+}
 //header file readable
 const char html_header[] PROGMEM = R"=====(
 <html><head><meta charset="UTF-8"><title>ESP-GPS-Logger</title>
@@ -396,7 +402,7 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>apiKey</td><td>\n";
   // We gebruiken de macro 'MAX_API_KEY_LENGTH' dynamisch voor de grootte van de inputbox
   webpage += "<input size='" + String(MAX_API_KEY_LENGTH) + "' type='text' name='apiKeyShort' value=" + attr(apiKeyShort) + ">\n";
-  webpage += "</td><td>apiKey: first 20 chars from apiKey for auto-upload your .gpy files to speedsurf.app</td>\n</tr>\n"; 
+  webpage += "</td><td>apiKey: paste the full API key from speedsurf.app (Settings &gt; Devices) for auto-upload of your .gpy files. After saving, only the first 20 characters are shown</td>\n</tr>\n"; 
   // name new  .gpy files $.gpy  so auto-upload is activated
   webpage += "<tr><td>auto_upload</td><td>\n<select id='auto_upload' name='auto_upload'>\n";
   if(config.auto_upload_speedsurf == 1) webpage += "<option value='1' selected>AUTO UPLOAD ON</option>\n"; else webpage += "<option value='1'>AUTO UPLOAD ON</option>\n";
