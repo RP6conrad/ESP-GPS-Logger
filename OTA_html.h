@@ -442,6 +442,10 @@ void html_config(String& webpage){
   webpage += "<tr>\n<td>start_logging_speed</td><td>\n";
   webpage += "<input size='8' type='number' required name='start_logging_speed' min='0' max='10' value="+String(config.start_logging_speed)+" step='1'>\n";
   webpage += "</td><td>If the actual speed(in m/s) exceed this start_logging_speed, then the log is started</td>\n</tr>\n"; 
+  //long_runs_min_knots
+  webpage += "<tr>\n<td>long_runs_min_knots</td><td>\n";
+  webpage += "<input size='8' type='number' required name='long_runs_min_knots' min='0' max='5' value="+String(config.long_runs_min_knots,1)+" step='0.1'>\n";
+  webpage += "</td><td>30 min and 1 h : a second slower than this (in knots) adds no distance, its time still counts. A GPS standing still never reads exactly 0, slogging still counts. 0 = every speed counts</td>\n</tr>\n";
   //GPIO12_screens
   #ifdef GPIO12_ACTIF
   webpage += "<tr>\n<td>gpio12_screen</td><td>\n";
