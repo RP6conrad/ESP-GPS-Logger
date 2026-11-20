@@ -57,7 +57,8 @@ void GPS_data::push_data(float latitude,float longitude,uint32_t gSpeed) {//gspe
   _lat[index_GPS%BUFFER_ALFA]=latitude;
   _long[index_GPS%BUFFER_ALFA]=longitude;
    //alleen afstand optellen als ontvangst goed is, opgelet af en toe sAcc<2  !!!****************************************************
-  if((ubxMessage.navPvt.numSV>=FILTER_MIN_SATS)&((ubxMessage.navPvt.sAcc/1000.0f)<FILTER_MAX_sACC)){
+  #define LONG_RUN_MIN_MM_S 514 //1 knot in mm/s 
+  if((ubxMessage.navPvt.numSV>=FILTER_MIN_SATS)&((ubxMessage.navPvt.sAcc/1000.0f)<FILTER_MAX_sACC)&(gSpeed>LONG_RUN_MIN_MM_S)){
         delta_dist=gSpeed/config.sample_rate;//snelheid omrekenen naar afstand !!!
         total_distance=total_distance+delta_dist;
         run_distance=run_distance+delta_dist;
@@ -65,7 +66,10 @@ void GPS_data::push_data(float latitude,float longitude,uint32_t gSpeed) {//gspe
         }  
   //Opslaan groundSpeed in seconden tact !!**********************************************************************************
   static int avg_gSpeed;//in mm/s
-  avg_gSpeed=avg_gSpeed+gSpeed;//in seconden tact opslaan voor 30 min / 60 min gemiddelde snelheid
+  int gSpeed_filtered;
+  gSpeed_filtered=gSpeed;
+  if(gSpeed<=LONG_RUN_MIN_MM_S){gSpeed_filtered=0;}
+  avg_gSpeed=avg_gSpeed+gSpeed_filtered;//in seconden tact opslaan voor 30 min / 60 min gemiddelde snelheid
   if(index_GPS%config.sample_rate==0){    //modulus van index%sample rate
     index_sec++;//ook index_sec mag pas geupdated worden na update instantie
     _secSpeed[index_sec%BUFFER_SIZE]=avg_gSpeed/config.sample_rate;//anders overflow want _secSpeed[] is maar tot 65535 !!!!
@@ -332,11 +336,19 @@ void GPS_time::Reset_stats(void){
   }
   avg_5runs=0;
 }
+//30 min and 1 h only : a speed under 1 knot counts as 0 (no distance, the time still counts).
+//A GPS standing still reads a few tenths of a knot of noise, never exactly 0; slogging still counts.
+//The shorter windows (1s, 2s, 10s) keep every speed. Fixed, not a setting.
+
+static int long_run_speed(int time_window, int speed_mm_s){
+  if(time_window < 1800) return speed_mm_s;
+  return (speed_mm_s < LONG_RUN_MIN_MM_S) ? 0 : speed_mm_s;
+}
 float GPS_time::Update_speed(int actual_run){
   if(time_window*config.sample_rate<BUFFER_SIZE){      //indien tijdvenster kleiner is dan de sample_rate*BUFFER, normale buffer gebruiken
-        avg_s_sum=avg_s_sum+_gSpeed[index_GPS%BUFFER_SIZE]; //altijd gSpeed optellen bij elke update
+        avg_s_sum=avg_s_sum+long_run_speed(time_window,_gSpeed[index_GPS%BUFFER_SIZE]); //altijd gSpeed optellen bij elke update
         if(index_GPS>=time_window*config.sample_rate){
-            avg_s_sum=avg_s_sum-_gSpeed[(index_GPS-(time_window*config.sample_rate))%BUFFER_SIZE];//vanaf 10s bereikt, terug -10s aftrekken van som
+            avg_s_sum=avg_s_sum-long_run_speed(time_window,_gSpeed[(index_GPS-(time_window*config.sample_rate))%BUFFER_SIZE]);//vanaf 10s bereikt, terug -10s aftrekken van som
             }
             avg_s=(double)avg_s_sum/time_window/config.sample_rate;
             if(s_max_speed<avg_s){
@@ -388,9 +400,9 @@ float GPS_time::Update_speed(int actual_run){
             return s_max_speed;
   }
   else if(index_GPS%config.sample_rate==0){        //overschakelen naar seconden buffer, maar één update/seconde !!
-            avg_s_sum=avg_s_sum+(int)_secSpeed[index_sec%BUFFER_SIZE]; //_secSpeed[BUFFER_SIZE] en index_sec 
+            avg_s_sum=avg_s_sum+long_run_speed(time_window,(int)_secSpeed[index_sec%BUFFER_SIZE]); //_secSpeed[BUFFER_SIZE] en index_sec 
             if(index_sec>=time_window){
-                avg_s_sum=avg_s_sum-(int)_secSpeed[(index_sec-time_window)%BUFFER_SIZE];//vanaf 10s bereikt, terug -10s aftrekken van som
+                avg_s_sum=avg_s_sum-long_run_speed(time_window,(int)_secSpeed[(index_sec-time_window)%BUFFER_SIZE]);//vanaf 10s bereikt, terug -10s aftrekken van som
                 }
             avg_s=(double)avg_s_sum/time_window;//in de seconden array staat de gemiddelde van gspeed !!
             //Serial.print("avg_s ");Serial.println(avg_s);

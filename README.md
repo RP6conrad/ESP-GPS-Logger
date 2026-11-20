@@ -1,7 +1,7 @@
 
 # ESP-GPS Logger
 
-GPS Logger for Speedsurfing, based on ESP32 & u-blox hardware. This is an open source project for a GPS Speed Logger with a ESP32 µ-controller. This logger is approved for uploading to [http://gps-speedsurfing.com](http://gps-speedsurfing.com)
+GPS Logger for Speedsurfing, based on ESP32 & u-blox hardware. This is an open source project for a GPS Speed Logger with a ESP32 µ-controller. This logger is approved for uploading to [http://gps-speedsurfing.com](http://gps-speedsurfing.com), and from SW 7.0 it uploads its sessions to [SpeedSurf.app](https://speedsurf.app) by itself over Wi-Fi (see [Auto upload to SpeedSurf.app](#auto-upload-to-speedsurfapp)).
 
 ![ESP GPS banner 1024x500](https://user-images.githubusercontent.com/58887243/228194449-03b4aee7-f6ac-44cf-936f-beec46ba28fb.jpg)
 

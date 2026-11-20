@@ -1229,7 +1229,7 @@ void Update_screen(int screen) {
       run_rectangle_length = (Ublox.alfa_distance / bar_length);
     }
     if (run_rectangle_length > total_bar_length) { run_rectangle_length = total_bar_length; }  //limit bar length for time...
-    if ((run_rectangle_length < 180) & (config.speed_large_font == 1)) {
+    if ((run_rectangle_length < 180) & (config.speed_large_font == 1) & (field != SPEEDB) & (field != SPEEDC)) {
       display.setTextWrap(false);
       display.setFont(&FreeMonoBold9pt7b);  //print bar infoFreeMonoBold9pt7b
       display.setCursor(offset + 186, 48);

@@ -12,9 +12,9 @@
 #include <DNSServer.h>
 String IP_adress="0.0.0.0";
 #ifdef AUTO_UPLOAD_SPEEDSURF
-const char SW_version[16]="V 7.2eB74";//Hier staat de software versie voor partitie 2MB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 7.2fB74";//Hier staat de software versie voor partitie 2MB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #else
-const char SW_version[16]="V 6.2eB74";//Hier staat de software versie voor partitie 1.2MB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const char SW_version[16]="V 6.2fB74";//Hier staat de software versie voor partitie 1.2MB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #endif
 #if defined(_GxGDEH0213B73_H_) 
 const char E_paper_version[16]="E-paper 213B73";
@@ -256,6 +256,7 @@ void print_wakeup_reason(){
                                                         delay(50);}
                                     Sleep_screen(RTC_SLEEP_screen);
                                     display.powerDown();
+                                    delay(5000);//give the screen some time to go to sleep !!!
                                     RTC_old_voltage_bat=RTC_voltage_bat;
                                     }
                                   if(RTC_voltage_bat<RTC_minimum_voltage_bat){
@@ -264,7 +265,7 @@ void print_wakeup_reason(){
                                                         delay(50);}
                                       Boot_screen();
                                       display.powerDown();
-                                      delay(100);
+                                      delay(5000);  //give the screen some time to go to sleep
                                       pinMode(GO_TO_SLEEP_GPIO,INPUT_PULLUP);
                                       esp_sleep_enable_ext0_wakeup(WAKE_UP_GPIO_NUM,0);
                                       esp_deep_sleep_start();//sleep forever.....
@@ -329,6 +330,7 @@ void go_to_sleep(uint64_t sleep_time,bool refresh_screen){
     Sleep_screen(RTC_SLEEP_screen);
     delay(1000);
     display.powerDown();
+    delay(5000);//give the E-paper some time to go to sleep.....
     }
   if(T5_version==T5_VERSION_V2_4) {   //only for T5 V2.4 board !!
   // De kaart ontkoppelen en bronnen vrijgeven
@@ -344,14 +346,14 @@ void go_to_sleep(uint64_t sleep_time,bool refresh_screen){
     rtc_gpio_hold_en(p);
     }
   }  
-  // 2. daarna VCC_IO uit
-  digitalWrite(12, LOW);       
+     
 
   digitalWrite(HOLD_PIN,LOW);  
   pinMode(GO_TO_SLEEP_GPIO,INPUT_PULLUP);
   esp_sleep_enable_timer_wakeup( uS_TO_S_FACTOR*sleep_time);
   esp_sleep_enable_ext0_wakeup(WAKE_UP_GPIO_NUM,0);//can't be combined with ulp_wakeup() !!!
   Serial.printf("ESP was awake for %d ms\n",millis());
+  digitalWrite(12, LOW);   
   esp_deep_sleep(uS_TO_S_FACTOR*sleep_time);
 }
 

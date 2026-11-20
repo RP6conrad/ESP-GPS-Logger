@@ -1,3 +1,9 @@
+###Changes SW 7.2f
+* Pull request from Mediazone : speed under 1 knots is considered "no movement", this for 1800s, 3600s and distance (distance added by JH)
+* Pull request from Mediazone (Ron), optimizing API key handling
+* Added info from speedsurf.app to the README.md (pull request Ron)
+* Added 5s waiting time before powerdown() the e-paper. This to keep the contrast nice and steady when sleeping.
+* Bugfix speedscreen B/C, barlength info not printed as bar is not printed (info Ron)
 ###Changes SW 7.2e
 * SpeedSurf-upload is only in the 7.x-bestanden in the directory partition2MB, and AUTO UPLOAD ON  + your API-key has to be in the configuration !
 * added RSSI to Wifi screen
