@@ -5,6 +5,7 @@
 #include <soc/uart_reg.h> // Vereist in V1.06 voor directe registertoegang
 
 #define DISPLAY_RESET_SPEED 4000  //reset speed in mm/sek for last run display
+#define LONG_RUN_MIN_MM_S 514 //1 knot in mm/s : under this speed no distance for the total distance, the 30 min and the 1 h. Fixed, not a setting.
 uint16_t _gSpeed[BUFFER_SIZE]; 
 float _lat[BUFFER_ALFA]; 
 float _long[BUFFER_ALFA];
@@ -59,7 +60,7 @@ void GPS_data::push_data(float latitude,float longitude,uint32_t gSpeed) {//gspe
    //alleen afstand optellen als ontvangst goed is, opgelet af en toe sAcc<2  !!!****************************************************
   if((ubxMessage.navPvt.numSV>=FILTER_MIN_SATS)&((ubxMessage.navPvt.sAcc/1000.0f)<FILTER_MAX_sACC)){
         delta_dist=gSpeed/config.sample_rate;//snelheid omrekenen naar afstand !!!
-        total_distance=total_distance+delta_dist;
+        if(gSpeed>=LONG_RUN_MIN_MM_S) total_distance=total_distance+delta_dist;//total distance only from 1 knot : a GPS standing still never reads exactly 0
         run_distance=run_distance+delta_dist;
         alfa_distance=alfa_distance+delta_dist;
         }  
@@ -335,7 +336,6 @@ void GPS_time::Reset_stats(void){
 //30 min and 1 h only : a speed under 1 knot counts as 0 (no distance, the time still counts).
 //A GPS standing still reads a few tenths of a knot of noise, never exactly 0; slogging still counts.
 //The shorter windows (1s, 2s, 10s) keep every speed. Fixed, not a setting.
-#define LONG_RUN_MIN_MM_S 514 //1 knot in mm/s
 static int long_run_speed(int time_window, int speed_mm_s){
   if(time_window < 1800) return speed_mm_s;
   return (speed_mm_s < LONG_RUN_MIN_MM_S) ? 0 : speed_mm_s;
