@@ -544,16 +544,6 @@ void handleConfigUpload() {
     doc["Stat_screens_time"] = server.arg("Stat_screens_time").toInt();
     doc["stat_speed"] = server.arg("stat_speed").toInt();
     doc["start_logging_speed"] = server.arg("start_logging_speed").toInt();
-    //An old config page without this field must not reset it to 0 : keep the current value.
-    //Saved as plain number text (jsonNumber), 0 ... 5 knots; empty or garbage keeps the current value.
-    {
-      String current = String(config.long_runs_min_knots, 1);
-      String v = server.hasArg("long_runs_min_knots") ? jsonNumber("long_runs_min_knots", current.c_str()) : current;
-      float f = v.toFloat();
-      if (f < 0) v = "0";
-      else if (f > 5) v = "5";
-      doc["long_runs_min_knots"] = serialized(v);
-    }
     doc["archive_days"] = server.arg("archive_days").toInt();
     doc["gpio12_screen"] = server.arg("gpio12_screen");
     doc["Board_Logo"] = server.arg("Board_Logo").toInt();

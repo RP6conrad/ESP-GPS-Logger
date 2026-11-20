@@ -87,7 +87,6 @@ struct Config {
   int sleep_off_screen=11;
   int stat_speed=1;//max speed in m/s for showing Stat screens
   int start_logging_speed=1;
-  float long_runs_min_knots=1.0;//30 min and 1 h : a second slower than this (knots) adds no distance, its time still counts. 0 = every speed counts
   int bar_length=1852;//choice for bar indicator for length of run in m (nautical mile)
   int archive_days=10; //how many days files will be moved to the "Archive" dir
   bool screen_orientation=1;//choice for voltage in % or voltage

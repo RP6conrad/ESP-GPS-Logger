@@ -332,13 +332,13 @@ void GPS_time::Reset_stats(void){
   }
   avg_5runs=0;
 }
-//30 min and 1 h only : a speed under config.long_runs_min_knots counts as 0 (no distance, the time still counts).
+//30 min and 1 h only : a speed under 1 knot counts as 0 (no distance, the time still counts).
 //A GPS standing still reads a few tenths of a knot of noise, never exactly 0; slogging still counts.
-//The shorter windows (1s, 2s, 10s) keep every speed.
+//The shorter windows (1s, 2s, 10s) keep every speed. Fixed, not a setting.
+#define LONG_RUN_MIN_MM_S 514 //1 knot in mm/s
 static int long_run_speed(int time_window, int speed_mm_s){
   if(time_window < 1800) return speed_mm_s;
-  int min_mm_s = (int)(config.long_runs_min_knots * 514.444f);//knots to mm/s
-  return (speed_mm_s < min_mm_s) ? 0 : speed_mm_s;
+  return (speed_mm_s < LONG_RUN_MIN_MM_S) ? 0 : speed_mm_s;
 }
 float GPS_time::Update_speed(int actual_run){
   if(time_window*config.sample_rate<BUFFER_SIZE){      //indien tijdvenster kleiner is dan de sample_rate*BUFFER, normale buffer gebruiken

@@ -242,7 +242,6 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   config.Stat_screens_time = doc["Stat_screens_time"] | 4;
   config.stat_speed = doc["stat_speed"] | 1;
   config.start_logging_speed = doc["start_logging_speed"] | 1;
-  config.long_runs_min_knots = doc["long_runs_min_knots"] | 1.0;
   config.archive_days = doc["archive_days"] | 10;
   config.Board_Logo = doc["Board_Logo"] | 1;
   config.Sail_Logo = doc["Sail_Logo"] | 1;
