@@ -723,6 +723,8 @@ void probeerUpload(const char* filepath) {
   WiFiClientSecure client; // Gebruik van de beveiligde TLS client
   client.setInsecure();    // Slaat root-certificaatcontrole over (voorkomt crashes door RAM-gebrek)
 
+  Serial.printf("[Upload] Heap %u, grootste blok %u, stack vrij %u\n",
+                ESP.getFreeHeap(), ESP.getMaxAllocHeap(), uxTaskGetStackHighWaterMark(NULL));
   Serial.println("[Upload] Verbinden met speedsurf.app via HTTPS... "); 
   // Maak verbinding met speedsurf.app op de beveiligde HTTPS-poort (443)
   if (!client.connect("speedsurf.app", 443)) {
@@ -735,6 +737,7 @@ void probeerUpload(const char* filepath) {
     return;
   }
   Serial.println("Verbonden!");
+  Serial.printf("[Upload] Laagste vrije heap tot nu toe %u\n", ESP.getMinFreeHeap());
 
   // Bouw unieke multipart boundary op
   String boundary = "--------------------------ESP32Boundary" + String(millis());

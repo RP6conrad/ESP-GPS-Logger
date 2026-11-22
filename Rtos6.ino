@@ -116,6 +116,12 @@ void setup() {
   // We halen de string op. Als deze nog niet bestaat, laden we "sk_live_leeg"
   String geladenKey = preferences.getString("api_key", "sk_live_leeg");
   geladenKey.toCharArray(apiKey, MAX_API_KEY_LENGTH);
+  // Geen sleutel ingevuld: dan ook geen uploadpogingen. De server weigert ze
+  // toch, en elke poging kost een TLS-verbinding (veel RAM) om de 10 s.
+  if (apiKey[0] == 0 || strcmp(apiKey, "sk_live_leeg") == 0) {
+    apiKeyValid = false;
+    Serial.println(F("[Upload] No API key set, auto upload off"));
+  }
   // Voor de configpagina alleen de eerste 20 karakters, met puntjes
   apiKeyShort = kortApiKey(String(apiKey));
   Serial.print(F("Preferences API Key Short = "));
@@ -401,7 +407,10 @@ void taskOne( void * parameter )
        }
    if((WiFi.status() == WL_CONNECTED)|SoftAP_connection){
         ftpSrv.handleFTP();        //make sure in loop you call handleFTP()!! 
-        dnsServer.processNextRequest();
+        // Geen dnsServer.processNextRequest() meer: de DNS-server wordt nergens
+        // gestart, maar elke aanroep vroeg wel 1460 bytes (WiFiUDP::parsePacket).
+        // Tijdens een HTTPS-upload is het geheugen krap; mislukte die vraag, dan
+        // herstartte de logger (abort op core 1).
         server.handleClient();
         ftpStatus=ftpSrv.cmdStatus;//for e-paper
         // Init and get the time if WLAN, create "Archive" dir if not present
