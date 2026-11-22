@@ -81,6 +81,9 @@
 #define FORMAT_LITTLEFS_IF_FAILED true
 #define MAX_API_KEY_LENGTH 50
 #define AUTO_UPLOAD_SPEEDSURF
+#define AP_GRACE_MS 30000        //soft AP: keep it up this long after the last phone left, so it can come back
+#define WEB_SLEEP_DELAY 1500     //POST /sleep: time for the answer to reach the app before the logger turns off
+#define WEB_SLEEP_MAX_WAIT 180000 //POST /sleep during an upload: wait for it, but never longer than this (the file stays $.gpy and goes next time)
 #define WIFI_HERSTEL_MS 60000   //zo lang mag de Wi-Fi terugkomen als er nog een upload klaarstaat
 #define BEACON_GEDULD_S 15      //zo lang zonder beacons van het accesspoint voor de ESP de verbinding opgeeft (driver: 6 s)
 //#define WIFI_ALLEEN_BG        //testschakelaar: station alleen 802.11b/g, geen n

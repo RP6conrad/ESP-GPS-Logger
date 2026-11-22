@@ -1,3 +1,7 @@
+###Changes (pull request Mediazone, proposal)
+* SoftAP: when a phone leaves, the Wi-Fi stays on for 30 s (AP_GRACE_MS) and goes off only if no phone comes back and no web request arrives in that time, so a phone that left for a moment (app in the background, a short drop) can come back without a magnet restart.
+* POST /sleep turns the logger off from an app after the files are fetched (same path as a long push, waits for a running upload). GET /sleep answers 405, so an app can see the firmware has it; old firmware answers 404.
+* An empty or cut-off config.txt falls back on config_backup.txt instead of the defaults, so the Wi-Fi settings are kept; the next save then keeps that good backup.
 ###Changes SW 7.2f
 * Pull request from Mediazone : speed under 1 knots is considered "no movement", this for 1800s, 3600s and distance (distance added by JH)
 * Pull request from Mediazone (Ron), optimizing API key handling

@@ -102,6 +102,7 @@ String Print_time(time_t timestamp) {
   return buff;
 }
 
+volatile uint32_t lastHttpMs = 0;  //last request from an app or a browser, for the soft AP grace
 /*Download a file from the SD, it is called in void SD_dir()
 void SD_file_download(String filename) {
   if (sdOK | LITTLEFS_OK) {
@@ -139,6 +140,7 @@ void SD_file_download(String filename) {
       uint32_t t0 = millis();
       size_t total = download.size();
       size_t sent = server.streamFile(download, "application/octet-stream");
+      lastHttpMs = millis();  //a long download counts as being here, for the soft AP grace
       Serial.printf("Download %s: %u van %u bytes, %lu ms, clients=%d\n",
                     filename.c_str(), (unsigned)sent, (unsigned)total,
                     (unsigned long)(millis() - t0), WiFi.softAPgetStationNum());
@@ -292,8 +294,22 @@ void GPSTC_Upload(void){
   GPSTC_info(gpstc_post);
   server.sendContent(gpstc_post);
 }
+//POST /sleep : turn the logger off from an app, after the files are fetched (GET /sleep answers 405: the app's capability check).
+//Only a flag here, taskOne turns the logger off WEB_SLEEP_DELAY ms later through the normal off path
+//(same as a long push), so this answer still reaches the client first. A GET never turns it off.
+volatile bool web_sleep_request = false;
+uint32_t web_sleep_millis = 0;
+void Web_sleep(void) {
+  server.sendHeader("Connection", "close");
+  server.send(200, "text/plain", "Going to sleep");
+  server.client().stop();
+  web_sleep_millis = millis();
+  web_sleep_request = true;
+  Serial.println("Sleep requested from web");
+}
 //Initial page of the server web, list directory and give you the chance of deleting and uploading
 void SD_dir(int archive) {
+  lastHttpMs = millis();
   if (sdOK | LITTLEFS_OK) {
     //Action acording to post, dowload or delete, by MC 2022
     if (server.args() > 0)  //Arguments were received, ignored if there are not arguments
@@ -629,13 +645,18 @@ void handleConfigUpload() {
       sendConfigResult(F("Failed to write the file, config.txt was NOT changed"));
       return;
     }
-    fs.remove("/config_backup.txt");                    //rename fails on FAT if the target exists
-    if (fs.exists("/config.txt")) fs.rename("/config.txt", "/config_backup.txt");
+    if (config.config_fail == 2) {
+      fs.remove("/config.txt");                         //config.txt was unreadable, keep the good config_backup.txt
+    } else {
+      fs.remove("/config_backup.txt");                  //rename fails on FAT if the target exists
+      if (fs.exists("/config.txt")) fs.rename("/config.txt", "/config_backup.txt");
+    }
     if (!fs.rename("/config.tmp", "/config.txt")) {
       Serial.println(F("Failed to rename /config.tmp -> /config.txt"));
       sendConfigResult(F("Failed to save config.txt, the previous config is in config_backup.txt"));
       return;
     }
+    config.config_fail = 0;
   }
   sendConfigResult(F("Upload was successful!"));
   if (server.arg("reboot") == "yes") {
@@ -791,6 +812,13 @@ void OTA_setup(void) {
   server.on("/archive_file", SD_archive_file);
   server.on("/upload", File_Upload);
   server.on("/gpstc",GPSTC_Upload);
+  server.on("/sleep", HTTP_POST, Web_sleep);
+  server.on("/sleep", HTTP_GET, []() {
+    //GET never turns the logger off (prefetch, crawler); a 405 here tells an app this firmware has POST /sleep
+    lastHttpMs = millis();  //also the app's keep-alive, every 15 s
+    server.sendHeader("Allow", "POST");
+    server.send(405, "text/plain", "Use POST to turn the logger off");
+  });
   server.on("/fupload", HTTP_POST, []() {
       server.send(200);
     },

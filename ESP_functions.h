@@ -39,6 +39,7 @@ bool reed = false;
 bool deep_sleep = false;
 bool Wifi_on=true;
 bool SoftAP_connection = false;
+volatile unsigned long apLeftAt = 0;  //millis() when a station left the soft AP, 0 = nobody left (see AP_GRACE_MS)
 bool GPS_Signal_OK = false;
 //bool long_push = false;
 bool Field_choice = false;
@@ -549,10 +550,14 @@ void OnWiFiEvent(WiFiEvent_t event){
       Serial.println("Station connected to ESP32 soft AP");
       IP_adress =  WiFi.softAPIP().toString();
       SoftAP_connection=true;
+      apLeftAt = 0;
       break;
     case SYSTEM_EVENT_AP_STADISCONNECTED:
       Serial.println("Station disconnected from ESP32 soft AP");
-      SoftAP_connection=false;
+      //SoftAP_connection stays true: taskOne switches the Wi-Fi off only when nobody
+      //came back and no app asked anything for AP_GRACE_MS (the station count of
+      //core 1.0.6 can keep a station that is gone, so it is not used).
+      apLeftAt = millis() | 1;
       break;
     default: break;
   }

@@ -358,6 +358,10 @@ void taskOne( void * parameter )
       sleep_mode=true;
       Serial.println("task one delete");vTaskDelete(NULL);
       }//to prevent gps boot in task one....
+    if(web_sleep_request&((millis()-web_sleep_millis)>WEB_SLEEP_DELAY)&(!isUploading|((millis()-web_sleep_millis)>WEB_SLEEP_MAX_WAIT))) {  //POST /sleep, same off path as a long push
+      sleep_mode=true;
+      Serial.println("sleep from web, task one delete");vTaskDelete(NULL);
+      }
     static int actual_speed_field=0;  
     if (Short_push39.Button_pushed()|Short_push19.Button_pushed()){  
       if(config.Stat_screens_time==0)stat_count++;
@@ -367,6 +371,17 @@ void taskOne( void * parameter )
     if (stat_count>config.screen_count)stat_count=0;
     config.field_actual=config.speed_screen[actual_speed_field];
     Field_choice=((Short_push39.long_pulse|Short_push19.long_pulse)&(config.Stat_screens_time!=0));//10s wachttijd voor menu field keuze....
+   // SoftAP: a phone left. Keep the AP and the web server up for AP_GRACE_MS so it can come
+   // back without a magnet restart. Then end the AP the usual way, unless an app asked
+   // something in that time (it pings every 15 s), which means a phone is still here.
+   if(ap_mode&Wifi_on&SoftAP_connection&(apLeftAt!=0)&((millis()-apLeftAt)>AP_GRACE_MS)){
+        if ((millis() - lastHttpMs) < AP_GRACE_MS) apLeftAt = 0;
+        else {
+          Serial.println("Nobody back on the soft AP within AP_GRACE_MS, Wi-Fi off");
+          SoftAP_connection = false;
+          apLeftAt = 0;
+          }
+        }
    // Valt de Wi-Fi weg terwijl er nog een bestand klaarstaat voor speedsurf.app,
    // geef de verbinding dan WIFI_HERSTEL_MS de tijd om terug te komen (de core
    // verbindt zelf opnieuw na o.a. reden 2 en 200) in plaats van de Wi-Fi meteen
