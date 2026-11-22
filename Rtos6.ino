@@ -371,16 +371,17 @@ void taskOne( void * parameter )
     if (stat_count>config.screen_count)stat_count=0;
     config.field_actual=config.speed_screen[actual_speed_field];
     Field_choice=((Short_push39.long_pulse|Short_push19.long_pulse)&(config.Stat_screens_time!=0));//10s wachttijd voor menu field keuze....
-   // SoftAP: a phone left. Keep the AP and the web server up for AP_GRACE_MS so it can come
-   // back without a magnet restart. Then end the AP the usual way, unless an app asked
-   // something in that time (it pings every 15 s), which means a phone is still here.
-   if(ap_mode&Wifi_on&SoftAP_connection&(apLeftAt!=0)&((millis()-apLeftAt)>AP_GRACE_MS)){
-        if ((millis() - lastHttpMs) < AP_GRACE_MS) apLeftAt = 0;
-        else {
-          Serial.println("Nobody back on the soft AP within AP_GRACE_MS, Wi-Fi off");
-          SoftAP_connection = false;
-          apLeftAt = 0;
-          }
+   // SoftAP: once a phone has left, keep the AP and the web server up only while web
+   // requests keep coming (an app pings every 15 s, a browser loads pages), so a phone
+   // can come back without a magnet restart. A phone that joins again by itself
+   // (ESP32AP saved in its settings) and asks nothing does not count: AP_GRACE_MS after
+   // the phone left and AP_HTTP_WINDOW_MS after the last request, the AP ends as before.
+   unsigned long apLeft = apLeftAt;  //read once, before millis(): the Wi-Fi event task writes it
+   unsigned long apNow = millis();
+   if(ap_mode&Wifi_on&SoftAP_connection&(apLeft!=0)&((apNow-apLeft)>AP_GRACE_MS)&((apNow-lastHttpMs)>AP_HTTP_WINDOW_MS)){
+        Serial.println("No web request since a phone left the soft AP, Wi-Fi off");
+        SoftAP_connection = false;
+        apLeftAt = 0;
         }
    // Valt de Wi-Fi weg terwijl er nog een bestand klaarstaat voor speedsurf.app,
    // geef de verbinding dan WIFI_HERSTEL_MS de tijd om terug te komen (de core

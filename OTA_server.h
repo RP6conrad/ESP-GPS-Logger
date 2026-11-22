@@ -290,6 +290,7 @@ void SD_archive_file(void) {
 }
 void GPSTC_info(char* GPSTC_post );
 void GPSTC_Upload(void){
+  lastHttpMs = millis();  //a person on this page is here, for the soft AP grace
   char gpstc_post[2000]="";
   GPSTC_info(gpstc_post);
   server.sendContent(gpstc_post);
@@ -419,6 +420,7 @@ void ReportCouldNotCreateFile(String target) {
 }
 //Upload a file to the SD
 void File_Upload() {
+  lastHttpMs = millis();  //a person on this page is here, for the soft AP grace
   append_page_header();
   webpage += F("<FORM action='/fupload' method='post' enctype='multipart/form-data'>");
   webpage += F("<div style='overflow-x:auto;'><table id='esplogger'>");
@@ -436,6 +438,7 @@ File UploadFile;
 //Upload a new file to the Filing system
 void handleFileUpload() {
   HTTPUpload& uploadfile = server.upload();
+  lastHttpMs = millis();  //a person on this page is here, for the soft AP grace
   if (uploadfile.status == UPLOAD_FILE_START) {
     String filename = uploadfile.filename;
     if (!filename.startsWith("/")) filename = "/" + filename;
@@ -477,6 +480,7 @@ void handleFileUpload() {
 
 //Config Part - allow to change the config on txt by webinterface
 void Config_TXT() {
+  lastHttpMs = millis();  //a person on this page is here, for the soft AP grace
   append_page_header();
   webpage += html_config_header;
   html_config(webpage);
@@ -524,6 +528,7 @@ String jsonNumber(const String& name, const char* fallback) {
 }
 
 void handleConfigUpload() {
+  lastHttpMs = millis();  //a person on this page is here, for the soft AP grace
   if (!(sdOK | LITTLEFS_OK)) {
     ReportSDNotPresent();
     return;
@@ -798,11 +803,13 @@ void OTA_setup(void) {
   Serial.println("mDNS responder started");
   /*return index page which is stored in serverIndex */
   server.on("/firmware", HTTP_GET, []() {
+    lastHttpMs = millis();  //a person on this page is here, for the soft AP grace
     makeLoginString();
     server.sendHeader("Connection", "close");
     server.send(200, "text/html", loginIndex);
   });
   server.on("/serverIndex", HTTP_GET, []() {
+    lastHttpMs = millis();  //a person on this page is here, for the soft AP grace
     server.sendHeader("Connection", "close");
     server.send(200, "text/html", serverIndex);
   });
@@ -835,6 +842,7 @@ void OTA_setup(void) {
     },
     []() {
       HTTPUpload& upload = server.upload();
+      lastHttpMs = millis();  //a person on this page is here, for the soft AP grace
       if (upload.status == UPLOAD_FILE_START) {
         Serial.printf("Update: %s\n", upload.filename.c_str());
         if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {  //start with max available size
