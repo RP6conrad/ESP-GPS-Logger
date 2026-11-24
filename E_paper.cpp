@@ -885,7 +885,7 @@ void Update_screen(int screen) {
     if(isUploading){display.setCursor(offset,46);display.print("Uploading...");};
     if(upload_OK){display.setCursor(offset,46);display.print("Upload done");};
     if(upload_file_rejected){display.setCursor(offset,46);display.print("File rejected!");};
-    if(!apiKeyValid){display.setCursor(offset,46);display.print("API Key not valid");};
+    if(!apiKeyValid&&config.auto_upload_speedsurf){display.setCursor(offset,46);display.print("API Key not valid");};
     if(auto_upload_time_out){display.setCursor(offset,46);display.print("Upload time-out!");};
     //DEVICE_BOOT_LOG(2);
     if (SoftAP_connection != true) {

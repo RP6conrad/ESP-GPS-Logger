@@ -1,4 +1,5 @@
 ###Changes SW 7.2f
+* Pull request from Mediazone : auto upload no longer reboots the logger. taskOne called dnsServer.processNextRequest() every loop; the DNS server is never started, but each call asked 1460 bytes. During the HTTPS upload that failed and the logger restarted (abort). No API key set: no upload attempts, and "API Key not valid" only shows with AUTO UPLOAD ON.
 * Pull request from Mediazone : speed under 1 knots is considered "no movement", this for 1800s, 3600s and distance (distance added by JH)
 * Pull request from Mediazone (Ron), optimizing API key handling
 * Added info from speedsurf.app to the README.md (pull request Ron)
