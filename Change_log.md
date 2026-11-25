@@ -1,3 +1,7 @@
+###Changes (pull request Mediazone, proposal)
+* SoftAP: when a phone leaves, the Wi-Fi stays on as long as web requests keep coming (an app, or a browser on the logger's pages), at least 30 s (AP_GRACE_MS), so a phone that left for a moment (app in the background, a short drop) can come back without a magnet restart. Without requests for 45 s (AP_HTTP_WINDOW_MS) the Wi-Fi goes off as before. A phone that joins again by itself (ESP32AP saved in its settings) does not keep it on.
+* POST /sleep turns the logger off from an app after the files are fetched (same path as a long push, waits for a running upload). GET /sleep answers 405, so an app can see the firmware has it; old firmware answers 404.
+* An empty or cut-off config.txt falls back on config_backup.txt instead of the defaults, so the Wi-Fi settings are kept; the next save then keeps that good backup.
 ###Changes SW 7.2f
 * Pull request from Mediazone : auto upload no longer reboots the logger. taskOne called dnsServer.processNextRequest() every loop; the DNS server is never started, but each call asked 1460 bytes. During the HTTPS upload that failed and the logger restarted (abort). No API key set: no upload attempts, and "API Key not valid" only shows with AUTO UPLOAD ON.
 * Pull request from Mediazone : speed under 1 knots is considered "no movement", this for 1800s, 3600s and distance (distance added by JH)

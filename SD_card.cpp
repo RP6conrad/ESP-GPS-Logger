@@ -211,6 +211,18 @@ void loadConfiguration(const char *filename, const char *filename_backup, Config
   // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
   if (error) {
+    // An empty or cut-off config.txt falls back on config_backup.txt, the copy kept at
+    // every save, instead of the defaults (which lose the Wi-Fi settings).
+    file.close();
+    if (sdOK && SD_MMC.exists(filename_backup)) file = SD_MMC.open(filename_backup);
+    else if (LITTLEFS_OK && LITTLEFS.exists(filename_backup)) file = LITTLEFS.open(filename_backup);
+    if (file) {
+      Serial.println(F("config.txt unreadable, open the config_backup.txt"));
+      error = deserializeJson(doc, file);
+      if (!error) config.config_fail = 2;  //read from the backup: the next save must not turn the broken config.txt into the backup
+    }
+  }
+  if (error) {
     Serial.println(F("Failed to deserialize file, using default configuration"));
     Serial.println(error.f_str());
     config.config_fail = 1;

@@ -39,6 +39,7 @@ bool reed = false;
 bool deep_sleep = false;
 bool Wifi_on=true;
 bool SoftAP_connection = false;
+volatile unsigned long apLeftAt = 0;  //millis() when a station left the soft AP, 0 = nobody left (see AP_GRACE_MS)
 bool GPS_Signal_OK = false;
 //bool long_push = false;
 bool Field_choice = false;
@@ -549,10 +550,15 @@ void OnWiFiEvent(WiFiEvent_t event){
       Serial.println("Station connected to ESP32 soft AP");
       IP_adress =  WiFi.softAPIP().toString();
       SoftAP_connection=true;
+      //apLeftAt is NOT cleared here: a phone with ESP32AP saved joins again by itself,
+      //and that alone must not keep the AP up. Only an app that asks something does.
       break;
     case SYSTEM_EVENT_AP_STADISCONNECTED:
       Serial.println("Station disconnected from ESP32 soft AP");
-      SoftAP_connection=false;
+      //SoftAP_connection stays true: taskOne switches the Wi-Fi off once no web request
+      //came for a while (AP_GRACE_MS, AP_HTTP_WINDOW_MS). The station count of core 1.0.6
+      //can keep a station that is gone, so it is not used.
+      { unsigned long t = millis(); apLeftAt = t ? t : 1; }  //0 means nobody left; never a value ahead of millis()
       break;
     default: break;
   }
